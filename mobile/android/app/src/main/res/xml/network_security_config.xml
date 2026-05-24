@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Network Security Config.
+    Production builds must ONLY connect over HTTPS.
+    Cleartext (HTTP) is disabled here; allowMixedContent is also false in capacitor.config.ts.
+    To enable cleartext for local dev, add a <domain-config> below or temporarily set
+    usesCleartextTraffic="true" in AndroidManifest.xml (never commit to main).
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Allow cleartext to localhost only (dev server) -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>

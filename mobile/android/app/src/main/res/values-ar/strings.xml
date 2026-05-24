@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Arabic locale overrides.  The app is already RTL by default (manifest
+    supportsRtl="true" + Arabic lang tag in the PWA manifest), but explicit
+    Arabic string resources ensure that any native UI strings also display
+    correctly in Arabic.
+-->
+<resources>
+    <string name="app_name">نقل دمشق</string>
+    <string name="title_activity_main">نقل دمشق</string>
+    <string name="default_notification_channel_name">تنبيهات النقل</string>
+</resources>

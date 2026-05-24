@@ -1,0 +1,30 @@
+{
+  "name": "Damascus Transit Admin",
+  "short_name": "DamAdmin",
+  "description": "لوحة إدارة نظام النقل في دمشق | Damascus Transit System admin panel.",
+  "start_url": "/admin/",
+  "display": "standalone",
+  "background_color": "#054239",
+  "theme_color": "#428177",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#002623">
+<meta name="description" content="نقل دمشق — تطبيق الركاب: أوقات الوصول الفورية، أقرب محطة، خطوط دمشق">
+<title>نقل دمشق — للركاب</title>
+
+<link rel="manifest" href="/passenger/manifest.json">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<link rel="stylesheet" href="/lib/design-system.css">
+
+<style>
+  body { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+  .topbar {
+    background: var(--brand-800);
+    color: #fff;
+    padding: var(--s-4) var(--s-4) var(--s-6);
+    padding-top: calc(var(--s-4) + env(safe-area-inset-top));
+    border-radius: 0 0 var(--r-xl) var(--r-xl);
+  }
+  .topbar h1 { margin: 0 0 var(--s-3); font-size: var(--fs-xl); }
+  .search-bar {
+    display: flex;
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: var(--r-pill);
+    padding: var(--s-1);
+    align-items: center;
+  }
+  .search-bar input {
+    flex: 1;
+    background: transparent;
+    border: 0;
+    color: #fff;
+    padding: var(--s-3) var(--s-4);
+    font-size: var(--fs-md);
+    outline: none;
+  }
+  .search-bar input::placeholder { color: rgba(255,255,255,.6); }
+  .search-bar button {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--gold-600);
+    color: var(--brand-800);
+    display: grid; place-items: center;
+  }
+  .panel { margin-top: var(--s-5); padding-inline: var(--s-4); }
+  .section-title {
+    margin: 0 0 var(--s-3);
+    font-size: var(--fs-md);
+    color: var(--color-text-soft);
+    font-weight: 600;
+  }
+  .stop-card {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: var(--s-3);
+    align-items: center;
+    padding: var(--s-4);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    border-radius: var(--r-lg);
+    margin-bottom: var(--s-3);
+  }
+  .stop-card .dist {
+    background: var(--brand-100);
+    color: var(--brand-700);
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    padding: var(--s-1) var(--s-2);
+    border-radius: var(--r-pill);
+  }
+  .map-block {
+    margin-top: var(--s-5);
+    height: 260px;
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+  }
+  .eta {
+    color: var(--brand-700);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .quick-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--s-3);
+    margin-top: var(--s-5);
+  }
+  .qa-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--s-2);
+    padding: var(--s-5);
+    border-radius: var(--r-lg);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    text-align: center;
+  }
+  .qa-btn:hover { background: var(--color-surface-2); text-decoration:none; }
+  .qa-btn__icon {
+    width: 40px; height: 40px; border-radius: var(--r-md);
+    background: var(--brand-50); color: var(--brand-600);
+    display: grid; place-items: center;
+  }
+  /* Install banner */
+  .install-banner {
+    display: none;
+    background: var(--brand-100);
+    color: var(--brand-700);
+    padding: var(--s-3) var(--s-4);
+    border-radius: var(--r-md);
+    margin: var(--s-4) var(--s-4) 0;
+    align-items: center;
+    gap: var(--s-3);
+    font-size: var(--fs-sm);
+  }
+  .install-banner.show { display: flex; }
+</style>
+</head>
+<body>
+
+<div id="offline-banner" class="offline-banner hidden" role="status">أنت دون اتصال — يتم عرض البيانات المخزّنة محلياً</div>
+
+<header class="topbar">
+  <div class="cluster between">
+    <h1>أهلاً 👋</h1>
+    <button id="lang-toggle" class="btn btn--sm" style="background:rgba(255,255,255,.1);color:#fff">EN</button>
+  </div>
+  <p class="muted" style="margin:0 0 var(--s-4);color:rgba(255,255,255,.7);font-size:var(--fs-sm)">ابحث عن محطتك أو خطك أو شاهد أقرب الحافلات.</p>
+  <form class="search-bar" id="search-form" role="search">
+    <input id="q" type="search" placeholder="اسم محطة أو خط (مثال: مزة، باب توما)" aria-label="بحث">
+    <button type="submit" aria-label="بحث">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
+    </button>
+  </form>
+</header>
+
+<div id="install-banner" class="install-banner" role="region" aria-label="تثبيت التطبيق">
+  <strong>ثبّت التطبيق</strong>
+  <span class="muted">للوصول السريع وأداء أفضل خارج المتصفح.</span>
+  <button class="btn btn--sm" id="install-btn">تثبيت</button>
+</div>
+
+<section class="panel">
+  <div class="cluster between">
+    <h2 class="section-title">أقرب المحطات إليك</h2>
+    <button id="locate-btn" class="btn btn--ghost btn--sm">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg>
+      موقعي
+    </button>
+  </div>
+  <div id="nearest-stops" aria-busy="true">
+    <div class="stop-card"><div class="skeleton" style="width:44px;height:44px;border-radius:50%"></div><div><div class="skeleton" style="width:60%;height:1em;margin-bottom:6px"></div><div class="skeleton" style="width:40%;height:.8em"></div></div></div>
+    <div class="stop-card"><div class="skeleton" style="width:44px;height:44px;border-radius:50%"></div><div><div class="skeleton" style="width:60%;height:1em;margin-bottom:6px"></div><div class="skeleton" style="width:40%;height:.8em"></div></div></div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2 class="section-title">الخطوط الشائعة</h2>
+  <div id="popular-routes">
+    <div class="stop-card"><div class="skeleton" style="width:48px;height:1.2em;border-radius:6px"></div><div class="skeleton" style="width:70%;height:1em"></div></div>
+    <div class="stop-card"><div class="skeleton" style="width:48px;height:1.2em;border-radius:6px"></div><div class="skeleton" style="width:70%;height:1em"></div></div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2 class="section-title">حافلات قريبة</h2>
+  <div class="map-block">
+    <div id="mini-map" class="map" role="application" aria-label="خريطة الحافلات"></div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2 class="section-title">روابط سريعة</h2>
+  <div class="quick-actions">
+    <a href="/api/gtfs" class="qa-btn">
+      <div class="qa-btn__icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h10"/></svg></div>
+      <div class="font-bold">جدول GTFS</div>
+      <div class="text-xs muted">بيانات الخطوط القابلة للتنزيل</div>
+    </a>
+    <a href="/" class="qa-btn">
+      <div class="qa-btn__icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12 12 3l9 9"/><path d="M5 10v10h14V10"/></svg></div>
+      <div class="font-bold">الرئيسية</div>
+      <div class="text-xs muted">العودة للوحة العامة</div>
+    </a>
+  </div>
+</section>
+
+<nav class="tabbar" style="--tabbar-cols:4" aria-label="تنقل سفلي">
+  <a href="/passenger/" class="is-active" aria-current="page">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12 12 3l9 9"/><path d="M5 10v10h14V10"/></svg>
+    <span>الرئيسية</span>
+  </a>
+  <a href="#" id="nav-nearest">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 22s7-7 7-12a7 7 0 0 0-14 0c0 5 7 12 7 12Z"/></svg>
+    <span>قريب</span>
+  </a>
+  <a href="/api/gtfs">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 4v16M4 9h16"/></svg>
+    <span>الخطوط</span>
+  </a>
+  <a href="/admin/login.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>
+    <span>حسابي</span>
+  </a>
+</nav>
+
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script>
+'use strict';
+const $ = (s, r=document) => r.querySelector(s);
+const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:8000' : '';
+const arDigit = (n) => Number(n).toLocaleString('ar-EG');
+
+async function getJson(path) {
+  try {
+    const r = await fetch(API_BASE + path, { headers: {'Accept':'application/json'} });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.json();
+  } catch (e) { console.warn(path, e); return null; }
+}
+
+// ----- Offline detection -----
+function setOnline(online) {
+  const banner = $('#offline-banner');
+  if (online) banner.classList.add('hidden');
+  else banner.classList.remove('hidden');
+}
+window.addEventListener('online',  () => setOnline(true));
+window.addEventListener('offline', () => setOnline(false));
+setOnline(navigator.onLine);
+
+// ----- Nearest stops -----
+async function loadNearest(lat, lon) {
+  const wrap = $('#nearest-stops');
+  wrap.setAttribute('aria-busy', 'true');
+  const stops = await getJson(`/api/stops/nearest?lat=${lat}&lon=${lon}&radius_m=1500`);
+  wrap.setAttribute('aria-busy', 'false');
+  if (!stops || !stops.length) {
+    wrap.innerHTML = '<div class="stop-card muted">لا توجد محطات قريبة ضمن ١.٥ كم.</div>';
+    return;
+  }
+  wrap.innerHTML = stops.slice(0, 6).map(s => `
+    <div class="stop-card">
+      <span class="dist">${arDigit(Math.round(s.distance_m ?? 0))} م</span>
+      <div>
+        <div class="font-bold">${s.name_ar || s.name || 'محطة'}</div>
+        <div class="text-xs muted">${s.route_code || s.routes?.join('، ') || ''}</div>
+      </div>
+      <span class="eta">${s.eta_min != null ? '~ '+arDigit(s.eta_min)+' د' : ''}</span>
+    </div>
+  `).join('');
+}
+
+// ----- Popular routes -----
+async function loadPopularRoutes() {
+  const routes = await getJson('/api/routes');
+  const wrap = $('#popular-routes');
+  if (!routes || !routes.length) {
+    wrap.innerHTML = '<div class="stop-card muted">لا توجد خطوط متاحة.</div>';
+    return;
+  }
+  wrap.innerHTML = routes.slice(0, 6).map(r => `
+    <a class="stop-card" style="text-decoration:none" href="/passenger/?route=${encodeURIComponent(r.id)}">
+      <span class="dist" style="background:var(--gold-100);color:var(--gold-700)">${r.code || r.short_name || (r.id+'').slice(0,3)}</span>
+      <div>
+        <div class="font-bold" style="color:var(--color-text)">${r.name_ar || r.name || 'خط'}</div>
+        <div class="text-xs muted">${r.from || ''} ↔ ${r.to || r.name_en || ''}</div>
+      </div>
+      <span class="badge badge--brand">${arDigit(r.stops_count || 0)} محطة</span>
+    </a>
+  `).join('');
+}
+
+// ----- Map -----
+let map;
+function initMap(center=[36.291, 33.513]) {
+  map = new maplibregl.Map({
+    container: 'mini-map',
+    style: {
+      version: 8,
+      sources: { osm: { type:'raster', tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'], tileSize:256, attribution:'© OpenStreetMap' } },
+      layers: [{ id:'osm', type:'raster', source:'osm' }]
+    },
+    center, zoom: 13
+  });
+  map.on('load', () => {
+    map.addSource('vehicles', { type:'geojson', data: {type:'FeatureCollection',features:[]} });
+    map.addLayer({ id:'vehicles', type:'circle', source:'vehicles',
+      paint: { 'circle-radius':6, 'circle-color':'#00876f', 'circle-stroke-width':2, 'circle-stroke-color':'#fff' } });
+  });
+}
+function openStream() {
+  let es; try { es = new EventSource(API_BASE + '/api/stream'); } catch(_) { return; }
+  es.addEventListener('vehicles', (ev) => {
+    let data; try { data = JSON.parse(ev.data); } catch(_) { return; }
+    const list = data.positions || data.vehicles || data || [];
+    const features = list.map(v => ({
+      type:'Feature',
+      geometry:{ type:'Point', coordinates:[v.lon ?? v.longitude, v.lat ?? v.latitude] },
+      properties:{ id: v.vehicle_id || v.id }
+    })).filter(f => Array.isArray(f.geometry.coordinates) && f.geometry.coordinates.every(Number.isFinite));
+    if (map?.getSource && map.getSource('vehicles')) map.getSource('vehicles').setData({type:'FeatureCollection',features});
+  });
+}
+
+// ----- Geolocation -----
+$('#locate-btn').addEventListener('click', () => requestLocation());
+function requestLocation() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const {latitude:lat, longitude:lon} = pos.coords;
+      loadNearest(lat, lon);
+      if (map) map.flyTo({ center:[lon, lat], zoom:14 });
+    },
+    () => loadNearest(33.513, 36.291),  // fallback: Damascus center
+    { enableHighAccuracy:false, timeout:6000, maximumAge:60000 }
+  );
+}
+
+// ----- Language toggle -----
+$('#lang-toggle').addEventListener('click', () => {
+  const html = document.documentElement;
+  const next = html.lang === 'ar' ? 'en' : 'ar';
+  html.lang = next; html.dir = next === 'ar' ? 'rtl' : 'ltr';
+  $('#lang-toggle').textContent = next === 'ar' ? 'EN' : 'AR';
+});
+
+// ----- PWA install -----
+let deferred;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferred = e;
+  $('#install-banner').classList.add('show');
+});
+$('#install-btn').addEventListener('click', async () => {
+  if (!deferred) return;
+  deferred.prompt();
+  await deferred.userChoice;
+  deferred = null;
+  $('#install-banner').classList.remove('show');
+});
+
+// ----- Boot -----
+window.addEventListener('DOMContentLoaded', () => {
+  initMap();
+  loadPopularRoutes();
+  requestLocation();
+  setTimeout(openStream, 800);
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/passenger/service-worker.js').catch(()=>{});
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Daily at 02:00 UTC
+    - cron: "0 2 * * *"
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  dependency-audit:
+    name: Dependency CVE Audit (pip-audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      - name: Run pip-audit
+        run: pip-audit -r requirements.txt --strict
+
+  npm-audit:
+    name: Dependency CVE Audit (npm — mobile/Capacitor)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - name: npm audit (Capacitor)
+        working-directory: mobile
+        run: |
+          # We tolerate moderate findings in transitive Android/iOS toolchains
+          # but fail on anything high or critical.
+          npm audit --audit-level=high
+
+  flutter-deps:
+    name: Dependency Check (Flutter pub outdated)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.x'
+          channel: stable
+          cache: true
+      - working-directory: flutter_app
+        run: |
+          flutter pub get
+          # Report-only — does not fail CI. CVEs come via Dependabot.
+          flutter pub outdated --no-dev-dependencies --no-dependency-overrides || true
+
+  secrets-scan:
+    name: Secrets Detection (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # full history for commit-history scan
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml

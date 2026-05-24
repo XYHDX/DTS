@@ -1,0 +1,83 @@
+# =============================================================================
+# DamascusTransit — production image (multi-stage, distroless-flavoured)
+# Pinned to Python 3.12-slim 2024-09 sha for reproducibility.
+# Build with:
+#   docker build -f Dockerfile.prod -t damascustransit:prod .
+# =============================================================================
+
+# ---------- Stage 1: build wheels into an isolated prefix ---------------------
+FROM python:3.12-slim-bookworm AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Build deps only — discarded in the final stage.
+RUN apt-get update \
+ && apt-get install --no-install-recommends -y build-essential gcc curl \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+COPY requirements.txt .
+
+# Install into /install so we can COPY the whole tree in one shot.
+RUN pip install --prefix=/install -r requirements.txt \
+                                  uvicorn[standard] \
+                                  gunicorn
+
+# ---------- Stage 2: lean runtime --------------------------------------------
+FROM python:3.12-slim-bookworm AS runtime
+
+ENV PYTHONPATH=/app \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    GUNICORN_WORKERS=4 \
+    GUNICORN_TIMEOUT=120
+
+# Runtime deps only — libpq (Supabase via httpx — none needed), tini (PID 1).
+RUN apt-get update \
+ && apt-get install --no-install-recommends -y tini ca-certificates curl \
+ && rm -rf /var/lib/apt/lists/* /var/cache/apt/* /tmp/*
+
+# Non-root user with a stable UID for k8s + read-only fs.
+RUN addgroup --system --gid 10001 transit \
+ && adduser  --system --uid 10001 --ingroup transit --home /home/transit transit
+
+WORKDIR /app
+
+# Copy installed wheels from the builder.
+COPY --from=builder /install /usr/local
+
+# Copy only the runtime-relevant source. .dockerignore covers the rest.
+COPY --chown=transit:transit api/    ./api/
+COPY --chown=transit:transit lib/    ./lib/
+COPY --chown=transit:transit public/ ./public/
+COPY --chown=transit:transit openapi.json ./openapi.json
+
+# Drop privileges.
+USER transit:transit
+
+EXPOSE 8000
+
+# Healthcheck uses /api/health/deep so the orchestrator pulls us out of rotation
+# on Redis or DB outage, not just on FastAPI being up.
+HEALTHCHECK --interval=30s --timeout=10s --start-period=25s --retries=3 \
+  CMD curl --fail --silent --show-error http://localhost:8000/api/health/deep > /dev/null \
+   || exit 1
+
+# tini reaps zombies + forwards signals cleanly to gunicorn.
+ENTRYPOINT ["/usr/bin/tini", "--"]
+
+CMD ["gunicorn", "api.index:app", \
+     "--worker-class", "uvicorn.workers.UvicornWorker", \
+     "--workers",          "4", \
+     "--worker-tmp-dir",   "/dev/shm", \
+     "--bind",             "0.0.0.0:8000", \
+     "--timeout",          "120", \
+     "--graceful-timeout", "30", \
+     "--keep-alive",       "5", \
+     "--access-logfile",   "-", \
+     "--error-logfile",    "-", \
+     "--forwarded-allow-ips", "*"]

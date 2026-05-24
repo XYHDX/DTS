@@ -1,0 +1,19 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL:-http://localhost}
+      - SUPABASE_KEY=${SUPABASE_KEY:-placeholder}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY:-placeholder}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-placeholder-anon-key-xxxxxxxxxxxxxxxxx}
+      - JWT_SECRET=${JWT_SECRET:-ci-test-secret-do-not-use-in-prod-xxxxx}
+      - TRACCAR_WEBHOOK_SECRET=${TRACCAR_WEBHOOK_SECRET:-ci-test-traccar-secret-do-not-use-in-prod}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s

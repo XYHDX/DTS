@@ -1,0 +1,94 @@
+// DamascusTransit — telemetry protobuf schema.
+// Lifts the example from transit_architecture_guide.md §2.B and extends it
+// for the multi-tenant fields the FastAPI side already expects (operator_id,
+// route_id) plus debug breadcrumbs we want on every frame.
+//
+// Wire-format target: 35–50 bytes per periodic ping vs ~180 bytes for JSON.
+//
+// Generate language bindings with:
+//   protoc --python_out=api/models --proto_path=schemas schemas/telematics.proto
+//   protoc --dart_out=flutter_app/lib/core/proto schemas/telematics.proto
+//   protoc --cpp_out=firmware/sim900a-reference/proto schemas/telematics.proto
+//
+// Field-numbering policy:
+//   1–15  reserved for the hot-path single-byte fields (Protobuf encodes
+//         field tag + wire type in 1 byte for tags ≤ 15).
+//   16+   for low-frequency or optional extras.
+
+syntax = "proto3";
+
+package telematics;
+
+option java_multiple_files = true;
+option go_package = "github.com/actuatorsos/SyrianTransitSystem/api/proto/telematics";
+
+/// One position update from a vehicle. Sent on every periodic ping AND every
+/// trigger event. The trigger_event field distinguishes which.
+message VehicleStatus {
+  // ── Identity (always present) ───────────────────────────────────────────
+  string vehicle_id = 1;        // Stable device identifier (IMEI or our DAM-### code)
+  uint64 timestamp = 2;         // GPS UTC time in milliseconds since epoch — timestamped at the edge per §1.B
+  // ── Coordinates ─────────────────────────────────────────────────────────
+  double latitude  = 3;         // WGS-84 latitude
+  double longitude = 4;         // WGS-84 longitude
+  // ── Motion ──────────────────────────────────────────────────────────────
+  float  speed_kph = 5;         // From NMEA $GPVTG Doppler per §1.A — NOT computed server-side
+  float  heading   = 6;         // 0–360 clockwise from north
+  // ── Engine + fuel ───────────────────────────────────────────────────────
+  bool   engine_state = 7;      // true = engine running, false = off
+  float  fuel_level   = 8;      // 0.0–100.0, EMA-smoothed on the device (α≈0.1)
+  // ── Trigger ─────────────────────────────────────────────────────────────
+  EventType trigger_event = 9;  // 0 = periodic, otherwise one of the named events
+
+  enum EventType {
+    PERIODIC        = 0;
+    IGNITION_ON     = 1;
+    IGNITION_OFF    = 2;
+    GEOFENCE_ENTER  = 3;
+    GEOFENCE_EXIT   = 4;
+    HARSH_BRAKING   = 5;
+    HARSH_ACCEL     = 6;
+    PANIC_BUTTON    = 7;
+    LOW_BATTERY     = 8;
+    DEVICE_TAMPER   = 9;
+    OFFLINE_REPLAY  = 10;       // Frame from the FIFO buffer, transmitted late
+  }
+
+  // ── Multi-tenant context (optional, populated by ops) ──────────────────
+  string operator_id        = 16;
+  string route_id           = 17;
+  string driver_id          = 18;
+  string trip_id            = 19;
+
+  // ── Health breadcrumbs ─────────────────────────────────────────────────
+  uint32 satellite_count    = 20;  // For HDOP sanity
+  float  hdop               = 21;  // Horizontal dilution of precision
+  uint32 cell_signal_dbm    = 22;  // Absolute (NOT signed; positive int = magnitude)
+  uint32 firmware_version   = 23;  // Packed semver: major*10000 + minor*100 + patch
+  uint32 battery_mv         = 24;  // Device backup battery, millivolts
+}
+
+/// A batch wrapper used when the device flushes its offline FIFO buffer
+/// after a network outage (§1.B). The server treats every contained
+/// VehicleStatus exactly as a single live message, but logs the replay flag.
+message VehicleStatusBatch {
+  repeated VehicleStatus items = 1;
+  uint64 generated_at = 2;    // Time the batch was assembled, ms since epoch
+  bool   is_replay    = 3;    // true when items came from the FIFO buffer
+}
+
+/// Server-side acknowledgement for QoS-1 events. Devices receive this on the
+/// MQTT `vehicles/+/ack` topic and only then clear the matching item from
+/// their FIFO buffer.
+message Ack {
+  string vehicle_id = 1;
+  uint64 event_timestamp = 2;
+  enum Status {
+    OK               = 0;
+    SCHEMA_REJECTED  = 1;
+    AUTH_REJECTED    = 2;
+    RATE_LIMITED     = 3;
+  }
+  Status status = 3;
+  string detail = 4;          // Empty when status = OK
+}

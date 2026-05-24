@@ -1,0 +1,49 @@
+name: Lighthouse CI
+
+on:
+  pull_request:
+    paths:
+      - 'public/**'
+      - '.github/workflows/lighthouse.yml'
+  workflow_dispatch:
+
+jobs:
+  audit:
+    name: Audit perf, a11y, best-practice, SEO
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: |
+          npm install -g @lhci/cli@0.14.x
+
+      - name: Start static server
+        run: |
+          npx http-server public -p 8080 --silent &
+          # Wait for the server to be reachable
+          for i in {1..20}; do
+            if curl -fsS http://localhost:8080/ > /dev/null; then break; fi
+            sleep 0.5
+          done
+
+      - name: Run Lighthouse CI
+        run: |
+          lhci autorun \
+            --collect.url=http://localhost:8080/ \
+            --collect.url=http://localhost:8080/passenger/ \
+            --collect.url=http://localhost:8080/driver/ \
+            --collect.url=http://localhost:8080/admin/login.html \
+            --collect.numberOfRuns=2 \
+            --assert.assertions.categories:performance=warn:0.85 \
+            --assert.assertions.categories:accessibility=error:0.9 \
+            --assert.assertions.categories:best-practices=warn:0.9 \
+            --assert.assertions.categories:seo=warn:0.85 \
+            --upload.target=temporary-public-storage
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}

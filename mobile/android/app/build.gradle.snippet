@@ -1,0 +1,66 @@
+// Step 88 — Drop-in snippet for `mobile/android/app/build.gradle`.
+//
+// Paste the `signingConfigs` block inside the existing `android { … }` block,
+// and replace the `buildTypes { release { … } }` with the version below.
+//
+// Why env vars:
+//   - The keystore file lives outside the repo and is never committed.
+//   - Local builds, GitHub Actions, and Vercel preview builds can all sign
+//     by exporting the same four env vars (KEYSTORE_PATH, KEYSTORE_PASSWORD,
+//     KEY_ALIAS, KEY_PASSWORD).
+//   - When the env vars are missing (a fresh clone, a contributor's machine
+//     without keystore access), the release type silently falls back to the
+//     debug signing config so the build still works.
+
+android {
+    // … existing config (compileSdk, defaultConfig, etc.) …
+
+    signingConfigs {
+        release {
+            // The four env vars are honoured directly. Empty strings short-circuit
+            // the block so a missing keystore degrades gracefully.
+            def ksPath = System.getenv("KEYSTORE_PATH") ?: ""
+            if (ksPath) {
+                storeFile     file(ksPath)
+                storePassword System.getenv("KEYSTORE_PASSWORD")
+                keyAlias      System.getenv("KEY_ALIAS")
+                keyPassword   System.getenv("KEY_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            // If the release signingConfig has a real keystore, use it; otherwise
+            // sign with debug so contributors without the keystore can still build.
+            def hasReleaseKey = (System.getenv("KEYSTORE_PATH") ?: "").length() > 0
+            signingConfig hasReleaseKey ? signingConfigs.release : signingConfigs.debug
+
+            minifyEnabled       true
+            shrinkResources     true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
+                          'proguard-rules.pro'
+        }
+        debug {
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-debug"
+        }
+    }
+}
+
+// Verifying locally:
+//   export KEYSTORE_PATH=$HOME/keystores/damascus-transit.jks
+//   export KEYSTORE_PASSWORD='from-1password'
+//   export KEY_ALIAS=damascus-transit
+//   export KEY_PASSWORD='from-1password'
+//   cd mobile/android && ./gradlew bundleRelease
+//   # -> android/app/build/outputs/bundle/release/app-release.aab
+//
+// Verifying in CI (.github/workflows/release-mobile.yml — TODO):
+//   - run: |
+//       echo "${{ secrets.ANDROID_KEYSTORE_B64 }}" | base64 -d > /tmp/release.jks
+//       export KEYSTORE_PATH=/tmp/release.jks
+//       export KEYSTORE_PASSWORD="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}"
+//       export KEY_ALIAS="${{ secrets.ANDROID_KEY_ALIAS }}"
+//       export KEY_PASSWORD="${{ secrets.ANDROID_KEY_PASSWORD }}"
+//       cd mobile/android && ./gradlew bundleRelease
