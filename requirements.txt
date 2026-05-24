@@ -4,7 +4,7 @@
 # Major version bumps (bcrypt 5.x, gtfs-realtime-bindings 2.x) are deferred to
 # a separate feature branch with a full pytest run — see ROADMAP_100.md step 71.
 
-fastapi>=0.136.0,<0.140.0
+fastapi>=0.136.3,<0.140.0
 httpx==0.28.1
 PyJWT==2.12.1
 bcrypt==4.2.1                       # 5.x bumps on its own branch
