@@ -25,8 +25,7 @@
     "@capacitor/keyboard": "^6.0.2",
     "@capacitor/push-notifications": "^6.0.1",
     "@capacitor/splash-screen": "^6.0.0",
-    "@capacitor/status-bar": "^6.0.1",
-    "capacitor-biometric-auth": "^5.0.0"
+    "@capacitor/status-bar": "^6.0.1"
   },
   "devDependencies": {
     "@capacitor/cli": "^6.1.0"

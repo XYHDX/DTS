@@ -26,8 +26,8 @@
     color: #fff;
     padding: calc(env(safe-area-inset-top) + 14px) 16px 14px;
     display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: 12px;
+    grid-template-columns: auto auto 1fr auto;
+    gap: 10px;
     align-items: center;
     position: relative;
     overflow: hidden;
@@ -60,6 +60,25 @@
     transition: background var(--t-fast) var(--ease);
   }
   .logout-btn:hover { background: rgba(255,255,255,.18); }
+
+  /* Inline back-to-home button inside the driver-bar */
+  .home-btn {
+    background: rgba(255,255,255,.10); color: #fff;
+    border: 1px solid rgba(255,255,255,.22);
+    width: 40px; height: 40px; border-radius: 50%;
+    display: grid; place-items: center;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+  }
+  .home-btn:hover {
+    background: var(--national-gold);
+    color: var(--national-green-950);
+    border-color: var(--national-gold);
+    text-decoration: none;
+  }
+  .home-btn svg { width: 16px; height: 16px; }
+  [dir="rtl"] .home-btn svg { transform: scaleX(-1); }
 
   .login-pane, .trip-pane { flex: 1; padding: 24px 16px 32px; }
   .login-pane { display: grid; place-content: center; max-width: 440px; margin: 0 auto; width: 100%; }
@@ -202,11 +221,28 @@
 <body class="with-fade-in">
 
 
+<!-- Universal utility bar (gov chip + cross-section links) -->
+<div class="utility-bar">
+  <div class="container">
+    <span class="gov">الجمهورية العربية السورية</span>
+    <span class="right">
+      <a href="/passenger/">للركاب</a>
+      <span class="sep"></span>
+      <a href="/driver/">للسائقين</a>
+      <span class="sep"></span>
+      <a href="/admin/login.html">الإدارة</a>
+    </span>
+  </div>
+</div>
+
 <div class="driver-shell">
 
 <div id="offline-banner" class="offline-banner hidden" role="status" data-i18n="driver.offline">دون اتصال — يتم تخزين المواقع محلياً وستُرسل عند العودة</div>
 
 <header class="driver-bar">
+  <a href="/" class="home-btn" title="العودة إلى الرئيسية" aria-label="العودة إلى الرئيسية">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+  </a>
   <div>
     <div class="label">حافلة</div>
     <div class="vehicle-id" id="bar-vehicle">—</div>
