@@ -369,22 +369,22 @@ ALTER TABLE public.vehicle_positions_latest  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.trips                     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.alerts                    ENABLE ROW LEVEL SECURITY;
 
--- Public-read policies for the data the passenger app needs anonymously
-DO $$ BEGIN
-  CREATE POLICY "anon can read routes"    ON public.routes                   FOR SELECT USING (is_active);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+-- Public-read policies for the data the passenger app needs anonymously.
+-- DROP-then-CREATE makes the script fully re-runnable without leaving
+-- duplicate policies behind. Sensitive tables (users, vehicle_positions,
+-- trips, operators, alerts) intentionally have NO anon policy — only the
+-- service-role (FastAPI backend) reads them.
+DROP POLICY IF EXISTS anon_read_routes           ON public.routes;
+DROP POLICY IF EXISTS anon_read_stops            ON public.stops;
+DROP POLICY IF EXISTS anon_read_route_stops      ON public.route_stops;
+DROP POLICY IF EXISTS anon_read_positions_latest ON public.vehicle_positions_latest;
+DROP POLICY IF EXISTS anon_read_vehicles         ON public.vehicles;
 
-DO $$ BEGIN
-  CREATE POLICY "anon can read stops"     ON public.stops                    FOR SELECT USING (is_active);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-
-DO $$ BEGIN
-  CREATE POLICY "anon can read route_stops" ON public.route_stops            FOR SELECT USING (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-
-DO $$ BEGIN
-  CREATE POLICY "anon can read positions_latest" ON public.vehicle_positions_latest FOR SELECT USING (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+CREATE POLICY anon_read_routes           ON public.routes                   FOR SELECT USING (is_active);
+CREATE POLICY anon_read_stops            ON public.stops                    FOR SELECT USING (is_active);
+CREATE POLICY anon_read_route_stops      ON public.route_stops              FOR SELECT USING (true);
+CREATE POLICY anon_read_positions_latest ON public.vehicle_positions_latest FOR SELECT USING (true);
+CREATE POLICY anon_read_vehicles         ON public.vehicles                 FOR SELECT USING (is_active);
 
 -- Service-role bypasses RLS automatically; no policy needed for FastAPI.
 
