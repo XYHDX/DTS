@@ -872,8 +872,19 @@ h1, h2, h3, h4, .display {
 /* On-green-bg button overrides */
 .on-green-bg .btn--primary { background: var(--national-gold); color: var(--national-green-950); border-color: var(--national-gold); box-shadow: 0 4px 14px rgba(201,169,91,.18); }
 .on-green-bg .btn--primary:hover { background: var(--national-gold-500); border-color: var(--national-gold-500); box-shadow: 0 8px 22px rgba(201,169,91,.36); }
-.on-green-bg .btn--outline { background: rgba(255,255,255,.05); color: #fff; border-color: rgba(255,255,255,.55); }
-.on-green-bg .btn--outline:hover { background: rgba(255,255,255,.14); border-color: var(--national-gold); color: var(--national-gold); }
+.on-green-bg .btn--outline {
+  background: rgba(255,255,255,.06);
+  color: #fff;
+  border-color: rgba(255,255,255,.55);
+}
+.on-green-bg .btn--outline:hover {
+  /* Stay translucent dark — never let the default light-cream hover bleed through.
+     Background lifts slightly so the hover is felt; border + text flip to gold. */
+  background: rgba(14,86,80,.55) !important;
+  border-color: var(--national-gold) !important;
+  color: var(--national-gold) !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,.20);
+}
 .on-green-bg .btn--ghost { background: rgba(255,255,255,.04); color: rgba(255,255,255,.92); border: 1px solid rgba(255,255,255,.16); }
 .on-green-bg .btn--ghost:hover { background: rgba(255,255,255,.14); color: #fff; border-color: rgba(255,255,255,.4); }
 .on-green-bg .btn--secondary { background: rgba(255,255,255,.06); color: #fff; border-color: rgba(255,255,255,.55); }

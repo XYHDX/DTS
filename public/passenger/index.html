@@ -187,15 +187,70 @@
     background: var(--national-gold); border-radius: 0 0 2px 2px;
   }
   .tabbar a, .tabbar button { position: relative; }
+
+  /* Desktop chrome — only show full masthead+nav on wider screens
+     so mobile keeps the compact pass-hero without redundant header */
+  .desk-chrome { display: none; }
+  @media (min-width: 768px) {
+    .desk-chrome { display: block; }
+    /* On desktop the pass-hero loses its rounded radius (it sits below nav) */
+    .pass-hero { border-radius: 0; padding-top: 32px; padding-bottom: 36px; }
+    .pass-hero__top { display: none; }
+    /* Larger container width for panels */
+    .panel { max-width: 1100px; margin-inline: auto; padding-inline: 24px; }
+    .panel:first-of-type { margin-top: 32px; }
+    body { padding-bottom: 0; }
+    .tabbar { display: none; }
+  }
+  /* Mobile-only — hide the standard footer chrome (we use the tabbar instead) */
+  @media (max-width: 767px) {
+    .foot { display: none; }
+  }
 </style>
 </head>
 <body class="with-fade-in">
 
-<!-- National flag accent strip -->
-<div class="flag-strip" aria-hidden="true">
-  <span class="flag-strip__green"></span>
-  <span class="flag-strip__white"></span>
-  <span class="flag-strip__black"></span>
+<!-- Desktop chrome — utility bar + masthead + sticky nav (hidden on mobile) -->
+<div class="desk-chrome">
+  <div class="utility-bar">
+    <div class="container">
+      <span class="gov">الجمهورية العربية السورية · حكومة مفتوحة المصدر</span>
+      <span class="right">
+        <a href="/passenger/">للركاب</a>
+        <span class="sep"></span>
+        <a href="/driver/">للسائقين</a>
+        <span class="sep"></span>
+        <a href="/admin/login.html">الإدارة</a>
+      </span>
+    </div>
+  </div>
+  <header class="masthead">
+    <div class="container">
+      <div class="masthead__emblem" aria-hidden="true">
+        <picture>
+          <source srcset="/assets/identity/sy-emblem-eagle.avif" type="image/avif">
+          <img src="/assets/identity/sy-emblem-eagle.png" alt="">
+        </picture>
+      </div>
+      <div class="masthead__text">
+        <h1>نقل دمشق · للركّاب</h1>
+        <span class="masthead__tag">خريطة حيّة · أوقات وصول · أقرب محطّة</span>
+      </div>
+      <div class="masthead__en">
+        <strong>Damascus Transit</strong>
+        Passenger app
+      </div>
+    </div>
+  </header>
+  <nav class="nav-bar" id="primary-nav" aria-label="رئيسية">
+    <div class="container">
+      <a href="/">الرئيسية</a>
+      <a href="/passenger/" class="is-active">للركاب</a>
+      <a href="/driver/">للسائقين</a>
+      <a href="/admin/login.html">دخول الإدارة</a>
+      <a href="/help/">كيفية الاستخدام</a>
+    </div>
+  </nav>
 </div>
 
 <div id="offline-banner" class="offline-banner hidden" role="status" data-i18n="driver.offline">أنت دون اتصال — يتم عرض البيانات المخزّنة محلياً</div>
@@ -274,6 +329,44 @@
     </a>
   </div>
 </section>
+
+<!-- Desktop footer chrome (hidden on mobile by media query) -->
+<footer class="foot" style="margin-top: 56px">
+  <div class="container">
+    <div>
+      <h6>نقل دمشق</h6>
+      <p class="lede">منصة وطنية مفتوحة المصدر تربط الركاب والسائقين والمشرفين بمواقع الحافلات وأوقات الوصول لحظياً.</p>
+      <div class="social-row">
+        <a href="https://github.com/XYHDX/DTS" target="_blank" rel="noopener" aria-label="GitHub">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.6 5.6.6 11.9c0 5 3.3 9.3 7.8 10.8.6.1.8-.2.8-.5v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.4-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.2 1.2.9-.3 1.9-.4 2.9-.4s2 .1 2.9.4c2.2-1.5 3.2-1.2 3.2-1.2.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.1 0 4.5-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.3v3.4c0 .3.2.7.8.5 4.5-1.5 7.8-5.8 7.8-10.8C23.4 5.6 18.3.5 12 .5Z"/></svg>
+        </a>
+      </div>
+    </div>
+    <div>
+      <h6>المنصة</h6>
+      <a href="/">الرئيسية</a>
+      <a href="/passenger/">للركاب</a>
+      <a href="/driver/">للسائقين</a>
+      <a href="/admin/login.html">الإدارة</a>
+    </div>
+    <div>
+      <h6>المساعدة</h6>
+      <a href="/help/#passengers">دليل الركّاب</a>
+      <a href="/help/#gps">ربط الـGPS</a>
+      <a href="/help/#troubleshooting">حلّ المشاكل</a>
+    </div>
+    <div>
+      <h6>المرجع</h6>
+      <a href="https://github.com/XYHDX/DTS" target="_blank" rel="noopener">GitHub</a>
+      <a href="/api/gtfs">GTFS</a>
+      <a href="/api/health">Health</a>
+    </div>
+    <div class="copy">
+      <span>© ٢٠٢٦ نقل دمشق · رخصة MIT</span>
+      <span>v4.0</span>
+    </div>
+  </div>
+</footer>
 
 <nav class="tabbar" style="--tabbar-cols:4" aria-label="تنقل سفلي">
   <a href="/passenger/" class="is-active" aria-current="page">
@@ -424,6 +517,12 @@ $('#install-btn').addEventListener('click', async () => {
   deferred = null;
   $('#install-banner').classList.remove('show');
 });
+
+// Sticky-nav scroll shadow (desktop only — but harmless on mobile)
+const stickyNav = document.getElementById('primary-nav');
+window.addEventListener('scroll', () => {
+  if (stickyNav) stickyNav.classList.toggle('is-scrolled', window.scrollY > 8);
+}, { passive: true });
 
 // Boot
 window.addEventListener('DOMContentLoaded', () => {
