@@ -311,15 +311,29 @@ ON CONFLICT (vehicle_id) DO UPDATE SET
 -- 10.1 — RLS on spatial_ref_sys (PostGIS EPSG reference table)
 -- This is public reference data; enabling RLS with a permissive SELECT
 -- policy satisfies the advisor without breaking ST_Transform etc.
-ALTER TABLE public.spatial_ref_sys ENABLE ROW LEVEL SECURITY;
-DO $$ BEGIN
-  CREATE POLICY "spatial_ref_sys readable by everyone"
-    ON public.spatial_ref_sys FOR SELECT USING (true);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+-- NOTE: On Supabase Cloud, this table is owned by `supabase_admin`, so
+-- your `postgres` role can't ALTER it. We catch that gracefully — the
+-- advisor warning will remain, which is a benign known false-positive
+-- for every Supabase project that uses PostGIS.
+DO $$
+BEGIN
+  EXECUTE 'ALTER TABLE public.spatial_ref_sys ENABLE ROW LEVEL SECURITY';
+  BEGIN
+    EXECUTE $POL$
+      CREATE POLICY "spatial_ref_sys readable by everyone"
+        ON public.spatial_ref_sys FOR SELECT USING (true)
+    $POL$;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END;
+EXCEPTION WHEN insufficient_privilege THEN
+  RAISE NOTICE 'Skipped spatial_ref_sys RLS — owned by supabase_admin on Supabase Cloud. This is a known benign warning.';
+END $$;
 
 -- 10.2 — Revoke EXECUTE on PostGIS SECURITY DEFINER functions
 -- st_estimatedextent has 3 overloads. They can leak metadata about
 -- schemas the caller shouldn't see, so we restrict to the postgres role.
+-- Wrapped in EXCEPTION handler in case the PostGIS functions are owned
+-- by supabase_admin on hosted projects.
 DO $$
 DECLARE r record;
 BEGIN
@@ -330,9 +344,13 @@ BEGIN
     WHERE n.nspname = 'public'
       AND p.proname = 'st_estimatedextent'
   LOOP
-    EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM PUBLIC', r.sig);
-    EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM anon', r.sig);
-    EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM authenticated', r.sig);
+    BEGIN
+      EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM PUBLIC',        r.sig);
+      EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM anon',          r.sig);
+      EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM authenticated', r.sig);
+    EXCEPTION WHEN insufficient_privilege THEN
+      RAISE NOTICE 'Skipped REVOKE on %, owned by supabase_admin.', r.sig;
+    END;
   END LOOP;
 END $$;
 
