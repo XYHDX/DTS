@@ -107,17 +107,25 @@ h1, h2, h3, h4, h5, h6 {
 }
 ::selection { background: var(--gold); color: var(--green-950); }
 
-/* ── Octagram tessellation — used in 3 layers (hero, pattern band, footer) ── */
+/* ── Octagram tessellation ─────────────────────────────────────────────
+ * Classic Islamic 8-fold pattern with full edge connectivity:
+ *   – central 8-pointed khatam star
+ *   – 16 extension rays from each outer star tip to the tile boundary
+ *   – 4 corner-octagon arcs (each a 4-point polyline) that meet the rays
+ * When tiled, every ray continues into the neighbouring tile and the corner
+ * arcs fuse into complete regular octagons. The whole field becomes one
+ * continuous golden lattice — no isolated motifs.                            */
 .pattern-on-green {
   background-color: var(--green);
   background-image: url("data:image/svg+xml;utf8,\
 <svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'>\
-<g fill='none' stroke='%23C9A95B' stroke-width='1' stroke-opacity='0.45' stroke-linejoin='miter'>\
+<g fill='none' stroke='%23C9A95B' stroke-width='1' stroke-opacity='0.55' stroke-linejoin='round' stroke-linecap='round'>\
 <polygon points='68,40 51,45 60,60 45,51 40,68 35,51 20,60 29,45 12,40 29,35 20,20 35,29 40,12 45,29 60,20 51,35'/>\
-<polyline points='11,0 11,5 5,11 0,11'/>\
-<polyline points='80,11 75,11 69,5 69,0'/>\
-<polyline points='69,80 69,75 75,69 80,69'/>\
-<polyline points='0,69 5,69 11,75 11,80'/>\
+<path d='M68,40 L80,36.5 M68,40 L80,43.5 M40,68 L36.5,80 M40,68 L43.5,80 M12,40 L0,36.5 M12,40 L0,43.5 M40,12 L36.5,0 M40,12 L43.5,0 M60,20 L72,0 M60,20 L80,8 M60,60 L80,72 M60,60 L72,80 M20,60 L8,80 M20,60 L0,72 M20,20 L0,8 M20,20 L8,0'/>\
+<polyline points='8,0 8,3.3 3.3,8 0,8'/>\
+<polyline points='80,8 76.7,8 72,3.3 72,0'/>\
+<polyline points='72,80 72,76.7 76.7,72 80,72'/>\
+<polyline points='8,80 8,76.7 3.3,72 0,72'/>\
 </g></svg>");
   background-size: 80px 80px;
 }
@@ -239,7 +247,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 .hero::before {
   content: ""; position: absolute; inset: 0;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><g fill='none' stroke='%23C9A95B' stroke-width='1' stroke-opacity='0.38' stroke-linejoin='miter'><polygon points='68,40 51,45 60,60 45,51 40,68 35,51 20,60 29,45 12,40 29,35 20,20 35,29 40,12 45,29 60,20 51,35'/><polyline points='11,0 11,5 5,11 0,11'/><polyline points='80,11 75,11 69,5 69,0'/><polyline points='69,80 69,75 75,69 80,69'/><polyline points='0,69 5,69 11,75 11,80'/></g></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><g fill='none' stroke='%23C9A95B' stroke-width='1' stroke-opacity='0.48' stroke-linejoin='round' stroke-linecap='round'><polygon points='68,40 51,45 60,60 45,51 40,68 35,51 20,60 29,45 12,40 29,35 20,20 35,29 40,12 45,29 60,20 51,35'/><path d='M68,40 L80,36.5 M68,40 L80,43.5 M40,68 L36.5,80 M40,68 L43.5,80 M12,40 L0,36.5 M12,40 L0,43.5 M40,12 L36.5,0 M40,12 L43.5,0 M60,20 L72,0 M60,20 L80,8 M60,60 L80,72 M60,60 L72,80 M20,60 L8,80 M20,60 L0,72 M20,20 L0,8 M20,20 L8,0'/><polyline points='8,0 8,3.3 3.3,8 0,8'/><polyline points='80,8 76.7,8 72,3.3 72,0'/><polyline points='72,80 72,76.7 76.7,72 80,72'/><polyline points='8,80 8,76.7 3.3,72 0,72'/></g></svg>");
   background-size: 80px 80px;
   pointer-events: none;
   animation: pattern-drift 60s linear infinite;
@@ -581,13 +589,45 @@ h1, h2, h3, h4, h5, h6 {
 .btn--outline.is-loading::after,
 .btn--ghost.is-loading::after { color: var(--green); }
 
-/* Button on green */
-.on-green .btn--primary { background: var(--gold); color: var(--green-950); border-color: var(--gold); }
-.on-green .btn--primary:hover { background: var(--gold-600); border-color: var(--gold-600); }
-.on-green .btn--outline { color: #fff; border-color: rgba(255,255,255,.4); }
-.on-green .btn--outline:hover { background: rgba(255,255,255,.08); border-color: var(--gold); }
-.on-green .btn--ghost { color: rgba(255,255,255,.85); }
-.on-green .btn--ghost:hover { background: rgba(255,255,255,.08); color: #fff; }
+/* Buttons on green — high-contrast overrides for the dark-background row.
+   The "primary" slot flips to gold (so it stands out on green), the outline
+   gets a soft glass-pane fill + brighter border, and the ghost gets a faint
+   tint so it never disappears against the green field. */
+.on-green-bg .btn--primary {
+  background: var(--gold); color: var(--green-950); border-color: var(--gold);
+  box-shadow: 0 4px 14px rgba(201,169,91,.18);
+}
+.on-green-bg .btn--primary:hover {
+  background: var(--gold-600); border-color: var(--gold-600);
+  box-shadow: 0 8px 22px rgba(201,169,91,.36);
+}
+.on-green-bg .btn--secondary {
+  background: rgba(255,255,255,.06); color: #fff; border-color: rgba(255,255,255,.55);
+}
+.on-green-bg .btn--secondary:hover {
+  background: rgba(255,255,255,.12); border-color: var(--gold); color: var(--gold);
+}
+.on-green-bg .btn--outline {
+  background: rgba(255,255,255,.05);
+  color: #fff;
+  border-color: rgba(255,255,255,.55);
+}
+.on-green-bg .btn--outline:hover {
+  background: rgba(255,255,255,.14);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.on-green-bg .btn--ghost {
+  background: rgba(255,255,255,.04);
+  color: rgba(255,255,255,.92);
+  border-color: rgba(255,255,255,.16);
+}
+.on-green-bg .btn--ghost:hover {
+  background: rgba(255,255,255,.14);
+  color: #fff;
+  border-color: rgba(255,255,255,.4);
+}
+.on-green-bg .btn--danger { box-shadow: 0 4px 14px rgba(206,17,38,.22); }
 
 /* Button group */
 .btn-group { display: inline-flex; }
@@ -922,7 +962,7 @@ h1, h2, h3, h4, h5, h6 {
 .foot { background: var(--green-950); color: rgba(255,255,255,.82); padding: 72px 0 24px; position: relative; overflow: hidden; }
 .foot::before {
   content: ""; position: absolute; inset: 0;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><g fill='none' stroke='%23C9A95B' stroke-width='1' stroke-opacity='0.18' stroke-linejoin='miter'><polygon points='68,40 51,45 60,60 45,51 40,68 35,51 20,60 29,45 12,40 29,35 20,20 35,29 40,12 45,29 60,20 51,35'/><polyline points='11,0 11,5 5,11 0,11'/><polyline points='80,11 75,11 69,5 69,0'/><polyline points='69,80 69,75 75,69 80,69'/><polyline points='0,69 5,69 11,75 11,80'/></g></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><g fill='none' stroke='%23C9A95B' stroke-width='1' stroke-opacity='0.22' stroke-linejoin='round' stroke-linecap='round'><polygon points='68,40 51,45 60,60 45,51 40,68 35,51 20,60 29,45 12,40 29,35 20,20 35,29 40,12 45,29 60,20 51,35'/><path d='M68,40 L80,36.5 M68,40 L80,43.5 M40,68 L36.5,80 M40,68 L43.5,80 M12,40 L0,36.5 M12,40 L0,43.5 M40,12 L36.5,0 M40,12 L43.5,0 M60,20 L72,0 M60,20 L80,8 M60,60 L80,72 M60,60 L72,80 M20,60 L8,80 M20,60 L0,72 M20,20 L0,8 M20,20 L8,0'/><polyline points='8,0 8,3.3 3.3,8 0,8'/><polyline points='80,8 76.7,8 72,3.3 72,0'/><polyline points='72,80 72,76.7 76.7,72 80,72'/><polyline points='8,80 8,76.7 3.3,72 0,72'/></g></svg>");
   background-size: 80px 80px; pointer-events: none;
 }
 .foot .container { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr; gap: 36px; }

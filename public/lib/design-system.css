@@ -253,20 +253,22 @@ h1, h2, h3, h4, .display {
 }
 
 /* ---- Decorative Syrian geometric pattern — apply as a background layer.
- *      True 8-fold Islamic tessellation: 8-pointed khatam star at tile centre
- *      + quartered regular octagons at tile junctions (4 quadrant arcs that
- *      compose into full octagons where 4 tiles meet).
- *      Use sparingly: hero backgrounds, footer crowns, document watermarks. */
+ *      Classic Islamic 8-fold pattern with full edge connectivity: central
+ *      khatam star, 16 extension rays from each outer tip to the tile edge,
+ *      and 4 corner-octagon arcs that meet the rays. When tiled, every ray
+ *      continues into the neighbour and the corner arcs fuse into complete
+ *      regular octagons — the whole field is one continuous golden lattice. */
 .pattern-bg {
   background-color: var(--color-surface);
   background-image: url("data:image/svg+xml;utf8,\
 <svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'>\
-<g fill='none' stroke='%23C9A95B' stroke-width='0.9' stroke-opacity='0.35' stroke-linejoin='miter'>\
+<g fill='none' stroke='%23C9A95B' stroke-width='0.9' stroke-opacity='0.45' stroke-linejoin='round' stroke-linecap='round'>\
 <polygon points='68,40 51,45 60,60 45,51 40,68 35,51 20,60 29,45 12,40 29,35 20,20 35,29 40,12 45,29 60,20 51,35'/>\
-<polyline points='11,0 11,5 5,11 0,11'/>\
-<polyline points='80,11 75,11 69,5 69,0'/>\
-<polyline points='69,80 69,75 75,69 80,69'/>\
-<polyline points='0,69 5,69 11,75 11,80'/>\
+<path d='M68,40 L80,36.5 M68,40 L80,43.5 M40,68 L36.5,80 M40,68 L43.5,80 M12,40 L0,36.5 M12,40 L0,43.5 M40,12 L36.5,0 M40,12 L43.5,0 M60,20 L72,0 M60,20 L80,8 M60,60 L80,72 M60,60 L72,80 M20,60 L8,80 M20,60 L0,72 M20,20 L0,8 M20,20 L8,0'/>\
+<polyline points='8,0 8,3.3 3.3,8 0,8'/>\
+<polyline points='80,8 76.7,8 72,3.3 72,0'/>\
+<polyline points='72,80 72,76.7 76.7,72 80,72'/>\
+<polyline points='8,80 8,76.7 3.3,72 0,72'/>\
 </g>\
 </svg>");
   background-size: 80px 80px;
@@ -276,12 +278,13 @@ h1, h2, h3, h4, .display {
   background-color: var(--national-green);
   background-image: url("data:image/svg+xml;utf8,\
 <svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'>\
-<g fill='none' stroke='%23C9A95B' stroke-width='0.9' stroke-opacity='0.55' stroke-linejoin='miter'>\
+<g fill='none' stroke='%23C9A95B' stroke-width='0.9' stroke-opacity='0.6' stroke-linejoin='round' stroke-linecap='round'>\
 <polygon points='68,40 51,45 60,60 45,51 40,68 35,51 20,60 29,45 12,40 29,35 20,20 35,29 40,12 45,29 60,20 51,35'/>\
-<polyline points='11,0 11,5 5,11 0,11'/>\
-<polyline points='80,11 75,11 69,5 69,0'/>\
-<polyline points='69,80 69,75 75,69 80,69'/>\
-<polyline points='0,69 5,69 11,75 11,80'/>\
+<path d='M68,40 L80,36.5 M68,40 L80,43.5 M40,68 L36.5,80 M40,68 L43.5,80 M12,40 L0,36.5 M12,40 L0,43.5 M40,12 L36.5,0 M40,12 L43.5,0 M60,20 L72,0 M60,20 L80,8 M60,60 L80,72 M60,60 L72,80 M20,60 L8,80 M20,60 L0,72 M20,20 L0,8 M20,20 L8,0'/>\
+<polyline points='8,0 8,3.3 3.3,8 0,8'/>\
+<polyline points='80,8 76.7,8 72,3.3 72,0'/>\
+<polyline points='72,80 72,76.7 76.7,72 80,72'/>\
+<polyline points='8,80 8,76.7 3.3,72 0,72'/>\
 </g>\
 </svg>");
   background-size: 80px 80px;
