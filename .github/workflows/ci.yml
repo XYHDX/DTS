@@ -203,15 +203,35 @@ jobs:
 
   # -------------------------------------------------------------------------
   # Stage 5 — Auto-deploy (main branch only)
+  #
+  # NOTE: Vercel's native GitHub integration already auto-deploys every push
+  # to main (visit Vercel → Project Settings → Git to verify). This manual
+  # deploy step is only useful as a fallback. We require the VERCEL_TOKEN
+  # secret to actually be set before running, so an empty-secret repo doesn't
+  # produce a red CI job. To enable: add the secret in
+  # Settings → Secrets and variables → Actions:
+  #   VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
   # -------------------------------------------------------------------------
   deploy:
     name: Deploy to Vercel
     runs-on: ubuntu-latest
     needs: [api-contract, docker-smoke, map-tile-canary]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: |
+      github.ref == 'refs/heads/main' &&
+      github.event_name == 'push' &&
+      vars.ENABLE_VERCEL_CLI_DEPLOY == 'true'
 
     steps:
       - uses: actions/checkout@v5
+
+      - name: Verify VERCEL_TOKEN is present
+        run: |
+          if [ -z "${VERCEL_TOKEN:-}" ]; then
+            echo "::warning::VERCEL_TOKEN secret not set — Vercel's GitHub integration handles auto-deploy. Skipping manual CLI deploy."
+            exit 0
+          fi
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
       - name: Install Vercel CLI
         run: npm install -g vercel
