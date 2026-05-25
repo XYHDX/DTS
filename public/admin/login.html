@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0E5650">
+<title>دخول الإدارة — نقل دمشق</title>
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200;300;400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/lib/design-system.css">
+
+<style>
+  body {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(ellipse at top right, rgba(0,108,53,.10), transparent 60%),
+      radial-gradient(ellipse at bottom left, rgba(206,17,38,.06), transparent 60%),
+      var(--color-bg);
+    padding: var(--s-4);
+  }
+  .login-shell { width: 100%; max-width: 420px; }
+  .login-brand {
+    display: flex; align-items: center; gap: var(--s-3);
+    color: #fff; margin-bottom: var(--s-5);
+  }
+  .login-brand__mark {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--brand-500), var(--gold-600));
+    display: grid; place-items: center; color:#fff; font-weight:800;
+  }
+  .login-card {
+    background: var(--color-surface);
+    border-radius: var(--r-lg);
+    padding: var(--s-6);
+    box-shadow: var(--sh-lg);
+  }
+  .login-meta {
+    color: var(--color-text-mute);
+    font-size: var(--fs-sm);
+    margin-top: var(--s-4);
+    text-align: center;
+  }
+  .role-pills {
+    display: flex; gap: var(--s-2);
+    margin-bottom: var(--s-5);
+  }
+  .role-pill {
+    flex: 1;
+    padding: var(--s-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    text-align: center;
+    font-size: var(--fs-sm);
+    color: var(--color-text-soft);
+    cursor: pointer;
+    transition: all var(--t-fast) var(--ease);
+  }
+  .role-pill.is-active {
+    background: var(--brand-100);
+    color: var(--brand-700);
+    border-color: var(--brand-500);
+    font-weight: 600;
+  }
+  .password-toggle {
+    position: absolute;
+    inset-inline-end: var(--s-3);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-mute);
+    padding: var(--s-1);
+    background: none;
+  }
+  .field-pw { position: relative; }
+  .field-pw input { padding-inline-end: 40px; }
+  .submit-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--s-2);
+  }
+  .submit-row a { font-size: var(--fs-sm); }
+  .legal-bar {
+    text-align: center;
+    margin-top: var(--s-4);
+    color: rgba(255,255,255,.55);
+    font-size: var(--fs-xs);
+  }
+  .legal-bar a { color: rgba(255,255,255,.75); }
+</style>
+</head>
+<body>
+
+<!-- National flag accent strip — pinned to the top of the viewport -->
+<div class="flag-strip" style="position:fixed;top:0;inset-inline:0;z-index:50" aria-hidden="true">
+  <span class="flag-strip__green"></span>
+  <span class="flag-strip__white"></span>
+  <span class="flag-strip__black"></span>
+</div>
+
+<main class="login-shell" role="main">
+  <div class="login-brand">
+    <span class="login-brand__mark" aria-hidden="true">DT</span>
+    <div>
+      <div style="font-size:var(--fs-lg);font-weight:700">نقل دمشق</div>
+      <div style="font-size:var(--fs-sm);color:rgba(255,255,255,.6)">لوحة الإدارة</div>
+    </div>
+  </div>
+
+  <section class="login-card">
+    <h1 class="card__title" style="font-size:var(--fs-xl);margin-bottom:var(--s-2)">تسجيل الدخول</h1>
+    <p class="muted" style="margin-bottom:var(--s-5)">للوصول للوحة الإدارة، الموزّعين، والسائقين.</p>
+
+    <div class="role-pills" role="tablist" aria-label="نوع الدخول">
+      <button type="button" class="role-pill is-active" data-role="admin">إدارة</button>
+      <button type="button" class="role-pill" data-role="dispatcher">موزّع</button>
+      <button type="button" class="role-pill" data-role="driver">سائق</button>
+    </div>
+
+    <form id="login-form" class="stack" autocomplete="on" novalidate>
+      <div class="field">
+        <label class="field__label" for="email">البريد الإلكتروني</label>
+        <input class="input" id="email" name="email" type="email" inputmode="email"
+               autocomplete="username" required>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="password">كلمة المرور</label>
+        <div class="field-pw">
+          <input class="input" id="password" name="password" type="password"
+                 autocomplete="current-password" required minlength="6">
+          <button type="button" class="password-toggle" id="toggle-pw" aria-label="إظهار/إخفاء كلمة المرور">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <p id="error-msg" class="field__error hidden" role="alert">بيانات الدخول غير صحيحة</p>
+
+      <!-- Cloudflare Turnstile — invisible challenge.
+           Enable by setting window.TURNSTILE_SITE_KEY in a small inline script
+           inside your Vercel build (or via a CSP-friendly env injection). -->
+      <div id="turnstile-slot" class="hidden" style="margin: var(--s-3) 0"></div>
+
+      <button type="submit" class="btn btn--lg btn--block" id="submit-btn">
+        <span id="btn-label">دخول</span>
+      </button>
+
+      <div class="submit-row">
+        <label class="cluster gap-2" style="font-size:var(--fs-sm);color:var(--color-text-soft)">
+          <input type="checkbox" id="remember"> تذكّرني لمدة ٣٠ يوماً
+        </label>
+        <a href="/admin/reset.html">نسيت كلمة المرور؟</a>
+      </div>
+    </form>
+
+    <p class="login-meta">
+      تواجه مشكلة في الدخول؟ <a href="mailto:ops@damascustransit.sy">راسل المسؤول</a>
+    </p>
+  </section>
+
+  <p class="legal-bar">
+    © ٢٠٢٦ نقل دمشق ·
+    <a href="/">العودة للرئيسية</a> ·
+    <a href="/privacy.html">الخصوصية</a>
+  </p>
+</main>
+
+<script>
+'use strict';
+const $ = (s, r=document) => r.querySelector(s);
+const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:8000' : '';
+
+// ----- Turnstile bootstrap (step 85) ---------------------------------------
+let turnstileToken = null;
+const TURNSTILE_KEY = window.TURNSTILE_SITE_KEY || '';
+if (TURNSTILE_KEY) {
+  const slot = $('#turnstile-slot');
+  slot.classList.remove('hidden');
+  const s = document.createElement('script');
+  s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileReady&render=explicit';
+  s.async = true; s.defer = true;
+  document.head.appendChild(s);
+  window.onTurnstileReady = () => {
+    window.turnstile.render(slot, {
+      sitekey: TURNSTILE_KEY,
+      theme: 'light',
+      callback: (token) => { turnstileToken = token; },
+      'error-callback': () => { turnstileToken = null; },
+      'expired-callback': () => { turnstileToken = null; },
+    });
+  };
+}
+
+// Role-tab switching (cosmetic; backend identifies role from token)
+let selectedRole = 'admin';
+document.querySelectorAll('.role-pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('.role-pill').forEach(o => o.classList.remove('is-active'));
+    p.classList.add('is-active');
+    selectedRole = p.dataset.role;
+  });
+});
+
+// Show/hide password
+$('#toggle-pw').addEventListener('click', () => {
+  const pw = $('#password');
+  pw.type = pw.type === 'password' ? 'text' : 'password';
+});
+
+// Submit
+$('#login-form').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const email = $('#email').value.trim();
+  const password = $('#password').value;
+  const remember = $('#remember').checked;
+  $('#error-msg').classList.add('hidden');
+  const btn = $('#submit-btn');
+  btn.disabled = true;
+  $('#btn-label').textContent = '... جاري الدخول';
+  try {
+    if (TURNSTILE_KEY && !turnstileToken) {
+      $('#error-msg').textContent = 'يرجى إكمال التحقق من خانة الإنسان';
+      $('#error-msg').classList.remove('hidden');
+      btn.disabled = false;
+      $('#btn-label').textContent = 'دخول';
+      return;
+    }
+    const r = await fetch(API_BASE + '/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type':'application/json',
+        ...(turnstileToken ? { 'X-Turnstile-Token': turnstileToken } : {}),
+      },
+      body: JSON.stringify({ email, password, remember, turnstile_token: turnstileToken }),
+    });
+    if (!r.ok) throw new Error('login failed');
+    const data = await r.json();
+    const token = data.token || data.access_token;
+    const user = data.user || data;
+    const storage = remember ? localStorage : sessionStorage;
+    storage.setItem('dt_token', token);
+    storage.setItem('dt_user', JSON.stringify(user));
+    const role = (user && user.role) || selectedRole;
+    if (role === 'driver') location.href = '/driver/';
+    else location.href = '/admin/';
+  } catch (e) {
+    $('#error-msg').classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    $('#btn-label').textContent = 'دخول';
+  }
+});
+</script>
+<script src="/lib/i18n.js" defer></script>
+</body>
+</html>

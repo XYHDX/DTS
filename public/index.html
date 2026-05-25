@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0E5650">
+<meta name="description" content="نقل دمشق — تتبع الحافلات الفوري ومعلومات الخطوط في الوقت الحقيقي">
+<title>نقل دمشق — DamascusTransit</title>
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200;300;400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<link rel="stylesheet" href="/lib/design-system.css">
+
+<style>
+  .hero {
+    background: linear-gradient(180deg, var(--national-green-50) 0%, var(--color-bg) 100%);
+    color: var(--color-text);
+    padding-block: var(--s-12) var(--s-8);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .hero h1 {
+    margin: 0 0 var(--s-3);
+    font-size: clamp(2rem, 4vw + 1rem, 3.4rem);
+    line-height: 1.15;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+  [dir="rtl"] .hero h1 { font-weight: 700; }
+  .hero p { color: var(--color-text-soft); max-width: 56ch; margin: 0; font-size: var(--fs-lg); line-height: 1.65; }
+  .hero__cta { margin-top: var(--s-6); display: flex; flex-wrap: wrap; gap: var(--s-3); }
+  .stats-strip { margin-top: calc(-1 * var(--s-8)); z-index: 5; position: relative; }
+  .stats-strip .grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+  .map-section { margin-top: var(--s-8); }
+  .map-wrap {
+    height: 520px;
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    box-shadow: var(--sh-md);
+    border: 1px solid var(--color-border);
+    position: relative;
+  }
+  .map-legend {
+    position: absolute;
+    inset-inline-start: var(--s-3);
+    top: var(--s-3);
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    padding: var(--s-3) var(--s-4);
+    box-shadow: var(--sh-md);
+    font-size: var(--fs-sm);
+    z-index: 5;
+  }
+  .map-legend .row { display:flex; gap: var(--s-2); align-items: center; }
+  .map-legend .row + .row { margin-top: var(--s-1); }
+  .swatch { width: 12px; height: 12px; border-radius: 50%; }
+  .swatch--bus { background: var(--brand-500); border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.2); }
+  .swatch--stop { background: var(--gold-600); }
+  .route-grid { margin-top: var(--s-8); }
+  .route-card {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: var(--s-3);
+    align-items: center;
+  }
+  .route-card__chip {
+    background: var(--brand-100);
+    color: var(--brand-700);
+    font-weight: 700;
+    padding: var(--s-2) var(--s-3);
+    border-radius: var(--r-md);
+    font-size: var(--fs-sm);
+  }
+  .feature-grid { margin-top: var(--s-8); }
+  .feature { padding: var(--s-5); border-radius: var(--r-lg); background: var(--color-surface); border: 1px solid var(--color-border); }
+  .feature__icon { width: 44px; height: 44px; border-radius: var(--r-md); background: var(--brand-50); color: var(--brand-600); display: grid; place-items: center; margin-bottom: var(--s-3); }
+  .footer-bar { margin-top: var(--s-16); padding-block: var(--s-8) var(--s-6); border-top: 1px solid var(--color-border); color: var(--color-text-mute); font-size: var(--fs-sm); }
+  .footer-bar .cluster { justify-content: space-between; }
+  @media (max-width: 640px) {
+    .hero { padding-block: var(--s-8) var(--s-6); border-radius: 0 0 var(--r-lg) var(--r-lg); }
+    .map-wrap { height: 380px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Three-band national flag accent strip — present on every page -->
+<div class="flag-strip" aria-hidden="true">
+  <span class="flag-strip__green"></span>
+  <span class="flag-strip__white"></span>
+  <span class="flag-strip__black"></span>
+</div>
+
+<header class="app-header" role="banner">
+  <a class="app-header__brand" href="/">
+    <span class="app-header__brand-mark" aria-hidden="true">DT</span>
+    <span data-i18n="app.title">نقل دمشق</span>
+  </a>
+  <div class="app-header__spacer"></div>
+  <nav class="app-header__nav" aria-label="رئيسية">
+    <a href="/" class="is-active" data-i18n="header.home">الرئيسية</a>
+    <a href="/passenger/" data-i18n="header.passenger">للركاب</a>
+    <a href="/driver/" class="hide-mobile" data-i18n="header.driver">للسائقين</a>
+    <a href="/admin/login.html" class="hide-mobile" data-i18n="header.admin">دخول الإدارة</a>
+    <a href="/visual-identity.html" class="hide-mobile">الهوية</a>
+    <button id="lang-toggle" class="btn btn--sm btn--ghost" data-i18n-toggle data-i18n="header.toggleLang" data-i18n-aria-label="header.toggleLang">EN</button>
+  </nav>
+</header>
+
+<section class="hero">
+  <div class="container">
+    <span class="eyebrow" data-i18n="hero.eyebrow">الجمهورية العربية السورية · نظام النقل العام</span>
+    <h1 data-i18n="hero.title">تتبع حافلات دمشق في الوقت الحقيقي</h1>
+    <p data-i18n="hero.sub">منصة وطنية مفتوحة المصدر تربط الركاب والسائقين والمشرفين بمواقع الحافلات وأوقات الوصول لحظياً، بدون إعلانات وبدون مقابل.</p>
+    <div class="hero__cta">
+      <a href="/passenger/" class="btn btn--lg" data-i18n="hero.ctaPrimary">ابحث عن خطك</a>
+      <a href="#live-map" class="btn btn--ghost btn--lg" data-i18n="hero.ctaSecondary">عرض الخريطة المباشرة</a>
+    </div>
+    <div class="cluster mt-6">
+      <span class="badge badge--success"><span class="live-dot" aria-hidden="true"></span> <span data-i18n="hero.liveBadge">البيانات تُحدَّث كل ٥ ثوانٍ</span></span>
+      <span class="badge badge--star">★ ★ ★</span>
+    </div>
+  </div>
+</section>
+
+<main id="main" class="container stats-strip">
+  <div class="grid" id="stats-grid" aria-label="إحصاءات الأسطول الحالية">
+    <div class="stat"><span class="stat__label" data-i18n="stat.active">حافلات عاملة</span><span class="stat__value" id="stat-active"><span class="skeleton" style="display:inline-block;width:60px;height:1.4em"></span></span><span class="stat__sub" id="stat-active-sub" data-i18n="stat.activeFrom">من إجمالي الأسطول</span></div>
+    <div class="stat"><span class="stat__label" data-i18n="stat.routes">عدد الخطوط</span><span class="stat__value" id="stat-routes">—</span><span class="stat__sub" data-i18n="stat.routesSub">تغطي محاور المدينة</span></div>
+    <div class="stat"><span class="stat__label" data-i18n="stat.stops">عدد المحطات</span><span class="stat__value" id="stat-stops">—</span><span class="stat__sub" data-i18n="stat.stopsSub">منتشرة في دمشق</span></div>
+    <div class="stat"><span class="stat__label" data-i18n="stat.occupancy">متوسط الإشغال</span><span class="stat__value" id="stat-occupancy">—</span><span class="stat__sub" data-i18n="stat.occupancySub">حسب آخر تحديث</span></div>
+  </div>
+
+  <section class="map-section" id="live-map" aria-labelledby="map-h">
+    <div class="cluster between mb-4">
+      <h2 id="map-h" class="card__title" style="margin:0;font-size:var(--fs-xl)" data-i18n="map.title">الخريطة المباشرة</h2>
+      <span class="badge badge--success" id="conn-badge">
+        <span class="live-dot" aria-hidden="true"></span>
+        <span data-i18n="map.connected">متصل</span>
+      </span>
+    </div>
+    <div class="map-wrap">
+      <div id="map" class="map" role="application" aria-label="خريطة الحافلات المباشرة"></div>
+      <div class="map-legend" aria-hidden="true">
+        <div class="row"><span class="swatch swatch--bus"></span><span>حافلة</span></div>
+        <div class="row"><span class="swatch swatch--stop"></span><span>محطة</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="route-grid" aria-labelledby="routes-h">
+    <div class="cluster between mb-4">
+      <h2 id="routes-h" class="card__title" style="margin:0;font-size:var(--fs-xl)">الخطوط</h2>
+      <a href="/passenger/" class="btn btn--ghost btn--sm">عرض الكل ←</a>
+    </div>
+    <div class="grid grid-2" id="route-list" aria-busy="true">
+      <div class="card"><div class="skeleton" style="height:72px"></div></div>
+      <div class="card"><div class="skeleton" style="height:72px"></div></div>
+      <div class="card"><div class="skeleton" style="height:72px"></div></div>
+    </div>
+  </section>
+
+  <section class="feature-grid" aria-labelledby="features-h">
+    <h2 id="features-h" class="card__title" style="font-size:var(--fs-xl)">لماذا نقل دمشق؟</h2>
+    <div class="grid grid-3">
+      <article class="feature">
+        <div class="feature__icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6m0 0a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0 14v6"/></svg>
+        </div>
+        <h3 class="card__title">تتبع لحظي</h3>
+        <p class="muted">مواقع الحافلات تُبَث عبر SSE كل ٥ ثوانٍ. أوقات الوصول دقيقة محسوبة من PostGIS.</p>
+      </article>
+      <article class="feature">
+        <div class="feature__icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 10h18"/></svg>
+        </div>
+        <h3 class="card__title">يعمل دون اتصال</h3>
+        <p class="muted">تطبيق ويب تقدُّمي (PWA) يخزن المحطات والخطوط محلياً ويعمل بدون شبكة.</p>
+      </article>
+      <article class="feature">
+        <div class="feature__icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        </div>
+        <h3 class="card__title">خصوصية وأمان</h3>
+        <p class="muted">JWT مع RBAC، تشفير bcrypt، CSP صارم، ومراقبة الأخطاء عبر Sentry.</p>
+      </article>
+    </div>
+  </section>
+
+  <footer class="footer-bar">
+    <div class="cluster">
+      <div>© ٢٠٢٦ نقل دمشق — مشروع مفتوح المصدر تحت رخصة MIT.</div>
+      <div class="cluster gap-3">
+        <a href="https://github.com/actuatorsos/SyrianTransitSystem">GitHub</a>
+        <a href="/api/gtfs">GTFS</a>
+        <a href="/api/health">Health</a>
+      </div>
+    </div>
+  </footer>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script>
+'use strict';
+const $  = (s, r=document) => r.querySelector(s);
+const fmt = (n) => (n==null || isNaN(n)) ? '—' : Number(n).toLocaleString('ar-EG', {maximumFractionDigits:0});
+const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:8000' : '';
+
+async function getJson(path) {
+  try {
+    const r = await fetch(API_BASE + path, { headers: {'Accept':'application/json'} });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.json();
+  } catch (e) { console.warn('fetch failed', path, e); return null; }
+}
+
+async function loadStats() {
+  const s = await getJson('/api/stats');
+  if (!s) return;
+  $('#stat-active').textContent = fmt(s.active_vehicles);
+  $('#stat-active-sub').textContent = `من ${fmt(s.total_vehicles)} حافلة`;
+  $('#stat-routes').textContent = fmt(s.total_routes);
+  $('#stat-stops').textContent  = fmt(s.total_stops);
+  const occ = s.avg_occupancy != null ? Math.round(s.avg_occupancy) + '%' : '—';
+  $('#stat-occupancy').textContent = occ;
+}
+
+async function loadRoutes() {
+  const routes = await getJson('/api/routes');
+  const wrap = $('#route-list');
+  wrap.setAttribute('aria-busy', 'false');
+  if (!routes || !routes.length) {
+    wrap.innerHTML = '<div class="card muted center">لا توجد خطوط حالياً.</div>';
+    return;
+  }
+  wrap.innerHTML = routes.slice(0, 8).map(r => `
+    <a class="card card--hover" href="/passenger/?route=${encodeURIComponent(r.id)}">
+      <div class="route-card">
+        <span class="route-card__chip">${r.code || r.short_name || (r.id+'').slice(0,3)}</span>
+        <div>
+          <div class="card__title" style="margin:0;font-size:var(--fs-md)">${r.name_ar || r.name || 'خط'}</div>
+          <div class="card__meta">${r.from || ''} ↔ ${r.to || r.name_en || ''}</div>
+        </div>
+        <span class="badge badge--brand">${fmt(r.stops_count)} محطة</span>
+      </div>
+    </a>
+  `).join('');
+}
+
+let map;
+function initMap() {
+  map = new maplibregl.Map({
+    container: 'map',
+    style: {
+      version: 8,
+      sources: { osm: { type: 'raster', tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'], tileSize: 256, attribution: '© OpenStreetMap contributors' } },
+      layers: [{ id: 'osm', type: 'raster', source: 'osm' }]
+    },
+    center: [36.291, 33.513],
+    zoom: 12,
+  });
+  map.addControl(new maplibregl.NavigationControl({showCompass:false}), 'top-left');
+  map.on('load', () => {
+    map.addSource('vehicles', { type: 'geojson', data: { type:'FeatureCollection', features: [] } });
+    map.addLayer({
+      id: 'vehicles',
+      type: 'circle',
+      source: 'vehicles',
+      paint: {
+        'circle-radius': 7,
+        'circle-color': '#00876f',
+        'circle-stroke-width': 2,
+        'circle-stroke-color': '#fff',
+      }
+    });
+  });
+}
+
+function openStream() {
+  let es;
+  try { es = new EventSource(API_BASE + '/api/stream'); } catch (e) { return; }
+  es.addEventListener('vehicles', (ev) => {
+    let data;
+    try { data = JSON.parse(ev.data); } catch (_) { return; }
+    const list = data.positions || data.vehicles || data || [];
+    const features = list.map(v => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [v.lon ?? v.longitude, v.lat ?? v.latitude] },
+      properties: { id: v.vehicle_id || v.id, route: v.route_id, speed: v.speed }
+    })).filter(f => Array.isArray(f.geometry.coordinates) && f.geometry.coordinates.every(Number.isFinite));
+    if (map && map.getSource && map.getSource('vehicles')) {
+      map.getSource('vehicles').setData({ type:'FeatureCollection', features });
+    }
+    const b = $('#conn-badge');
+    b.classList.remove('badge--danger'); b.classList.add('badge--success');
+    const txt = (window.I18N ? I18N.t('map.connected') : 'متصل');
+    b.innerHTML = '<span class="live-dot" aria-hidden="true"></span> ' + txt;
+  });
+  es.onerror = () => {
+    const b = $('#conn-badge');
+    b.classList.remove('badge--success'); b.classList.add('badge--danger');
+    b.textContent = (window.I18N ? I18N.t('map.disconnected') : 'انقطع البث');
+  };
+}
+
+// i18n toggle is wired via data-i18n-toggle on the button (see lib/i18n.js).
+// When the language changes, re-render the dynamic strings:
+document.addEventListener('i18n:change', () => { loadStats(); loadRoutes(); });
+
+window.addEventListener('DOMContentLoaded', () => {
+  loadStats();
+  loadRoutes();
+  if (window.maplibregl) initMap();
+  setTimeout(openStream, 800);
+});
+</script>
+<script src="/lib/i18n.js" defer></script>
+</body>
+</html>

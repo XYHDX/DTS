@@ -1,0 +1,49 @@
+{
+  "@@locale": "ar",
+  "@@last_modified": "2026-05-24T12:30:00Z",
+
+  "appTitle": "نقل دمشق",
+
+  "tabHome": "الرئيسية",
+  "tabNearby": "قريب",
+  "tabRoutes": "الخطوط",
+  "tabAccount": "حسابي",
+
+  "passengerWelcome": "أهلاً بك",
+  "passengerSearchHint": "مزة، باب توما، خط ١٢ …",
+  "passengerNearestStops": "أقرب المحطات إليك",
+  "passengerPopularRoutes": "الخطوط الشائعة",
+  "passengerLiveMap": "الخريطة المباشرة",
+  "passengerStopsCount": "{count} محطة",
+
+  "loginTitle": "تسجيل الدخول",
+  "loginSubtitle": "استخدم بريدك وكلمة المرور.",
+  "loginEmail": "البريد",
+  "loginPassword": "كلمة المرور",
+  "loginInvalid": "بيانات الدخول غير صحيحة",
+  "loginButton": "دخول",
+  "loginBiometric": "الدخول ببصمة الإصبع",
+
+  "driverRoute": "الخط الحالي",
+  "driverStartTrip": "▶ بدء الرحلة",
+  "driverEndTrip": "■ إنهاء الرحلة",
+  "driverPassengers": "عدد الركاب",
+  "driverSpeed": "السرعة",
+  "driverDistance": "المسافة",
+  "driverDuration": "المدة",
+  "driverOccupancy": "الإشغال",
+  "driverIncident": "🚨 الإبلاغ عن حادث",
+
+  "errorGeneric": "حدث خطأ ما",
+  "errorOffline": "أنت دون اتصال — يتم عرض البيانات المخزّنة",
+  "errorRetry": "إعادة المحاولة",
+
+  "settingsTitle": "الإعدادات",
+  "settingsLanguage": "اللغة",
+  "settingsTheme": "السمة",
+  "settingsSignOut": "تسجيل الخروج",
+
+  "unitsKm": "كم",
+  "unitsMin": "د",
+  "unitsKph": "كم/س"
+}

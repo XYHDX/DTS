@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App name shown in launcher (Arabic) -->
+    <string name="app_name">نقل دمشق</string>
+    <string name="title_activity_main">نقل دمشق</string>
+    <string name="package_name">sy.gov.damascus.transit</string>
+    <string name="custom_url_scheme">transit</string>
+
+    <!-- FCM default notification channel -->
+    <string name="default_notification_channel_id">damascus_transit_default</string>
+    <string name="default_notification_channel_name">تنبيهات النقل</string>
+
+    <!-- Permission rationale strings -->
+    <string name="location_permission_rationale">يحتاج التطبيق إلى الوصول إلى موقعك لتتبع الرحلة وإبلاغ الركاب بالمواقع الفعلية للحافلات.</string>
+    <string name="background_location_rationale">يتطلب تطبيق السائق تتبع الموقع في الخلفية لمشاركة مسار الرحلة حتى عند استخدام تطبيقات أخرى.</string>
+    <string name="camera_permission_rationale">يحتاج التطبيق إلى الكاميرا لالتقاط صور الحوادث وإرسالها إلى مركز التحكم.</string>
+    <string name="biometric_rationale">استخدم بصمة الإصبع أو التعرف على الوجه لتسجيل الدخول بأمان.</string>
+</resources>

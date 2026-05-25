@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 500" width="1024" height="500">
+  <!-- Play Store feature graphic — 1024 × 500 -->
+  <rect width="1024" height="500" fill="#F5F1EA"/>
+
+  <!-- Calm illustrated stack on the left -->
+  <g transform="translate(80,90)">
+    <!-- Compass -->
+    <g transform="translate(0,0)">
+      <circle r="62" cx="62" cy="62" fill="#FBE7DB"/>
+      <circle r="42" cx="62" cy="62" fill="none" stroke="#6B3D24" stroke-width="2.5"/>
+      <polygon points="62,28 50,72 62,62 74,72" fill="#C96442"/>
+      <circle cx="62" cy="62" r="4" fill="#6B8E78"/>
+    </g>
+    <!-- Pulse -->
+    <g transform="translate(0,170)">
+      <circle r="62" cx="62" cy="62" fill="#FBE7DB"/>
+      <circle r="44" cx="62" cy="62" fill="none" stroke="#C96442" stroke-width="2" opacity="0.25"/>
+      <circle r="30" cx="62" cy="62" fill="none" stroke="#C96442" stroke-width="2" opacity="0.5"/>
+      <circle r="14" cx="62" cy="62" fill="#6B8E78"/>
+    </g>
+    <!-- Phone offline -->
+    <g transform="translate(170,85)">
+      <circle r="62" cx="62" cy="62" fill="#FBE7DB"/>
+      <rect x="42" y="28" width="40" height="68" rx="9" fill="#FFF8F3" stroke="#6B3D24" stroke-width="2"/>
+      <rect x="48" y="38" width="28" height="4" rx="2" fill="#FBE7DB"/>
+      <rect x="48" y="48" width="28" height="4" rx="2" fill="#FBE7DB"/>
+      <rect x="48" y="58" width="20" height="4" rx="2" fill="#FBE7DB"/>
+      <line x1="32" y1="20" x2="92" y2="80" stroke="#C96442" stroke-width="3" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <!-- Wordmark + tagline right side -->
+  <g transform="translate(440,180)">
+    <text x="0" y="0" font-family="Georgia,serif" font-size="58" font-weight="500" fill="#181818" letter-spacing="-1.5">DamascusTransit</text>
+    <text x="0" y="56" font-family="system-ui,sans-serif" font-size="20" fill="#6B3D24">نقل دمشق · مفتوح المصدر · بدون إعلانات</text>
+    <text x="0" y="118" font-family="system-ui,sans-serif" font-size="18" fill="#7C7570">Real-time. Calm. Yours.</text>
+  </g>
+
+  <!-- Bottom rule -->
+  <rect x="0" y="490" width="1024" height="10" fill="#C96442"/>
+</svg>

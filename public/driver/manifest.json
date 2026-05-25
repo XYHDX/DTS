@@ -1,0 +1,31 @@
+{
+  "name": "Damascus Transit Driver",
+  "short_name": "DamDriver",
+  "description": "تطبيق السائق لنظام النقل في دمشق | Damascus Transit driver companion app.",
+  "start_url": "/driver/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#054239",
+  "theme_color": "#428177",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

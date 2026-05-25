@@ -1,0 +1,125 @@
+name: GTFS Validation
+
+on:
+  push:
+    paths:
+      - "db/gtfs/**"
+      - "api/routers/gtfs.py"
+      - "tests/test_gtfs_static.py"
+      - "tests/test_gtfs_rt.py"
+      - ".github/workflows/gtfs-validate.yml"
+  pull_request:
+    paths:
+      - "db/gtfs/**"
+      - "api/routers/gtfs.py"
+      - "tests/test_gtfs_static.py"
+      - "tests/test_gtfs_rt.py"
+      - ".github/workflows/gtfs-validate.yml"
+
+env:
+  SUPABASE_URL: http://mock-supabase.local
+  SUPABASE_KEY: mock-key
+  SUPABASE_SERVICE_KEY: mock-service-key
+  SUPABASE_ANON_KEY: mock-anon-key
+  JWT_SECRET: ci-test-secret-do-not-use-in-prod-xxxxxxxxxx
+  TRACCAR_WEBHOOK_SECRET: ci-test-traccar-secret-do-not-use-in-prod
+  ALLOWED_ORIGINS: http://localhost:3000
+
+jobs:
+  # -------------------------------------------------------------------------
+  # Job 1 — Python GTFS static + RT endpoint tests
+  # -------------------------------------------------------------------------
+  gtfs-api-tests:
+    name: GTFS API Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt uvicorn pytest pytest-cov httpx
+
+      - name: Run GTFS static tests
+        run: pytest tests/test_gtfs_static.py -v --tb=short
+
+      - name: Run GTFS-RT tests
+        run: pytest tests/test_gtfs_rt.py -v --tb=short
+
+  # -------------------------------------------------------------------------
+  # Job 2 — Official Google/MobilityData GTFS Canonical Validator
+  # https://github.com/MobilityData/gtfs-validator
+  # -------------------------------------------------------------------------
+  gtfs-canonical-validator:
+    name: GTFS Canonical Validator (MobilityData)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Java (required by the validator JAR)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Download GTFS canonical validator
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VALIDATOR_VERSION="6.0.0"
+          gh release download "v${VALIDATOR_VERSION}" \
+            --repo MobilityData/gtfs-validator \
+            --pattern "gtfs-validator-${VALIDATOR_VERSION}-cli.jar"
+          mv "gtfs-validator-${VALIDATOR_VERSION}-cli.jar" gtfs-validator.jar
+          file gtfs-validator.jar | grep -qE "(Java archive|Zip archive)" || { echo "ERROR: Downloaded file is not a valid JAR"; file gtfs-validator.jar; exit 1; }
+
+      - name: Package feed into ZIP for validator
+        run: |
+          cd db/gtfs
+          zip -j ../../gtfs_feed.zip \
+            agency.txt stops.txt routes.txt trips.txt \
+            stop_times.txt calendar.txt feed_info.txt
+
+      - name: Run canonical GTFS validator
+        run: |
+          java -jar gtfs-validator.jar \
+            --input gtfs_feed.zip \
+            --output_base gtfs_validation_output \
+            --country_code sy
+
+      - name: Check for errors (fail on any ERROR severity)
+        run: |
+          REPORT="gtfs_validation_output/report.json"
+          if [ ! -f "$REPORT" ]; then
+            echo "Validation report not found — validator may have failed"
+            exit 1
+          fi
+          ERROR_COUNT=$(python3 -c "
+          import json, sys
+          with open('$REPORT') as f:
+              report = json.load(f)
+          notices = report.get('notices', [])
+          errors = [n for n in notices if n.get('severity') == 'ERROR']
+          print(len(errors))
+          for e in errors:
+              print(f\"  ERROR: {e.get('code')} — {e.get('totalNotices')} occurrence(s)\", file=sys.stderr)
+          ")
+          echo "Error count: $ERROR_COUNT"
+          if [ "$ERROR_COUNT" -gt "0" ]; then
+            echo "GTFS validation failed with ERROR-level notices. See report above."
+            exit 1
+          fi
+          echo "PASS: No ERROR-level GTFS validation issues found."
+
+      - name: Upload validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gtfs-validation-report
+          path: gtfs_validation_output/
+          retention-days: 14

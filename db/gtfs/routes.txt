@@ -1,0 +1,9 @@
+route_id,agency_id,route_short_name,route_long_name,route_type,route_url,route_color,route_text_color
+R001,1,1,Marjeh to Mezzeh,3,,428177,000000
+R002,1,2,Baramkeh to Barzeh,3,,054239,FFFFFF
+R003,1,3,Umayyad to Qaboun,3,,002623,FFFFFF
+R004,1,4,Old City to Jaramana,3,,b9a779,000000
+R005,1,5,Marjeh to Sayyidah Zaynab,3,,988561,FFFFFF
+R006,1,6,Muhajirin to Kafar Souseh,3,,6b1f2a,FFFFFF
+R007,1,7,Abbasiyyin to Harasta,3,,4a151e,FFFFFF
+R008,1,8,Mezzeh to Dummar,3,,3d3a3b,FFFFFF

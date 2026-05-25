@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Damascus Transit brand colours -->
+    <color name="colorPrimary">#002623</color>
+    <color name="colorPrimaryDark">#001a18</color>
+    <color name="colorAccent">#b9a779</color>
+
+    <!-- Status-bar tint (used by StatusBar Capacitor plugin) -->
+    <color name="colorStatusBar">#002623</color>
+</resources>
