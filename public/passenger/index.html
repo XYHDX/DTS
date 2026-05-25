@@ -55,6 +55,24 @@
     font-family: var(--font-mono); font-size: 12px; font-weight: 600;
     cursor: pointer;
   }
+  .home-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: #fff; background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.30);
+    padding: 6px 12px; border-radius: var(--r-pill);
+    font-size: 12px; font-weight: 600;
+    text-decoration: none;
+    transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+  }
+  .home-pill:hover {
+    background: var(--national-gold);
+    color: var(--national-green-950);
+    border-color: var(--national-gold);
+    text-decoration: none;
+  }
+  .home-pill svg { width: 12px; height: 12px; }
+  [dir="rtl"] .home-pill svg { transform: scaleX(-1); }
+  .pass-hero__top-right { display: flex; align-items: center; gap: 8px; }
   .search-bar {
     display: flex;
     background: rgba(255,255,255,.12);
@@ -214,7 +232,7 @@
 <div class="desk-chrome">
   <div class="utility-bar">
     <div class="container">
-      <span class="gov">الجمهورية العربية السورية · حكومة مفتوحة المصدر</span>
+      <span class="gov">الجمهورية العربية السورية</span>
       <span class="right">
         <a href="/passenger/">للركاب</a>
         <span class="sep"></span>
@@ -267,7 +285,13 @@
       </span>
       <span>نقل دمشق · للركاب</span>
     </div>
-    <button id="lang-toggle" class="lang-pill" data-i18n-toggle data-i18n="header.toggleLang">EN</button>
+    <div class="pass-hero__top-right">
+      <a href="/" class="home-pill" aria-label="العودة إلى الرئيسية">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+        الرئيسية
+      </a>
+      <button id="lang-toggle" class="lang-pill" data-i18n-toggle data-i18n="header.toggleLang">EN</button>
+    </div>
   </div>
   <h1 data-i18n="passenger.welcome">أهلاً بك</h1>
   <p data-i18n="passenger.sub">ابحث عن محطتك أو خطك أو شاهد أقرب الحافلات.</p>

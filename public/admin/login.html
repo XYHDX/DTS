@@ -127,10 +127,41 @@
   .legal-bar a { color: rgba(255,255,255,.78); }
   .legal-bar a:hover { color: var(--national-gold); text-decoration: none; }
 
+  /* Floating "Back to home" button — always visible top-start corner */
+  .back-home {
+    position: fixed;
+    top: calc(env(safe-area-inset-top) + 16px);
+    inset-inline-start: 18px;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 9px 16px;
+    background: rgba(255,255,255,.10);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,.30);
+    border-radius: var(--r-pill);
+    font-size: 13px; font-weight: 600;
+    font-family: var(--font-sans);
+    text-decoration: none;
+    z-index: 60;
+    backdrop-filter: blur(8px);
+    transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+  }
+  .back-home:hover {
+    background: var(--national-gold);
+    color: var(--national-green-950);
+    border-color: var(--national-gold);
+    text-decoration: none;
+    transform: translateY(-1px);
+  }
+  .back-home svg { width: 14px; height: 14px; }
+  [dir="rtl"] .back-home svg { transform: scaleX(-1); }
 </style>
 </head>
 <body class="with-fade-in">
 
+<a href="/" class="back-home" aria-label="العودة إلى الرئيسية">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+  العودة للرئيسية
+</a>
 
 <header class="login-mast">
   <span class="login-mast__mark" aria-hidden="true">

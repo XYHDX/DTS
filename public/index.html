@@ -21,8 +21,8 @@
 <style>
   /* Hero composition — eagle + headline, with pattern band styling already in design-system.css */
   .hero-band { padding: 80px 0 120px; }
-  .hero-band .container { display: grid; gap: 48px; grid-template-columns: 1fr; align-items: center; }
-  @media (min-width: 900px) { .hero-band .container { grid-template-columns: 1.3fr 1fr; } }
+  .hero-band .container { display: block; }
+  .hero-band .hero-inner { max-width: 760px; }
   .hero-band h1 { font-size: clamp(2rem, 4.5vw, 3.4rem); line-height: 1.15; margin: 18px 0 0; }
   .hero-band p { font-size: 18px; line-height: 1.75; margin: 18px 0 0; max-width: 56ch; }
   .hero-band .meta { display: flex; gap: 28px; flex-wrap: wrap; margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,.18); color: rgba(255,255,255,.7); font-size: 13px; }
@@ -125,7 +125,7 @@
 <!-- Utility bar -->
 <div class="utility-bar">
   <div class="container">
-    <span class="gov">الجمهورية العربية السورية · حكومة مفتوحة المصدر</span>
+    <span class="gov">الجمهورية العربية السورية</span>
     <span class="right">
       <a href="/passenger/" data-i18n="header.passenger">للركاب</a>
       <span class="sep"></span>
@@ -171,7 +171,7 @@
 <!-- Hero band -->
 <section class="hero-band">
   <div class="container">
-    <div class="reveal">
+    <div class="reveal hero-inner">
       <span class="eyebrow" data-i18n="hero.eyebrow">الجمهورية العربية السورية · نظام النقل العام</span>
       <h1 data-i18n="hero.title">تتبع حافلات دمشق في الوقت الحقيقي</h1>
       <p data-i18n="hero.sub">منصة وطنية مفتوحة المصدر تربط الركاب والسائقين والمشرفين بمواقع الحافلات وأوقات الوصول لحظياً، بدون إعلانات وبدون مقابل.</p>
@@ -185,12 +185,6 @@
         <span><b>الترخيص</b> · MIT</span>
       </div>
     </div>
-    <figure class="hero-emblem-card reveal">
-      <picture>
-        <source srcset="/assets/identity/sy-emblem-eagle.avif" type="image/avif">
-        <img src="/assets/identity/sy-emblem-eagle.png" alt="">
-      </picture>
-    </figure>
   </div>
 </section>
 

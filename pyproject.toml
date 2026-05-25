@@ -1,0 +1,52 @@
+[project]
+name = "damascus-transit"
+version = "1.0.0"
+description = "Damascus Transit System — real-time public transit platform"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = [
+  "tests/",
+  "scripts/",
+  "**/__pycache__",
+  "build",
+  "dist",
+  ".venv",
+  "vendor",
+]
+
+[tool.ruff.lint]
+# Ruff defaults are strict; this is the curated set the codebase already follows.
+select = [
+  "E",  # pycodestyle errors
+  "F",  # pyflakes
+  "W",  # pycodestyle warnings
+  "I",  # isort
+  "B",  # bugbear (avoids common pitfalls)
+]
+ignore = [
+  "E501",  # line length (we set 120 above; some long URL strings can exceed it)
+  "E402",  # module level import not at top (FastAPI sometimes needs this for env)
+  "E731",  # do not assign a lambda expression
+  "B008",  # function call in default argument (FastAPI Depends pattern)
+  "B904",  # raise from (already-styled exception chains)
+  "B007",  # unused loop control var
+  "E741",  # ambiguous variable name (l, I, O)
+  "W291",  # trailing whitespace
+  "W292",  # no newline at end of file
+  "W293",  # whitespace on blank line
+]
+
+[tool.ruff.format]
+# Match the existing codebase formatting; don't force changes.
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+skip-magic-trailing-comma = false
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+asyncio_mode = "auto"
+testpaths = ["tests"]

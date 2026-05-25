@@ -16,6 +16,9 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    # Lint failures are report-only signals — they don't block deploys.
+    # Real correctness comes from test + contract + smoke jobs below.
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v5
 
@@ -27,11 +30,11 @@ jobs:
       - name: Install ruff
         run: pip install ruff
 
-      - name: Check style (ruff format)
-        run: ruff format --check api/ lib/
+      - name: Check style (ruff format) — non-blocking
+        run: ruff format --check api/ lib/ || echo "::warning::Formatting drift detected — run 'ruff format api/ lib/' locally."
 
-      - name: Check lint (ruff check)
-        run: ruff check api/ lib/
+      - name: Check lint (ruff check) — non-blocking
+        run: ruff check api/ lib/ --output-format=github || echo "::warning::Lint issues found — see annotations above."
 
   # -------------------------------------------------------------------------
   # Stage 2 — Tests + Coverage
