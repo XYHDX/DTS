@@ -253,12 +253,14 @@ ON CONFLICT (stop_id) DO NOTHING;
 
 -- ============================================================
 -- 7. SEED — 4 routes
+-- (column list: route_id, name, name_ar, route_type, color,
+--               distance_km, avg_duration_min, fare_syp, operator_id)
 -- ============================================================
 INSERT INTO routes (route_id, name, name_ar, route_type, color, distance_km, avg_duration_min, fare_syp, operator_id) VALUES
-  ('R101', 'Marjeh → Mezzeh Highway', 'المرجة → أوتوستراد المزة',          'bus',      8.4,  35, 500, '00000000-0000-0000-0000-000000000001'),
-  ('R102', 'Umayyad Square → Jaramana','ساحة الأمويين → جرمانا',          'bus',      9.1,  40, 500, '00000000-0000-0000-0000-000000000001'),
-  ('R201', 'Damascus Univ. → Abbasiyyin','جامعة دمشق → العباسيين',         'microbus', 6.2,  25, 300, '00000000-0000-0000-0000-000000000001'),
-  ('R202', 'Bab Tuma → Kafar Souseh', 'باب توما → كفرسوسة',                'microbus', 5.8,  22, 300, '00000000-0000-0000-0000-000000000001')
+  ('R101', 'Marjeh → Mezzeh Highway',   'المرجة → أوتوستراد المزة',     'bus',      '#0E5650', 8.4, 35, 500, '00000000-0000-0000-0000-000000000001'),
+  ('R102', 'Umayyad Square → Jaramana', 'ساحة الأمويين → جرمانا',       'bus',      '#1F7068', 9.1, 40, 500, '00000000-0000-0000-0000-000000000001'),
+  ('R201', 'Damascus Univ. → Abbasiyyin','جامعة دمشق → العباسيين',      'microbus', '#C9A95B', 6.2, 25, 300, '00000000-0000-0000-0000-000000000001'),
+  ('R202', 'Bab Tuma → Kafar Souseh',   'باب توما → كفرسوسة',           'microbus', '#9C7A3A', 5.8, 22, 300, '00000000-0000-0000-0000-000000000001')
 ON CONFLICT (route_id) DO NOTHING;
 
 -- ============================================================
@@ -300,7 +302,76 @@ ON CONFLICT (vehicle_id) DO UPDATE SET
   recorded_at = EXCLUDED.recorded_at;
 
 -- ============================================================
--- 10. VERIFICATION — should print one row with all counts
+-- 10. SECURITY ADVISOR CLEANUP
+-- Clears the warnings the Supabase Security Advisor raises right after
+-- installing PostGIS in the public schema. These are well-known PostGIS
+-- + Supabase patterns — the fixes below are the recommended hardening.
+-- ============================================================
+
+-- 10.1 — RLS on spatial_ref_sys (PostGIS EPSG reference table)
+-- This is public reference data; enabling RLS with a permissive SELECT
+-- policy satisfies the advisor without breaking ST_Transform etc.
+ALTER TABLE public.spatial_ref_sys ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+  CREATE POLICY "spatial_ref_sys readable by everyone"
+    ON public.spatial_ref_sys FOR SELECT USING (true);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- 10.2 — Revoke EXECUTE on PostGIS SECURITY DEFINER functions
+-- st_estimatedextent has 3 overloads. They can leak metadata about
+-- schemas the caller shouldn't see, so we restrict to the postgres role.
+DO $$
+DECLARE r record;
+BEGIN
+  FOR r IN
+    SELECT p.oid::regprocedure AS sig
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.proname = 'st_estimatedextent'
+  LOOP
+    EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM PUBLIC', r.sig);
+    EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM anon', r.sig);
+    EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM authenticated', r.sig);
+  END LOOP;
+END $$;
+
+-- 10.3 — RLS on every app table so the advisor's "RLS Disabled" check passes.
+-- The API uses the service-role key (which bypasses RLS) so this doesn't
+-- break the FastAPI backend. For direct PostgREST clients (anon key), we
+-- add permissive SELECT policies on read-only public data.
+ALTER TABLE public.operators                 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.users                     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.routes                    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.stops                     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.route_stops               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.vehicles                  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.vehicle_positions         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.vehicle_positions_latest  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.trips                     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.alerts                    ENABLE ROW LEVEL SECURITY;
+
+-- Public-read policies for the data the passenger app needs anonymously
+DO $$ BEGIN
+  CREATE POLICY "anon can read routes"    ON public.routes                   FOR SELECT USING (is_active);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE POLICY "anon can read stops"     ON public.stops                    FOR SELECT USING (is_active);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE POLICY "anon can read route_stops" ON public.route_stops            FOR SELECT USING (true);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE POLICY "anon can read positions_latest" ON public.vehicle_positions_latest FOR SELECT USING (true);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- Service-role bypasses RLS automatically; no policy needed for FastAPI.
+
+-- ============================================================
+-- 11. VERIFICATION — should print one row with all counts
 -- ============================================================
 SELECT
   (SELECT count(*) FROM operators)                AS operators,
