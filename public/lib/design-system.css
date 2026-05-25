@@ -3,7 +3,7 @@
  * Refreshed 25 May 2026, inspired by the post-2024 Syrian visual
  * identity (independence flag): green, white, black, with red stars.
  *
- * Reference site: https://mofaex.gov.sy/en  (Ministry of Foreign Affairs)
+ * Reference: Syrian Identity Team · 2025 official launch.
  *
  * Palette anchors:
  *   --national-green : the band at the top of the flag
@@ -253,32 +253,38 @@ h1, h2, h3, h4, .display {
 }
 
 /* ---- Decorative Syrian geometric pattern — apply as a background layer.
- *      Octagonal Islamic motif: 8-pointed khatam star + regular inner octagon.
+ *      True 8-fold Islamic tessellation: 8-pointed khatam star at tile centre
+ *      + quartered regular octagons at tile junctions (4 quadrant arcs that
+ *      compose into full octagons where 4 tiles meet).
  *      Use sparingly: hero backgrounds, footer crowns, document watermarks. */
 .pattern-bg {
   background-color: var(--color-surface);
   background-image: url("data:image/svg+xml;utf8,\
-<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'>\
-<g fill='none' stroke='%23C9A95B' stroke-width='0.8' stroke-opacity='0.35'>\
-<polygon points='60,32 42,36 52,52 36,42 32,60 28,42 12,52 22,36 4,32 22,28 12,12 28,22 32,4 36,22 52,12 42,28'/>\
-<polygon points='38,35 35,38 29,38 26,35 26,29 29,26 35,26 38,29'/>\
-<circle cx='32' cy='32' r='2'/>\
+<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'>\
+<g fill='none' stroke='%23C9A95B' stroke-width='0.9' stroke-opacity='0.35' stroke-linejoin='miter'>\
+<polygon points='68,40 51,45 60,60 45,51 40,68 35,51 20,60 29,45 12,40 29,35 20,20 35,29 40,12 45,29 60,20 51,35'/>\
+<polyline points='11,0 11,5 5,11 0,11'/>\
+<polyline points='80,11 75,11 69,5 69,0'/>\
+<polyline points='69,80 69,75 75,69 80,69'/>\
+<polyline points='0,69 5,69 11,75 11,80'/>\
 </g>\
 </svg>");
-  background-size: 64px 64px;
+  background-size: 80px 80px;
   background-repeat: repeat;
 }
 .pattern-bg--gold-on-green {
   background-color: var(--national-green);
   background-image: url("data:image/svg+xml;utf8,\
-<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'>\
-<g fill='none' stroke='%23C9A95B' stroke-width='0.8' stroke-opacity='0.55'>\
-<polygon points='60,32 42,36 52,52 36,42 32,60 28,42 12,52 22,36 4,32 22,28 12,12 28,22 32,4 36,22 52,12 42,28'/>\
-<polygon points='38,35 35,38 29,38 26,35 26,29 29,26 35,26 38,29'/>\
-<circle cx='32' cy='32' r='2'/>\
+<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'>\
+<g fill='none' stroke='%23C9A95B' stroke-width='0.9' stroke-opacity='0.55' stroke-linejoin='miter'>\
+<polygon points='68,40 51,45 60,60 45,51 40,68 35,51 20,60 29,45 12,40 29,35 20,20 35,29 40,12 45,29 60,20 51,35'/>\
+<polyline points='11,0 11,5 5,11 0,11'/>\
+<polyline points='80,11 75,11 69,5 69,0'/>\
+<polyline points='69,80 69,75 75,69 80,69'/>\
+<polyline points='0,69 5,69 11,75 11,80'/>\
 </g>\
 </svg>");
-  background-size: 64px 64px;
+  background-size: 80px 80px;
   background-repeat: repeat;
 }
 

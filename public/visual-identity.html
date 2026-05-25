@@ -4,57 +4,88 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0E5650">
-<meta name="description" content="نقل دمشق — دليل الهوية البصرية الرسمي، بنفس الطابع البصري الذي تعتمده وزارة الخارجية والمغتربين في الجمهورية العربية السورية.">
+<meta name="description" content="نقل دمشق — دليل الهوية البصرية الرسمي: الشعار، الألوان، الزخارف، الطباعة، الأزرار، النماذج، والحركة.">
 <title>الهوية البصرية الرسمية — نقل دمشق</title>
 
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 
 <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Readex Pro — refined Arabic + Latin pair by TypeTogether, featured in
-     Alaa Shalayel's Free Arabic Fonts reference (Behance). Variable weights
-     200–700, designed for both UI and editorial typography. Source Serif 4
-     paired for Latin display where serif is desired. -->
+<!-- Readex Pro — refined Arabic + Latin pair by TypeTogether (Behance reference
+     by Alaa Shalayel). Source Serif 4 for Latin display; JetBrains Mono for code. -->
 <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200;300;400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <style>
 /* =========================================================================
- *  Visual identity page — modelled on mofaex.gov.sy.
- *  Dark teal-green chrome, gold geometric pattern overlay, white
- *  service-card content. Typography: Readex Pro for all Arabic + Latin
- *  body (chosen from Alaa Shalayel's Free Arabic Fonts reference),
- *  Source Serif 4 for any Latin display, JetBrains Mono for code.
+ *  Damascus Transit — Visual Identity v4.0
+ *  Dark teal-green chrome · gold octagram tessellation · full component set.
  * ========================================================================= */
+
+/* ── Design tokens ────────────────────────────────────────────────────── */
 :root {
   --green-950: #061B17;
   --green-900: #082B25;
   --green-800: #0A3D34;
   --green-700: #0C4A40;
-  --green:     #0E5650;     /* primary */
+  --green:     #0E5650;
+  --green-600: #115E58;
+  --green-500: #14756E;
   --green-100: #DCEAE7;
+  --green-50:  #EEF6F4;
 
   --gold:      #C9A95B;
+  --gold-600:  #B89446;
   --gold-700:  #9C7A3A;
   --gold-100:  #F8F1DE;
+  --gold-50:   #FBF7EA;
 
   --red:       #CE1126;
+  --red-600:   #B30E20;
+  --red-100:   #FCE7E9;
+
+  --amber:     #C58A2B;
+  --amber-100: #FBEFD5;
+
+  --info:      #1F6FB3;
+  --info-100:  #DEEBF7;
 
   --paper:     #FFFFFF;
   --bg:        #FAFAF7;
+  --bg-2:      #F4F2EC;
   --ink:       #0B0B0B;
   --ink-soft:  #3C3C3C;
   --ink-mute:  #6A6A6A;
+  --ink-faint: #9A9A9A;
   --border:    #E2DDD2;
+  --border-strong: #CFC9B9;
   --rule-dark: rgba(255,255,255,.12);
 
   --serif: 'Source Serif 4', Charter, Georgia, 'Times New Roman', serif;
   --sans:  'Readex Pro', 'IBM Plex Sans Arabic', system-ui,
            -apple-system, BlinkMacSystemFont, sans-serif;
   --mono:  'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --r-xs:  3px;
+  --r-sm:  6px;
+  --r-md:  8px;
+  --r-lg:  12px;
+  --r-xl:  16px;
+  --r-pill: 999px;
+
+  --sh-sm: 0 1px 2px rgba(11,11,11,.05);
+  --sh-md: 0 4px 12px rgba(11,11,11,.06), 0 2px 4px rgba(11,11,11,.04);
+  --sh-lg: 0 18px 42px rgba(11,11,11,.08);
+  --sh-xl: 0 28px 64px rgba(11,11,11,.12);
+
+  --t-fast: 160ms;
+  --t-norm: 220ms;
+  --t-slow: 360ms;
+  --ease:   cubic-bezier(.4, 0, .2, 1);
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
 }
 
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
 body {
   margin: 0;
   background: var(--bg);
@@ -63,31 +94,36 @@ body {
   font-size: 16px;
   line-height: 1.7;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 img, svg, picture { max-width: 100%; display: block; }
-button, input { font: inherit; color: inherit; }
-button { cursor: pointer; border: 0; background: transparent; }
-a { color: var(--gold-700); text-decoration: none; }
-a:hover { color: var(--gold); }
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: var(--gold-700); text-decoration: none; transition: color var(--t-fast) var(--ease); }
+a:hover { color: var(--gold-600); }
 
-h1, h2, h3, h4 { margin: 0; font-weight: 700; line-height: 1.2; color: var(--ink); }
-[dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3, [dir="rtl"] h4 { letter-spacing: 0; }
+h1, h2, h3, h4, h5, h6 {
+  margin: 0; font-weight: 700; line-height: 1.2; color: var(--ink);
+}
+::selection { background: var(--gold); color: var(--green-950); }
 
-/* ── Gold-on-green geometric pattern as a reusable background ──────────── */
+/* ── Octagram tessellation — used in 3 layers (hero, pattern band, footer) ── */
 .pattern-on-green {
   background-color: var(--green);
   background-image: url("data:image/svg+xml;utf8,\
-<svg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'>\
-<g fill='none' stroke='%23C9A95B' stroke-width='1' stroke-opacity='0.42'>\
-<polygon points='68,36 48,41 59,59 41,48 36,68 31,48 13,59 24,41 4,36 24,31 13,13 31,24 36,4 41,24 59,13 48,31'/>\
-<polygon points='43,39 39,43 33,43 29,39 29,33 33,29 39,29 43,33'/>\
-<circle cx='36' cy='36' r='2'/>\
+<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'>\
+<g fill='none' stroke='%23C9A95B' stroke-width='1' stroke-opacity='0.45' stroke-linejoin='miter'>\
+<polygon points='68,40 51,45 60,60 45,51 40,68 35,51 20,60 29,45 12,40 29,35 20,20 35,29 40,12 45,29 60,20 51,35'/>\
+<polyline points='11,0 11,5 5,11 0,11'/>\
+<polyline points='80,11 75,11 69,5 69,0'/>\
+<polyline points='69,80 69,75 75,69 80,69'/>\
+<polyline points='0,69 5,69 11,75 11,80'/>\
 </g></svg>");
-  background-size: 72px 72px;
+  background-size: 80px 80px;
 }
 
 /* =========================================================================
- *  1. Top utility bar (mofaex-style)
+ *  1. Top utility bar
  * ========================================================================= */
 .utility {
   background: var(--green-950);
@@ -96,29 +132,39 @@ h1, h2, h3, h4 { margin: 0; font-weight: 700; line-height: 1.2; color: var(--ink
   padding: 10px 0;
   border-bottom: 1px solid var(--rule-dark);
 }
-.container { width: 100%; max-width: 1200px; margin-inline: auto; padding-inline: 24px; }
+.container { width: 100%; max-width: 1240px; margin-inline: auto; padding-inline: 24px; }
 .utility .container { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+.utility .gov { display: inline-flex; align-items: center; gap: 8px; }
+.utility .gov::before { content: "★"; color: var(--red); font-size: 10px; }
 .utility a { color: var(--gold); font-weight: 500; }
 .utility a:hover { color: #fff; }
-.utility .social { display: flex; gap: 14px; align-items: center; }
-.utility .social a { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,.06); }
+.utility .right { display: flex; gap: 18px; align-items: center; }
+.utility .right .sep { width: 1px; height: 14px; background: var(--rule-dark); }
 
 /* =========================================================================
- *  2. Masthead — dark green with eagle + bilingual wordmark
+ *  2. Masthead
  * ========================================================================= */
 .masthead {
   background: var(--green-900);
   color: #fff;
-  padding: 28px 0;
+  padding: 26px 0;
   border-bottom: 1px solid var(--gold);
+  position: relative;
+  overflow: hidden;
 }
-.masthead .container { display: flex; align-items: center; gap: 18px; }
+.masthead::after {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(circle at 15% 50%, rgba(201,169,91,.10), transparent 50%);
+  pointer-events: none;
+}
+.masthead .container { display: flex; align-items: center; gap: 18px; position: relative; z-index: 1; }
 .masthead .emblem {
-  width: 88px; height: 88px; border-radius: 6px;
+  width: 84px; height: 84px; border-radius: 6px;
   background: #fff;
   display: grid; place-items: center;
   padding: 8px;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0,0,0,.18);
 }
 .masthead .emblem img { width: 100%; height: 100%; object-fit: contain; }
 .masthead-text { flex: 1; min-width: 0; }
@@ -134,9 +180,15 @@ h1, h2, h3, h4 { margin: 0; font-weight: 700; line-height: 1.2; color: var(--ink
 [dir="rtl"] .masthead-en { text-align: left; }
 
 /* =========================================================================
- *  3. Primary navigation (mofaex pattern)
+ *  3. Primary navigation (sticky, scroll-shadow, animated underline)
  * ========================================================================= */
-.nav-primary { background: var(--paper); border-bottom: 1px solid var(--border); }
+.nav-primary {
+  background: var(--paper);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 30;
+  transition: box-shadow var(--t-norm) var(--ease);
+}
+.nav-primary.is-scrolled { box-shadow: 0 4px 18px rgba(0,0,0,.06); }
 .nav-primary .container { display: flex; align-items: stretch; gap: 0; flex-wrap: wrap; }
 .nav-primary a {
   display: inline-block;
@@ -144,11 +196,20 @@ h1, h2, h3, h4 { margin: 0; font-weight: 700; line-height: 1.2; color: var(--ink
   color: var(--ink-soft);
   font-weight: 600;
   font-size: 15px;
-  border-bottom: 3px solid transparent;
-  transition: color .15s, border-color .15s;
+  position: relative;
+  transition: color var(--t-fast) var(--ease);
+}
+.nav-primary a::after {
+  content: ""; position: absolute;
+  bottom: 0; inset-inline-start: 22px; inset-inline-end: 22px;
+  height: 3px; background: var(--gold);
+  transform: scaleX(0); transform-origin: center;
+  transition: transform var(--t-norm) var(--ease-out);
 }
 .nav-primary a:hover { color: var(--green); }
-.nav-primary a.is-active { color: var(--green); border-bottom-color: var(--gold); }
+.nav-primary a:hover::after { transform: scaleX(1); }
+.nav-primary a.is-active { color: var(--green); }
+.nav-primary a.is-active::after { transform: scaleX(1); }
 .nav-primary .lang-toggle {
   margin-inline-start: auto;
   padding: 18px 22px;
@@ -157,22 +218,38 @@ h1, h2, h3, h4 { margin: 0; font-weight: 700; line-height: 1.2; color: var(--ink
   font-family: var(--mono);
   font-size: 13px;
   background: transparent;
+  cursor: pointer;
+  border: 0;
+  transition: color var(--t-fast) var(--ease);
 }
+.nav-primary .lang-toggle:hover { color: var(--gold-700); }
 
 /* =========================================================================
- *  4. Hero — full-width dark green with pattern overlay
+ *  4. Hero — dark green + animated gradient sweep + octagram overlay
  * ========================================================================= */
 .hero {
   position: relative;
   color: #fff;
-  padding: 88px 0 96px;
+  padding: 96px 0 104px;
   background-color: var(--green);
+  background-image:
+    radial-gradient(ellipse at 80% 20%, rgba(201,169,91,.18), transparent 55%),
+    radial-gradient(ellipse at 20% 80%, rgba(255,255,255,.05), transparent 50%);
   overflow: hidden;
 }
 .hero::before {
   content: ""; position: absolute; inset: 0;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'><g fill='none' stroke='%23C9A95B' stroke-width='1' stroke-opacity='0.36'><polygon points='68,36 48,41 59,59 41,48 36,68 31,48 13,59 24,41 4,36 24,31 13,13 31,24 36,4 41,24 59,13 48,31'/><polygon points='43,39 39,43 33,43 29,39 29,33 33,29 39,29 43,33'/></g></svg>");
-  background-size: 72px 72px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><g fill='none' stroke='%23C9A95B' stroke-width='1' stroke-opacity='0.38' stroke-linejoin='miter'><polygon points='68,40 51,45 60,60 45,51 40,68 35,51 20,60 29,45 12,40 29,35 20,20 35,29 40,12 45,29 60,20 51,35'/><polyline points='11,0 11,5 5,11 0,11'/><polyline points='80,11 75,11 69,5 69,0'/><polyline points='69,80 69,75 75,69 80,69'/><polyline points='0,69 5,69 11,75 11,80'/></g></svg>");
+  background-size: 80px 80px;
+  pointer-events: none;
+  animation: pattern-drift 60s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero::before { animation: none; }
+}
+.hero::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 60%, rgba(6,27,23,.55) 100%);
   pointer-events: none;
 }
 .hero .container { position: relative; z-index: 1; display: grid; gap: 48px; grid-template-columns: 1fr; align-items: center; }
@@ -185,10 +262,11 @@ h1, h2, h3, h4 { margin: 0; font-weight: 700; line-height: 1.2; color: var(--ink
   padding: 8px 14px;
   background: rgba(255,255,255,.08);
   border: 1px solid var(--gold);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
+  backdrop-filter: blur(4px);
 }
 .hero h2 { color: #fff; font-size: clamp(2rem, 4.5vw, 3.4rem); line-height: 1.15; margin-top: 20px; }
-.hero p { font-size: 18px; color: rgba(255,255,255,.85); margin: 18px 0 0; max-width: 56ch; line-height: 1.75; }
+.hero p { font-size: 18px; color: rgba(255,255,255,.86); margin: 18px 0 0; max-width: 56ch; line-height: 1.75; }
 .hero .meta {
   display: flex; gap: 32px; flex-wrap: wrap;
   margin-top: 36px; padding-top: 28px;
@@ -196,20 +274,26 @@ h1, h2, h3, h4 { margin: 0; font-weight: 700; line-height: 1.2; color: var(--ink
   color: rgba(255,255,255,.7); font-size: 13px;
 }
 .hero .meta b { color: var(--gold); font-weight: 600; }
+.hero .cta-row { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
 
 .hero-emblem {
   background: rgba(255,255,255,.06);
   border: 1px solid rgba(255,255,255,.15);
-  border-radius: 10px;
+  border-radius: var(--r-lg);
   padding: 32px;
   text-align: center;
+  backdrop-filter: blur(6px);
+  animation: float-y 7s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-emblem { animation: none; }
 }
 .hero-emblem img {
-  width: 100%; max-width: 260px;
+  width: 100%; max-width: 240px;
   margin-inline: auto;
   background: #fff;
-  padding: 24px;
-  border-radius: 6px;
+  padding: 20px;
+  border-radius: var(--r-sm);
 }
 .hero-emblem figcaption {
   margin-top: 16px;
@@ -219,16 +303,20 @@ h1, h2, h3, h4 { margin: 0; font-weight: 700; line-height: 1.2; color: var(--ink
 }
 
 /* =========================================================================
- *  5. Section frame — alternating white and cream
+ *  5. Section frame
  * ========================================================================= */
-.section { padding: 80px 0; }
+.section { padding: 88px 0; }
 .section.cream { background: var(--bg); }
 .section.paper { background: var(--paper); }
+.section.muted { background: var(--bg-2); }
 .section.green { background: var(--green-900); color: #fff; }
-.section.green h2 { color: #fff; }
+.section.green h2,
+.section.green h3,
+.section.green h4 { color: #fff; }
 .section.green .head .num { color: var(--gold); }
+.section.dark { background: var(--green-950); color: #fff; }
 
-.head { max-width: 720px; margin-bottom: 48px; }
+.head { max-width: 760px; margin-bottom: 48px; }
 .head .num {
   display: inline-block;
   font-family: var(--mono); font-size: 13px;
@@ -243,11 +331,11 @@ h1, h2, h3, h4 { margin: 0; font-weight: 700; line-height: 1.2; color: var(--ink
   font-weight: 700;
   margin-bottom: 12px;
 }
-.head p { font-size: 17px; line-height: 1.7; color: var(--ink-soft); max-width: 60ch; }
+.head p { font-size: 17px; line-height: 1.7; color: var(--ink-soft); max-width: 62ch; }
 .section.green .head p { color: rgba(255,255,255,.78); }
 
 /* =========================================================================
- *  6. Service-style cards (mofaex services pattern)
+ *  6. Service-style cards
  * ========================================================================= */
 .cards-grid {
   display: grid;
@@ -257,25 +345,39 @@ h1, h2, h3, h4 { margin: 0; font-weight: 700; line-height: 1.2; color: var(--ink
 .card {
   background: var(--paper);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   padding: 28px 26px;
   display: flex; flex-direction: column;
-  transition: transform .15s, box-shadow .15s, border-color .15s;
+  transition: transform var(--t-fast) var(--ease),
+              box-shadow var(--t-fast) var(--ease),
+              border-color var(--t-fast) var(--ease);
+  position: relative;
+  overflow: hidden;
+}
+.card::before {
+  content: "";
+  position: absolute; inset-inline-start: 0; top: 0; bottom: 0;
+  width: 3px; background: var(--gold);
+  transform: scaleY(0); transform-origin: top;
+  transition: transform var(--t-norm) var(--ease-out);
 }
 .card:hover {
   border-color: var(--gold);
-  box-shadow: 0 18px 42px rgba(0,0,0,.06);
-  transform: translateY(-2px);
+  box-shadow: var(--sh-lg);
+  transform: translateY(-3px);
 }
+.card:hover::before { transform: scaleY(1); }
 .card .icon {
   width: 48px; height: 48px;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   background: var(--green-100);
   color: var(--green);
   display: grid; place-items: center;
   font-size: 22px; font-weight: 700;
   margin-bottom: 16px;
+  transition: transform var(--t-norm) var(--ease-out), background var(--t-fast) var(--ease);
 }
+.card:hover .icon { transform: rotate(-8deg) scale(1.05); background: var(--gold-100); color: var(--gold-700); }
 .card h4 { font-size: 17px; font-weight: 700; margin: 0 0 8px; color: var(--ink); }
 .card p { font-size: 14px; color: var(--ink-mute); margin: 0 0 18px; line-height: 1.65; flex: 1; }
 .card .more {
@@ -283,13 +385,19 @@ h1, h2, h3, h4 { margin: 0; font-weight: 700; line-height: 1.2; color: var(--ink
   display: inline-flex; align-items: center; gap: 6px;
   padding-top: 12px; border-top: 1px solid var(--border);
 }
-.card .more::after { content: "←"; transition: transform .15s; }
-[dir="rtl"] .card .more::after { content: "←"; }
-.card:hover .more::after { transform: translateX(-3px); }
-[dir="rtl"] .card:hover .more::after { transform: translateX(3px); }
+.card .more::after { content: "←"; transition: transform var(--t-fast) var(--ease); }
+.card:hover .more::after { transform: translateX(-4px); }
+
+/* Cards inside green sections */
+.section.green .card { background: rgba(255,255,255,.06); border-color: rgba(201,169,91,.4); color: #fff; }
+.section.green .card .icon { background: var(--gold); color: var(--green-900); }
+.section.green .card h4 { color: #fff; }
+.section.green .card p { color: rgba(255,255,255,.78); }
+.section.green .card .more { color: var(--gold); border-top-color: rgba(201,169,91,.3); }
+.section.green .card:hover { border-color: var(--gold); background: rgba(255,255,255,.10); }
 
 /* =========================================================================
- *  7. Asset gallery (news-card style)
+ *  7. Asset gallery
  * ========================================================================= */
 .gallery {
   display: grid; gap: 24px;
@@ -298,11 +406,11 @@ h1, h2, h3, h4 { margin: 0; font-weight: 700; line-height: 1.2; color: var(--ink
 .gallery-card {
   background: var(--paper);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   overflow: hidden;
-  transition: transform .2s, box-shadow .2s;
+  transition: transform var(--t-norm) var(--ease), box-shadow var(--t-norm) var(--ease);
 }
-.gallery-card:hover { transform: translateY(-3px); box-shadow: 0 18px 42px rgba(0,0,0,.08); }
+.gallery-card:hover { transform: translateY(-4px); box-shadow: var(--sh-lg); }
 .gallery-card .frame {
   aspect-ratio: 4 / 3;
   background: var(--bg);
@@ -312,7 +420,9 @@ h1, h2, h3, h4 { margin: 0; font-weight: 700; line-height: 1.2; color: var(--ink
 .gallery-card .frame img {
   width: 100%; height: 100%;
   object-fit: cover;
+  transition: transform var(--t-slow) var(--ease-out);
 }
+.gallery-card:hover .frame img { transform: scale(1.04); }
 .gallery-card .frame.contain img { object-fit: contain; padding: 24px; background: #fff; }
 .gallery-card .body { padding: 18px 20px 22px; }
 .gallery-card .stamp {
@@ -324,31 +434,42 @@ h1, h2, h3, h4 { margin: 0; font-weight: 700; line-height: 1.2; color: var(--ink
 .gallery-card p { font-size: 13px; color: var(--ink-mute); margin: 10px 0 0; line-height: 1.6; }
 
 /* =========================================================================
- *  8. Colour swatches (clean tabular)
+ *  8. Colour swatches
  * ========================================================================= */
 .swatches {
   background: var(--paper);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   overflow: hidden;
 }
 .swatches .row {
-  display: grid; grid-template-columns: 88px 1fr auto;
+  display: grid; grid-template-columns: 88px 1fr auto auto;
   gap: 20px; align-items: center;
-  padding: 18px 22px;
+  padding: 16px 22px;
   border-bottom: 1px solid var(--border);
+  transition: background var(--t-fast) var(--ease);
 }
 .swatches .row:last-child { border-bottom: 0; }
-.swatches .chip { width: 64px; height: 48px; border-radius: 4px; border: 1px solid var(--border); }
+.swatches .row:hover { background: var(--bg); }
+.swatches .chip { width: 64px; height: 44px; border-radius: var(--r-xs); border: 1px solid var(--border); }
 .swatches .meta { display: flex; flex-direction: column; }
 .swatches .meta b { font-size: 15px; color: var(--ink); font-weight: 700; }
 .swatches .meta span { font-size: 13px; color: var(--ink-mute); }
 .swatches .tok { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); text-align: end; }
+.swatches .copy-btn {
+  background: transparent; border: 1px solid var(--border);
+  border-radius: var(--r-xs); padding: 6px 10px;
+  font-family: var(--mono); font-size: 11px;
+  color: var(--ink-soft); cursor: pointer;
+  transition: all var(--t-fast) var(--ease);
+}
+.swatches .copy-btn:hover { border-color: var(--green); color: var(--green); background: var(--green-100); }
+.swatches .copy-btn.copied { background: var(--green); color: #fff; border-color: var(--green); }
 
 /* =========================================================================
  *  9. Type specimens
  * ========================================================================= */
-.spec { background: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 32px; margin-bottom: 18px; }
+.spec { background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-md); padding: 32px; margin-bottom: 18px; }
 .spec .label { font-family: var(--mono); font-size: 11px; color: var(--gold-700); letter-spacing: .08em; text-transform: uppercase; margin: 0 0 16px; font-weight: 600; }
 .spec .sample-ar { font-family: var(--sans); font-weight: 700; color: var(--ink); margin: 0; }
 .spec .sample-en { font-family: var(--serif); color: var(--ink); margin: 12px 0 0; }
@@ -356,32 +477,498 @@ h1, h2, h3, h4 { margin: 0; font-weight: 700; line-height: 1.2; color: var(--ink
 .spec.h2 .sample-ar, .spec.h2 .sample-en { font-size: 28px; }
 .spec.body .sample-ar, .spec.body .sample-en { font-size: 16px; line-height: 1.75; font-weight: 400; max-width: 56ch; }
 .spec.body .sample-en { font-family: var(--sans); }
+.spec.mono .sample-ar, .spec.mono .sample-en { font-family: var(--mono); font-size: 14px; }
 
 /* =========================================================================
- *  10. Footer (mofaex pattern)
+ *  10. BUTTONS — the full system
  * ========================================================================= */
-.foot { background: var(--green-950); color: rgba(255,255,255,.82); padding: 64px 0 24px; position: relative; overflow: hidden; }
+.btn {
+  display: inline-flex;
+  align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 18px;
+  border-radius: var(--r-sm);
+  font-family: var(--sans);
+  font-size: 15px; font-weight: 600;
+  line-height: 1.2;
+  border: 1px solid transparent;
+  cursor: pointer;
+  user-select: none;
+  text-decoration: none;
+  transition: background var(--t-fast) var(--ease),
+              border-color var(--t-fast) var(--ease),
+              color var(--t-fast) var(--ease),
+              transform 80ms ease,
+              box-shadow var(--t-fast) var(--ease);
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.btn:active { transform: translateY(1px) scale(.99); }
+.btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.btn[disabled], .btn.is-disabled {
+  opacity: .55; cursor: not-allowed; transform: none !important;
+}
+
+/* Variants */
+.btn--primary {
+  background: var(--green); color: #fff; border-color: var(--green);
+}
+.btn--primary:hover { background: var(--green-600); border-color: var(--green-600); box-shadow: 0 6px 18px rgba(14,86,80,.28); }
+.btn--primary::before {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,.22) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 600ms var(--ease-out);
+}
+.btn--primary:hover::before { transform: translateX(120%); }
+
+.btn--gold {
+  background: var(--gold); color: var(--green-950); border-color: var(--gold);
+}
+.btn--gold:hover { background: var(--gold-600); border-color: var(--gold-600); box-shadow: 0 6px 18px rgba(201,169,91,.32); }
+
+.btn--secondary {
+  background: var(--paper); color: var(--green); border-color: var(--green);
+}
+.btn--secondary:hover { background: var(--green-100); }
+
+.btn--outline {
+  background: transparent; color: var(--ink); border-color: var(--border-strong);
+}
+.btn--outline:hover { background: var(--bg-2); border-color: var(--ink-soft); }
+
+.btn--ghost {
+  background: transparent; color: var(--ink-soft); border-color: transparent;
+}
+.btn--ghost:hover { background: var(--bg-2); color: var(--ink); }
+
+.btn--link {
+  background: transparent; color: var(--green); border-color: transparent;
+  padding: 6px 4px; border-radius: 0;
+}
+.btn--link::after {
+  content: ""; position: absolute; bottom: 4px; inset-inline: 4px;
+  height: 1px; background: currentColor;
+  transform: scaleX(0); transform-origin: center;
+  transition: transform var(--t-norm) var(--ease-out);
+}
+.btn--link:hover::after { transform: scaleX(1); }
+
+.btn--danger {
+  background: var(--red); color: #fff; border-color: var(--red);
+}
+.btn--danger:hover { background: var(--red-600); border-color: var(--red-600); box-shadow: 0 6px 18px rgba(206,17,38,.30); }
+
+/* Sizes */
+.btn--xs { padding: 6px 10px; font-size: 12px; border-radius: var(--r-xs); gap: 4px; }
+.btn--sm { padding: 8px 14px; font-size: 13px; gap: 6px; }
+.btn--lg { padding: 13px 22px; font-size: 16px; }
+.btn--xl { padding: 16px 28px; font-size: 17px; border-radius: var(--r-md); }
+.btn--block { width: 100%; }
+.btn--pill { border-radius: var(--r-pill); }
+.btn--icon-only { padding: 10px; aspect-ratio: 1; }
+
+/* Loading */
+.btn.is-loading { pointer-events: none; color: transparent !important; }
+.btn.is-loading::after {
+  content: ""; position: absolute; inset: 0;
+  margin: auto; width: 16px; height: 16px;
+  border: 2px solid currentColor; border-top-color: transparent;
+  border-radius: 50%; color: #fff;
+  animation: spin 700ms linear infinite;
+}
+.btn--secondary.is-loading::after,
+.btn--outline.is-loading::after,
+.btn--ghost.is-loading::after { color: var(--green); }
+
+/* Button on green */
+.on-green .btn--primary { background: var(--gold); color: var(--green-950); border-color: var(--gold); }
+.on-green .btn--primary:hover { background: var(--gold-600); border-color: var(--gold-600); }
+.on-green .btn--outline { color: #fff; border-color: rgba(255,255,255,.4); }
+.on-green .btn--outline:hover { background: rgba(255,255,255,.08); border-color: var(--gold); }
+.on-green .btn--ghost { color: rgba(255,255,255,.85); }
+.on-green .btn--ghost:hover { background: rgba(255,255,255,.08); color: #fff; }
+
+/* Button group */
+.btn-group { display: inline-flex; }
+.btn-group .btn { border-radius: 0; }
+.btn-group .btn:first-child { border-start-start-radius: var(--r-sm); border-end-start-radius: var(--r-sm); }
+.btn-group .btn:last-child { border-start-end-radius: var(--r-sm); border-end-end-radius: var(--r-sm); }
+.btn-group .btn + .btn { margin-inline-start: -1px; }
+.btn-group .btn:hover { z-index: 1; }
+
+/* Showcase grid for buttons */
+.btn-showcase { display: grid; gap: 36px; }
+.btn-row {
+  display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+  padding: 24px; border: 1px solid var(--border); border-radius: var(--r-md);
+  background: var(--paper);
+}
+.btn-row.on-green-bg { background: var(--green-900); border-color: rgba(255,255,255,.12); }
+.btn-row > .label {
+  flex-basis: 100%;
+  font-family: var(--mono); font-size: 11px;
+  color: var(--gold-700); letter-spacing: .08em; text-transform: uppercase;
+  font-weight: 600; margin-bottom: 4px;
+}
+.btn-row.on-green-bg > .label { color: var(--gold); }
+
+/* =========================================================================
+ *  11. FORM CONTROLS
+ * ========================================================================= */
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+.field__label {
+  font-size: 13px; font-weight: 600; color: var(--ink-soft);
+  letter-spacing: .02em;
+}
+.field__hint { font-size: 12px; color: var(--ink-mute); }
+.field__error { font-size: 12px; color: var(--red); display: flex; align-items: center; gap: 6px; }
+.field__error::before { content: "⚠"; }
+
+.input, .select, .textarea {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 15px;
+  transition: border-color var(--t-fast) var(--ease),
+              box-shadow var(--t-fast) var(--ease);
+}
+.input:focus, .select:focus, .textarea:focus {
+  outline: 0;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(14,86,80,.15);
+}
+.input::placeholder, .textarea::placeholder { color: var(--ink-faint); }
+.textarea { resize: vertical; min-height: 100px; line-height: 1.6; }
+.input.is-error, .select.is-error, .textarea.is-error {
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px rgba(206,17,38,.10);
+}
+.input.is-success {
+  border-color: var(--green-500);
+  box-shadow: 0 0 0 3px rgba(20,117,110,.12);
+}
+.input[disabled], .select[disabled], .textarea[disabled] {
+  background: var(--bg-2); color: var(--ink-mute); cursor: not-allowed;
+}
+
+.select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%236A6A6A' stroke-width='2'><polyline points='1,1 6,7 11,1'/></svg>");
+  background-repeat: no-repeat;
+  background-position: left 14px center;
+  padding-inline-start: 36px;
+}
+[dir="ltr"] .select { background-position: right 14px center; padding-inline-end: 36px; padding-inline-start: 14px; }
+
+/* Checkbox + Radio */
+.check, .radio {
+  display: inline-flex; align-items: center; gap: 10px;
+  cursor: pointer; font-size: 14px; color: var(--ink-soft);
+  user-select: none;
+}
+.check input, .radio input {
+  appearance: none;
+  width: 18px; height: 18px;
+  border: 1.5px solid var(--border-strong);
+  background: var(--paper);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+.check input { border-radius: var(--r-xs); }
+.radio input { border-radius: 50%; }
+.check input:checked, .radio input:checked {
+  background: var(--green); border-color: var(--green);
+}
+.check input:checked {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='10' viewBox='0 0 12 10' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><polyline points='1,5 4.5,8.5 11,1'/></svg>");
+  background-position: center; background-repeat: no-repeat;
+}
+.radio input:checked {
+  background-image: radial-gradient(circle, #fff 30%, transparent 35%);
+}
+.check input:focus-visible, .radio input:focus-visible {
+  outline: 2px solid var(--gold); outline-offset: 2px;
+}
+
+/* Switch */
+.switch {
+  display: inline-flex; align-items: center; gap: 10px;
+  cursor: pointer; font-size: 14px; color: var(--ink-soft);
+}
+.switch input { position: absolute; opacity: 0; pointer-events: none; }
+.switch__track {
+  width: 38px; height: 22px;
+  background: var(--border-strong);
+  border-radius: var(--r-pill);
+  position: relative;
+  transition: background var(--t-fast) var(--ease);
+}
+.switch__track::after {
+  content: ""; position: absolute;
+  top: 2px; inset-inline-start: 2px;
+  width: 18px; height: 18px;
+  background: #fff; border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,.2);
+  transition: inset-inline-start var(--t-fast) var(--ease);
+}
+.switch input:checked + .switch__track { background: var(--green); }
+.switch input:checked + .switch__track::after { inset-inline-start: 18px; }
+
+/* Range */
+.range { width: 100%; appearance: none; height: 4px; background: var(--border-strong); border-radius: var(--r-pill); outline: none; }
+.range::-webkit-slider-thumb {
+  appearance: none; width: 18px; height: 18px;
+  background: var(--green); border-radius: 50%;
+  cursor: pointer; border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+.range::-moz-range-thumb {
+  width: 18px; height: 18px;
+  background: var(--green); border-radius: 50%;
+  cursor: pointer; border: 2px solid #fff;
+}
+
+/* Form layout demo */
+.form-grid {
+  display: grid; gap: 24px;
+  grid-template-columns: 1fr;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 32px;
+}
+@media (min-width: 720px) { .form-grid { grid-template-columns: 1fr 1fr; } }
+.form-grid .full { grid-column: 1 / -1; }
+
+/* =========================================================================
+ *  12. BADGES, TAGS, ALERTS
+ * ========================================================================= */
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  font-size: 12px; font-weight: 600;
+  background: var(--green-100); color: var(--green);
+  line-height: 1.4;
+}
+.badge--gold { background: var(--gold-100); color: var(--gold-700); }
+.badge--red  { background: var(--red-100); color: var(--red-600); }
+.badge--amber { background: var(--amber-100); color: var(--amber); }
+.badge--info { background: var(--info-100); color: var(--info); }
+.badge--neutral { background: var(--bg-2); color: var(--ink-soft); }
+.badge--dot::before {
+  content: ""; width: 6px; height: 6px;
+  border-radius: 50%; background: currentColor;
+}
+
+.tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-pill);
+  font-size: 12px; color: var(--ink-soft);
+  background: var(--paper);
+}
+.tag .x {
+  background: transparent; border: 0; cursor: pointer;
+  color: var(--ink-mute); font-size: 14px; line-height: 1;
+  padding: 0 0 0 2px; transition: color var(--t-fast) var(--ease);
+}
+.tag .x:hover { color: var(--red); }
+
+.alert {
+  display: flex; gap: 14px; align-items: flex-start;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-inline-start: 4px solid var(--info);
+  border-radius: var(--r-md);
+  background: var(--paper);
+  margin-bottom: 14px;
+}
+.alert__icon {
+  flex-shrink: 0; width: 24px; height: 24px;
+  display: grid; place-items: center;
+  border-radius: 50%; background: var(--info-100); color: var(--info);
+  font-weight: 700; font-size: 14px;
+}
+.alert__body h5 { font-size: 14px; margin: 0 0 4px; color: var(--ink); }
+.alert__body p { margin: 0; font-size: 13px; color: var(--ink-soft); line-height: 1.6; }
+.alert--success { border-inline-start-color: var(--green); }
+.alert--success .alert__icon { background: var(--green-100); color: var(--green); }
+.alert--warning { border-inline-start-color: var(--amber); }
+.alert--warning .alert__icon { background: var(--amber-100); color: var(--amber); }
+.alert--danger { border-inline-start-color: var(--red); }
+.alert--danger .alert__icon { background: var(--red-100); color: var(--red-600); }
+
+/* =========================================================================
+ *  13. STAT CARDS, AVATARS, BREADCRUMBS
+ * ========================================================================= */
+.stat-card {
+  background: var(--paper); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 22px;
+  display: flex; flex-direction: column; gap: 6px;
+  transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+.stat-card:hover { transform: translateY(-2px); box-shadow: var(--sh-md); }
+.stat-card .stat__label { font-size: 12px; color: var(--ink-mute); letter-spacing: .04em; text-transform: uppercase; font-weight: 600; }
+.stat-card .stat__value { font-size: 32px; font-weight: 700; color: var(--ink); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stat-card .stat__trend { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; }
+.stat-card .stat__trend.up   { color: var(--green); }
+.stat-card .stat__trend.down { color: var(--red); }
+
+.avatar {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: var(--green-100); color: var(--green);
+  font-weight: 600; font-size: 14px;
+  position: relative;
+}
+.avatar--lg { width: 56px; height: 56px; font-size: 18px; }
+.avatar--sm { width: 28px; height: 28px; font-size: 11px; }
+.avatar .status {
+  position: absolute; bottom: 0; inset-inline-end: 0;
+  width: 10px; height: 10px;
+  border-radius: 50%; border: 2px solid var(--paper);
+  background: var(--green);
+}
+.avatar .status.away { background: var(--amber); }
+.avatar .status.off  { background: var(--ink-faint); }
+
+.breadcrumb { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--ink-mute); flex-wrap: wrap; }
+.breadcrumb a { color: var(--ink-soft); }
+.breadcrumb a:hover { color: var(--green); }
+.breadcrumb .sep { color: var(--ink-faint); }
+.breadcrumb .current { color: var(--green); font-weight: 600; }
+
+/* =========================================================================
+ *  14. ANIMATIONS — keyframes + utility classes
+ * ========================================================================= */
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+@keyframes pattern-drift {
+  0%   { background-position: 0 0; }
+  100% { background-position: 80px 80px; }
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(14,86,80,.45); }
+  100% { box-shadow: 0 0 0 14px rgba(14,86,80,0); }
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 700ms var(--ease-out), transform 700ms var(--ease-out);
+}
+.reveal.is-visible { opacity: 1; transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+}
+
+.shimmer-box {
+  height: 18px; border-radius: var(--r-xs);
+  background: linear-gradient(110deg, var(--bg-2) 8%, var(--border) 18%, var(--bg-2) 33%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+.pulse-dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--green); animation: pulse-ring 1.6s cubic-bezier(.4,0,.2,1) infinite;
+}
+
+.spinner {
+  width: 22px; height: 22px;
+  border: 3px solid var(--border); border-top-color: var(--green);
+  border-radius: 50%; animation: spin 700ms linear infinite;
+}
+
+/* =========================================================================
+ *  15. Motion showcase tiles
+ * ========================================================================= */
+.motion-grid {
+  display: grid; gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.motion-tile {
+  background: var(--paper); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 24px;
+  display: flex; flex-direction: column; gap: 14px;
+  min-height: 160px;
+}
+.motion-tile .label { font-family: var(--mono); font-size: 11px; color: var(--gold-700); letter-spacing: .08em; text-transform: uppercase; font-weight: 600; }
+.motion-tile .demo { flex: 1; display: grid; place-items: center; }
+.motion-tile .caption { font-size: 12px; color: var(--ink-mute); }
+
+/* =========================================================================
+ *  16. Footer
+ * ========================================================================= */
+.foot { background: var(--green-950); color: rgba(255,255,255,.82); padding: 72px 0 24px; position: relative; overflow: hidden; }
 .foot::before {
   content: ""; position: absolute; inset: 0;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'><g fill='none' stroke='%23C9A95B' stroke-width='1' stroke-opacity='0.15'><polygon points='68,36 48,41 59,59 41,48 36,68 31,48 13,59 24,41 4,36 24,31 13,13 31,24 36,4 41,24 59,13 48,31'/><polygon points='43,39 39,43 33,43 29,39 29,33 33,29 39,29 43,33'/></g></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><g fill='none' stroke='%23C9A95B' stroke-width='1' stroke-opacity='0.18' stroke-linejoin='miter'><polygon points='68,40 51,45 60,60 45,51 40,68 35,51 20,60 29,45 12,40 29,35 20,20 35,29 40,12 45,29 60,20 51,35'/><polyline points='11,0 11,5 5,11 0,11'/><polyline points='80,11 75,11 69,5 69,0'/><polyline points='69,80 69,75 75,69 80,69'/><polyline points='0,69 5,69 11,75 11,80'/></g></svg>");
   background-size: 80px 80px; pointer-events: none;
 }
 .foot .container { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr; gap: 36px; }
 @media (min-width: 720px) { .foot .container { grid-template-columns: 2fr 1fr 1fr 1fr; } }
-.foot h6 { color: var(--gold); font-size: 13px; letter-spacing: .06em; text-transform: uppercase; font-weight: 700; margin: 0 0 14px; }
-.foot a { color: rgba(255,255,255,.82); display: block; padding: 4px 0; font-size: 14px; }
+.foot h6 { color: var(--gold); font-size: 13px; letter-spacing: .06em; text-transform: uppercase; font-weight: 700; margin: 0 0 16px; }
+.foot a { color: rgba(255,255,255,.82); display: block; padding: 5px 0; font-size: 14px; }
 .foot a:hover { color: var(--gold); }
+.foot .lede { color: rgba(255,255,255,.82); max-width: 44ch; font-size: 14px; line-height: 1.7; margin: 0 0 18px; }
+.foot .social-row { display: flex; gap: 10px; }
+.foot .social-row a {
+  width: 36px; height: 36px;
+  display: grid; place-items: center; padding: 0;
+  border-radius: 50%; background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+.foot .social-row a:hover { background: var(--gold); color: var(--green-950); border-color: var(--gold); transform: translateY(-2px); }
+.foot .social-row svg { width: 16px; height: 16px; }
 .foot .copy {
   grid-column: 1 / -1;
   margin-top: 28px; padding-top: 24px;
   border-top: 1px solid var(--rule-dark);
-  text-align: center;
+  display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
   font-size: 12px;
-  color: rgba(255,255,255,.5);
+  color: rgba(255,255,255,.55);
 }
 
+/* Scroll-to-top floating button */
+.scroll-top {
+  position: fixed; bottom: 24px; inset-inline-end: 24px;
+  width: 44px; height: 44px;
+  background: var(--green); color: #fff;
+  border: 0; border-radius: 50%;
+  display: grid; place-items: center;
+  box-shadow: var(--sh-md);
+  opacity: 0; pointer-events: none;
+  transform: translateY(8px);
+  transition: opacity var(--t-norm) var(--ease), transform var(--t-norm) var(--ease), background var(--t-fast) var(--ease);
+  z-index: 40; cursor: pointer;
+}
+.scroll-top.is-visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.scroll-top:hover { background: var(--green-600); }
+.scroll-top svg { width: 18px; height: 18px; }
+
 /* =========================================================================
- *  Misc
+ *  Flag strip + utilities
  * ========================================================================= */
 .flag-strip { display: flex; height: 5px; }
 .flag-strip span { flex: 1; }
@@ -389,6 +976,15 @@ h1, h2, h3, h4 { margin: 0; font-weight: 700; line-height: 1.2; color: var(--ink
 .flag-strip span:nth-child(2) { background: #fff; position: relative; }
 .flag-strip span:nth-child(2)::after { content: "★ ★ ★"; position: absolute; inset: 0; display: grid; place-items: center; color: var(--red); font-size: 8px; letter-spacing: 4px; }
 .flag-strip span:nth-child(3) { background: var(--ink); }
+
+.cluster { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+
+/* Body fade-in on load */
+body { animation: fade-up 600ms var(--ease-out) both; }
+@media (prefers-reduced-motion: reduce) {
+  body { animation: none; }
+}
 </style>
 </head>
 <body>
@@ -398,10 +994,13 @@ h1, h2, h3, h4 { margin: 0; font-weight: 700; line-height: 1.2; color: var(--ink
 <!-- ── 1. Utility bar ─────────────────────────────────────────────────── -->
 <div class="utility">
   <div class="container">
-    <span>الجمهورية العربية السورية · <a href="https://mofaex.gov.sy" target="_blank" rel="noopener">وزارة الخارجية والمغتربين</a></span>
-    <span class="social">
-      <a href="/" title="الرئيسية">DT</a>
-      <a href="https://github.com/XYHDX/DTS" target="_blank" rel="noopener" title="GitHub">GH</a>
+    <span class="gov">الجمهورية العربية السورية · حكومة مفتوحة المصدر</span>
+    <span class="right">
+      <a href="passenger/index.html">للركاب</a>
+      <span class="sep"></span>
+      <a href="driver/index.html">للسائقين</a>
+      <span class="sep"></span>
+      <a href="admin/login.html">الإدارة</a>
     </span>
   </div>
 </div>
@@ -417,7 +1016,7 @@ h1, h2, h3, h4 { margin: 0; font-weight: 700; line-height: 1.2; color: var(--ink
     </div>
     <div class="masthead-text">
       <h1>نقل دمشق · الهوية البصرية الرسمية</h1>
-      <span class="tag">دليل الهوية · إصدار ٣٫٠ · ٢٥ مايو ٢٠٢٦</span>
+      <span class="tag">دليل الهوية · إصدار ٤٫٠ · ٢٥ مايو ٢٠٢٦</span>
     </div>
     <div class="masthead-en">
       <strong>Damascus Transit</strong>
@@ -426,32 +1025,36 @@ h1, h2, h3, h4 { margin: 0; font-weight: 700; line-height: 1.2; color: var(--ink
   </div>
 </header>
 
-<!-- ── 3. Primary nav ─────────────────────────────────────────────────── -->
-<nav class="nav-primary" aria-label="رئيسية">
+<!-- ── 3. Sticky primary nav ──────────────────────────────────────────── -->
+<nav class="nav-primary" id="primary-nav" aria-label="رئيسية">
   <div class="container">
     <a href="index.html">الرئيسية</a>
     <a href="passenger/index.html">للركاب</a>
     <a href="driver/index.html">للسائقين</a>
     <a href="admin/login.html">دخول الإدارة</a>
     <a href="visual-identity.html" class="is-active">الهوية البصرية</a>
-    <button class="lang-toggle" data-i18n-toggle data-i18n="header.toggleLang">EN</button>
+    <button class="lang-toggle" data-i18n-toggle>EN</button>
   </div>
 </nav>
 
 <!-- ── 4. Hero ────────────────────────────────────────────────────────── -->
 <section class="hero">
   <div class="container">
-    <div>
+    <div class="reveal">
       <span class="eyebrow">الهوية الوطنية الجديدة · ٢٠٢٥</span>
       <h2>هوية رسمية لمدينة تتحرّك</h2>
-      <p>منصة نقل دمشق تتبنّى الهوية البصرية الوطنية الجديدة للجمهورية العربية السورية كما اعتمدتها وزارة الخارجية والمغتربين: الأخضر الفيروزي العميق، الذهبي الفاتح، والزخارف المستوحاة من الحضارات السورية المتعاقبة.</p>
+      <p>منصة نقل دمشق تتبنّى الهوية البصرية الوطنية الجديدة للجمهورية العربية السورية: الأخضر الفيروزي العميق، الذهبي الفاتح، والزخارف الهندسية الثُمانية المستوحاة من الحضارات السورية المتعاقبة.</p>
+      <div class="cta-row">
+        <a class="btn btn--gold btn--lg" href="#palette">استكشف الهوية</a>
+        <a class="btn btn--outline btn--lg" href="#components" style="color:#fff;border-color:rgba(255,255,255,.5)">المكوّنات</a>
+      </div>
       <div class="meta">
-        <span><b>الإصدار</b> · 3.0</span>
+        <span><b>الإصدار</b> · 4.0</span>
         <span><b>التاريخ</b> · ٢٥ مايو ٢٠٢٦</span>
         <span><b>المرجع</b> · Syrian Identity Team · 2025</span>
       </div>
     </div>
-    <figure class="hero-emblem">
+    <figure class="hero-emblem reveal">
       <picture>
         <source srcset="assets/identity/sy-emblem-eagle.avif" type="image/avif">
         <img src="assets/identity/sy-emblem-eagle.png" alt="الشعار الرسمي للجمهورية العربية السورية">
@@ -461,55 +1064,55 @@ h1, h2, h3, h4 { margin: 0; font-weight: 700; line-height: 1.2; color: var(--ink
   </div>
 </section>
 
-<!-- ── 5. Identity pillars (service-card style like mofaex services) ──── -->
+<!-- ── 5. Pillars ─────────────────────────────────────────────────────── -->
 <section class="section paper">
   <div class="container">
-    <header class="head">
+    <header class="head reveal">
       <span class="num">01 · أركان الهوية</span>
       <h2>أربع ركائز للهوية الوطنية</h2>
-      <p>أربعة عناصر تتكوّن منها الهوية: الشعار، اللوحة اللونية، الزخرفة، والطباعة. كل عنصر له دور محدّد لا يتبدّل.</p>
+      <p>أربعة عناصر تتكوّن منها الهوية: الشعار، اللوحة اللونية، الزخرفة، والطباعة. كلٌّ منها له دور محدّد لا يتبدّل.</p>
     </header>
 
     <div class="cards-grid">
-      <article class="card">
+      <article class="card reveal">
         <div class="icon">١</div>
         <h4>الشعار الرسمي</h4>
         <p>النسر الذهبي مع ثلاث نجوم خماسية تمثّل الشعب. يُستخدم في الترويسة والوثائق الرسمية، لا كرمز تفاعلي.</p>
         <a href="#emblem" class="more">عرض الاستخدام</a>
       </article>
-      <article class="card">
+      <article class="card reveal">
         <div class="icon">٢</div>
         <h4>اللوحة اللونية</h4>
         <p>أخضر فيروزي عميق للإجراء الأساسي، ذهبي فاتح للتأكيد، أحمر للنجوم والخطر، أسود وأبيض للحبر والورق.</p>
         <a href="#palette" class="more">عرض الألوان</a>
       </article>
-      <article class="card">
+      <article class="card reveal">
         <div class="icon">٣</div>
         <h4>الزخارف</h4>
-        <p>زخارف هندسية مستوحاة من العمارة الأموية، تُستخدم كطبقة خلفية بشفافية أقل من ٠٫٦.</p>
+        <p>زخرفة هندسية ثُمانية الأضلاع — نجمة الخاتم والمثمّن المنتظم — مستوحاة من العمارة الأموية والعبّاسية.</p>
         <a href="#patterns" class="more">عرض الأنماط</a>
       </article>
-      <article class="card">
+      <article class="card reveal">
         <div class="icon">٤</div>
         <h4>الطباعة</h4>
-        <p>IBM Plex Sans Arabic للعربية بأوزان متعدّدة، Source Serif 4 للعناوين اللاتينية.</p>
+        <p>Readex Pro للعربية واللاتينية بأوزان متغيّرة، Source Serif 4 للعناوين، JetBrains Mono للأرقام والأكواد.</p>
         <a href="#type" class="more">عرض الخطوط</a>
       </article>
     </div>
   </div>
 </section>
 
-<!-- ── 6. Asset gallery (news-card style) ─────────────────────────────── -->
+<!-- ── 6. Asset gallery ───────────────────────────────────────────────── -->
 <section class="section cream" id="emblem">
   <div class="container">
-    <header class="head">
+    <header class="head reveal">
       <span class="num">02 · الأصول الرسمية</span>
       <h2>أربعة أصول من Syrian Identity Team</h2>
       <p>صور رسمية من إطلاق الهوية في يوليو ٢٠٢٥. الشعار، الزخارف، التطبيقات الحقيقية، ومصادر الإلهام.</p>
     </header>
 
     <div class="gallery">
-      <article class="gallery-card">
+      <article class="gallery-card reveal">
         <div class="frame contain">
           <picture>
             <source srcset="assets/identity/sy-emblem-eagle.avif" type="image/avif">
@@ -523,7 +1126,7 @@ h1, h2, h3, h4 { margin: 0; font-weight: 700; line-height: 1.2; color: var(--ink
         </div>
       </article>
 
-      <article class="gallery-card">
+      <article class="gallery-card reveal">
         <div class="frame contain">
           <picture>
             <source srcset="assets/identity/sy-patterns.avif" type="image/avif">
@@ -533,11 +1136,11 @@ h1, h2, h3, h4 { margin: 0; font-weight: 700; line-height: 1.2; color: var(--ink
         <div class="body">
           <span class="stamp">٢٠٢٥ · الزخارف</span>
           <h4>ثلاث لوحات زخرفية</h4>
-          <p>زخارف هندسية مستوحاة من الحضارات السورية المتعاقبة — تُستخدم كخلفيات هادئة.</p>
+          <p>زخارف هندسية ثُمانية الأضلاع — نجمة الخاتم والمثمّن — كما تظهر في المنابر الرسمية.</p>
         </div>
       </article>
 
-      <article class="gallery-card">
+      <article class="gallery-card reveal">
         <div class="frame">
           <picture>
             <source srcset="assets/identity/sy-heritage.avif" type="image/avif">
@@ -551,7 +1154,7 @@ h1, h2, h3, h4 { margin: 0; font-weight: 700; line-height: 1.2; color: var(--ink
         </div>
       </article>
 
-      <article class="gallery-card">
+      <article class="gallery-card reveal">
         <div class="frame">
           <picture>
             <source srcset="assets/identity/sy-podium.avif" type="image/avif">
@@ -571,127 +1174,480 @@ h1, h2, h3, h4 { margin: 0; font-weight: 700; line-height: 1.2; color: var(--ink
 <!-- ── 7. Palette ─────────────────────────────────────────────────────── -->
 <section class="section paper" id="palette">
   <div class="container">
-    <header class="head">
+    <header class="head reveal">
       <span class="num">03 · الألوان</span>
       <h2>اللوحة اللونية الرسمية</h2>
-      <p>الأخضر الفيروزي للإجراء الأساسي، الذهبي للتأكيد والزخرفة، الأحمر للنجوم والخطر فقط.</p>
+      <p>الأخضر الفيروزي للإجراء الأساسي، الذهبي للتأكيد والزخرفة، الأحمر للنجوم والخطر فقط. اضغط الرمز لنسخ القيمة.</p>
     </header>
 
-    <div class="swatches">
+    <div class="swatches reveal">
       <div class="row">
         <div class="chip" style="background:#0E5650"></div>
         <div class="meta"><b>الأخضر الفيروزي</b><span>الإجراء الأساسي · الأزرار · الروابط</span></div>
         <div class="tok">#0E5650</div>
+        <button class="copy-btn" data-copy="#0E5650">نسخ</button>
       </div>
       <div class="row">
-        <div class="chip" style="background:#115148"></div>
+        <div class="chip" style="background:#115E58"></div>
         <div class="meta"><b>الأخضر — تحويم</b><span>الحالات النشطة</span></div>
-        <div class="tok">#115148</div>
+        <div class="tok">#115E58</div>
+        <button class="copy-btn" data-copy="#115E58">نسخ</button>
       </div>
       <div class="row">
         <div class="chip" style="background:#DCEAE7"></div>
         <div class="meta"><b>الأخضر — وَشاح</b><span>خلفيات الشارات</span></div>
         <div class="tok">#DCEAE7</div>
+        <button class="copy-btn" data-copy="#DCEAE7">نسخ</button>
       </div>
       <div class="row">
         <div class="chip" style="background:#C9A95B"></div>
         <div class="meta"><b>الذهبي</b><span>التأكيد · الحدود · الزخرفة</span></div>
         <div class="tok">#C9A95B</div>
+        <button class="copy-btn" data-copy="#C9A95B">نسخ</button>
       </div>
       <div class="row">
         <div class="chip" style="background:#9C7A3A"></div>
         <div class="meta"><b>الذهبي — عميق</b><span>النصوص الثانوية</span></div>
         <div class="tok">#9C7A3A</div>
+        <button class="copy-btn" data-copy="#9C7A3A">نسخ</button>
       </div>
       <div class="row">
         <div class="chip" style="background:#F8F1DE"></div>
         <div class="meta"><b>الذهبي — وَشاح</b><span>خلفيات هادئة</span></div>
         <div class="tok">#F8F1DE</div>
+        <button class="copy-btn" data-copy="#F8F1DE">نسخ</button>
       </div>
       <div class="row">
         <div class="chip" style="background:#CE1126"></div>
         <div class="meta"><b>الأحمر</b><span>النجوم · الخطر</span></div>
         <div class="tok">#CE1126</div>
+        <button class="copy-btn" data-copy="#CE1126">نسخ</button>
       </div>
       <div class="row">
         <div class="chip" style="background:#0B0B0B"></div>
         <div class="meta"><b>الحبر</b><span>النص الأساسي</span></div>
         <div class="tok">#0B0B0B</div>
+        <button class="copy-btn" data-copy="#0B0B0B">نسخ</button>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ── 8. Patterns (the actual mofaex pattern feel — full-width green) ── -->
+<!-- ── 8. Type specimens ──────────────────────────────────────────────── -->
+<section class="section muted" id="type">
+  <div class="container">
+    <header class="head reveal">
+      <span class="num">04 · الطباعة</span>
+      <h2>الخطوط الرسمية</h2>
+      <p>Readex Pro للعربية واللاتينية — خط مزدوج راقٍ من TypeTogether (ضمن قائمة الخطوط العربية المجانية المختارة من <a href="https://www.behance.net/gallery/168811671/Free-Arabic-Fonts-Reference" target="_blank" rel="noopener">المرجع المنسَّق من علاء شليل</a>). Source Serif 4 للعناوين اللاتينية، JetBrains Mono للأرقام والأكواد.</p>
+    </header>
+
+    <div class="reveal">
+      <div class="spec display">
+        <p class="label">Display · 44px — عناوين رئيسية</p>
+        <p class="sample-ar">تتبع حافلات دمشق في الوقت الحقيقي</p>
+        <p class="sample-en">Real-time Damascus bus tracking</p>
+      </div>
+
+      <div class="spec h2">
+        <p class="label">Heading · 28px — عناوين فرعية</p>
+        <p class="sample-ar">الخريطة المباشرة</p>
+        <p class="sample-en">Live map</p>
+      </div>
+
+      <div class="spec body">
+        <p class="label">Body · 16px — متن</p>
+        <p class="sample-ar">منصة وطنية مفتوحة المصدر تربط الركاب والسائقين والمشرفين بمواقع الحافلات وأوقات الوصول لحظياً، بدون إعلانات وبدون مقابل.</p>
+        <p class="sample-en">A national open-source platform connecting passengers, drivers, and dispatchers to live bus positions and accurate arrival times.</p>
+      </div>
+
+      <div class="spec mono">
+        <p class="label">Mono · 14px — أرقام وأكواد</p>
+        <p class="sample-ar">٠٬٢٤٣ راكب · ١٢:٣٤ ETA · 36.276°N</p>
+        <p class="sample-en">0.243 passengers · 12:34 ETA · 36.276°N</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 9. Patterns — full-width green with octagram tessellation ──────── -->
 <section class="section green pattern-on-green" id="patterns">
   <div class="container">
-    <header class="head">
-      <span class="num">04 · الزخارف</span>
-      <h2>زخرفة هندسية على الأخضر</h2>
-      <p>الزخارف الذهبية على خلفية خضراء — كما تظهر في المنابر الرسمية وواجهات الوزارات.</p>
+    <header class="head reveal">
+      <span class="num">05 · الزخارف</span>
+      <h2>تَكسير ثُماني · نجمة وَمثمّن</h2>
+      <p>زخرفة هندسية ثُمانية الأضلاع: نجمة الخاتم في المركز ومثمّنات منتظمة عند نقاط التلاقي — تتشكّل بالكامل حين تتلاقى أربع وحدات.</p>
     </header>
 
-    <div class="cards-grid" style="margin-top: 16px;">
-      <article class="card" style="background:rgba(255,255,255,.06); border-color: rgba(201,169,91,.4); color: #fff;">
-        <div class="icon" style="background: var(--gold); color: var(--green-900);">★</div>
-        <h4 style="color: #fff;">على الخلفية الخضراء</h4>
-        <p style="color: rgba(255,255,255,.78);">للمنابر، الترويسات الرسمية، والشاشات الكبرى.</p>
+    <div class="cards-grid">
+      <article class="card reveal">
+        <div class="icon">★</div>
+        <h4>على الخلفية الخضراء</h4>
+        <p>للمنابر، الترويسات الرسمية، والشاشات الكبرى — شفافية ٠٫٤٥.</p>
       </article>
-      <article class="card" style="background:rgba(255,255,255,.06); border-color: rgba(201,169,91,.4); color: #fff;">
-        <div class="icon" style="background: var(--gold); color: var(--green-900);">◆</div>
-        <h4 style="color: #fff;">شفافية أقل من ٠٫٦</h4>
-        <p style="color: rgba(255,255,255,.78);">الزخرفة طبقة خلفية، لا تنافس النصّ.</p>
+      <article class="card reveal">
+        <div class="icon">◆</div>
+        <h4>شفافية أقل من ٠٫٦</h4>
+        <p>الزخرفة طبقة خلفية، لا تنافس النصّ. للتذييلات والترَويسات الخفيفة.</p>
       </article>
-      <article class="card" style="background:rgba(255,255,255,.06); border-color: rgba(201,169,91,.4); color: #fff;">
-        <div class="icon" style="background: var(--gold); color: var(--green-900);">✦</div>
-        <h4 style="color: #fff;">النصّ في صندوق</h4>
-        <p style="color: rgba(255,255,255,.78);">فوق الزخرفة، يجب وضع النصّ داخل صندوق أبيض صلب للقراءة.</p>
+      <article class="card reveal">
+        <div class="icon">✦</div>
+        <h4>النصّ في صندوق</h4>
+        <p>فوق الزخرفة، يجب وضع النصّ داخل صندوق أبيض صلب للقراءة الواضحة.</p>
       </article>
     </div>
   </div>
 </section>
 
-<!-- ── 9. Type specimens ──────────────────────────────────────────────── -->
-<section class="section cream" id="type">
+<!-- ── 10. BUTTON SYSTEM ──────────────────────────────────────────────── -->
+<section class="section paper" id="components">
   <div class="container">
-    <header class="head">
-      <span class="num">05 · الطباعة</span>
-      <h2>الخطوط الرسمية</h2>
-      <p>
-        Readex Pro للعربية واللاتينية — خط مزدوج راقٍ من TypeTogether،
-        ضمن قائمة الخطوط العربية المجانية المختارة من <a href="https://www.behance.net/gallery/168811671/Free-Arabic-Fonts-Reference" target="_blank" rel="noopener">المرجع المنسَّق من علاء شليل</a>.
-        وزن متغيّر من ٢٠٠ إلى ٧٠٠، يعمل بكفاءة في واجهات الاستخدام والمحتوى التحريري. Source Serif 4 للعناوين اللاتينية، JetBrains Mono للأكواد.
-      </p>
+    <header class="head reveal">
+      <span class="num">06 · الأزرار</span>
+      <h2>نظام الأزرار الكامل</h2>
+      <p>ستة أنواع، خمسة أحجام، وست حالات. الزرّ الأساسي بالأخضر الفيروزي، التأكيد بالذهبي، الخطر بالأحمر. كل الأزرار ذات حركة لمعان عند التحويم وانضغاط طفيف عند النقر.</p>
     </header>
 
-    <div class="spec display">
-      <p class="label">Display · 44px — عناوين رئيسية</p>
-      <p class="sample-ar">تتبع حافلات دمشق في الوقت الحقيقي</p>
-      <p class="sample-en">Real-time Damascus bus tracking</p>
-    </div>
+    <div class="btn-showcase">
 
-    <div class="spec h2">
-      <p class="label">Heading · 28px — عناوين فرعية</p>
-      <p class="sample-ar">الخريطة المباشرة</p>
-      <p class="sample-en">Live map</p>
-    </div>
+      <div class="btn-row reveal">
+        <span class="label">Variants — الأنواع</span>
+        <button class="btn btn--primary">إجراء أساسي</button>
+        <button class="btn btn--gold">تأكيد ذهبي</button>
+        <button class="btn btn--secondary">ثانوي</button>
+        <button class="btn btn--outline">حدود فقط</button>
+        <button class="btn btn--ghost">شفّاف</button>
+        <button class="btn btn--link">رابط نصّي</button>
+        <button class="btn btn--danger">خطر</button>
+      </div>
 
-    <div class="spec body">
-      <p class="label">Body · 16px — متن</p>
-      <p class="sample-ar">منصة وطنية مفتوحة المصدر تربط الركاب والسائقين والمشرفين بمواقع الحافلات وأوقات الوصول لحظياً، بدون إعلانات وبدون مقابل.</p>
-      <p class="sample-en">A national open-source platform connecting passengers, drivers, and dispatchers to live bus positions and accurate arrival times.</p>
+      <div class="btn-row reveal">
+        <span class="label">Sizes — الأحجام</span>
+        <button class="btn btn--primary btn--xs">XS صغير جداً</button>
+        <button class="btn btn--primary btn--sm">SM صغير</button>
+        <button class="btn btn--primary">MD افتراضي</button>
+        <button class="btn btn--primary btn--lg">LG كبير</button>
+        <button class="btn btn--primary btn--xl">XL كبير جداً</button>
+      </div>
+
+      <div class="btn-row reveal">
+        <span class="label">With icons — مع أيقونات</span>
+        <button class="btn btn--primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          متابعة
+        </button>
+        <button class="btn btn--secondary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12l7-7 7 7"/></svg>
+          رفع ملف
+        </button>
+        <button class="btn btn--outline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 21l-4.3-4.3M17 10A7 7 0 1 1 3 10a7 7 0 0 1 14 0Z"/></svg>
+          بحث
+        </button>
+        <button class="btn btn--danger">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>
+          حذف
+        </button>
+        <button class="btn btn--primary btn--icon-only" aria-label="إعدادات">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.9 2.9l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.9-2.9l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.9-2.9l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.9 2.9l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
+        </button>
+      </div>
+
+      <div class="btn-row reveal">
+        <span class="label">States — الحالات</span>
+        <button class="btn btn--primary">عادي</button>
+        <button class="btn btn--primary" style="background:var(--green-600);box-shadow:0 6px 18px rgba(14,86,80,.28)">تحويم</button>
+        <button class="btn btn--primary is-loading">يحمّل…</button>
+        <button class="btn btn--primary" disabled>معطّل</button>
+      </div>
+
+      <div class="btn-row reveal">
+        <span class="label">Pill + block + group — أشكال خاصة</span>
+        <button class="btn btn--primary btn--pill">حبّة كاملة</button>
+        <button class="btn btn--secondary btn--pill">حبّة ثانية</button>
+        <div class="btn-group">
+          <button class="btn btn--outline">يوم</button>
+          <button class="btn btn--outline" style="background:var(--green-100);color:var(--green);border-color:var(--green)">أسبوع</button>
+          <button class="btn btn--outline">شهر</button>
+        </div>
+      </div>
+
+      <div class="btn-row reveal" style="display:grid;grid-template-columns:1fr;gap:8px">
+        <span class="label">Block — عرض كامل</span>
+        <button class="btn btn--primary btn--lg btn--block">دخول السائقين · عرض كامل</button>
+      </div>
+
+      <div class="btn-row on-green-bg reveal">
+        <span class="label" style="color:var(--gold)">On green — على الخلفية الخضراء</span>
+        <button class="btn btn--primary">إجراء ذهبي</button>
+        <button class="btn btn--outline">حدود بيضاء</button>
+        <button class="btn btn--ghost">شفّاف على الأخضر</button>
+      </div>
+
     </div>
   </div>
 </section>
 
-<!-- ── 10. Footer ─────────────────────────────────────────────────────── -->
+<!-- ── 11. FORM CONTROLS ──────────────────────────────────────────────── -->
+<section class="section cream">
+  <div class="container">
+    <header class="head reveal">
+      <span class="num">07 · النماذج</span>
+      <h2>عناصر الإدخال</h2>
+      <p>حقول النص، القوائم، الاختيارات، والمفاتيح — جميعها متناسقة مع نظام الألوان الرسمي وتدعم الحالات: عادي، نشط، خطأ، نجاح، معطّل.</p>
+    </header>
+
+    <form class="form-grid reveal" onsubmit="event.preventDefault()">
+      <div class="field">
+        <label class="field__label" for="f-name">الاسم الكامل</label>
+        <input class="input" id="f-name" type="text" placeholder="أدخل اسمك">
+        <span class="field__hint">يظهر في ترويسة الحساب.</span>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="f-email">البريد الإلكتروني</label>
+        <input class="input is-success" id="f-email" type="email" value="user@damascustransit.sy">
+        <span class="field__hint" style="color:var(--green)">✓ صالح</span>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="f-pass">كلمة المرور</label>
+        <input class="input is-error" id="f-pass" type="password" value="123">
+        <span class="field__error">كلمة المرور قصيرة جداً (٦ أحرف على الأقل)</span>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="f-role">الدور</label>
+        <select class="select" id="f-role">
+          <option>راكب</option>
+          <option>سائق</option>
+          <option>موزّع</option>
+          <option>إدارة</option>
+        </select>
+      </div>
+
+      <div class="field full">
+        <label class="field__label" for="f-bio">نبذة</label>
+        <textarea class="textarea" id="f-bio" placeholder="اكتب نبذة قصيرة…"></textarea>
+      </div>
+
+      <div class="field">
+        <span class="field__label">الإشعارات</span>
+        <label class="check"><input type="checkbox" checked> إشعارات الوصول</label>
+        <label class="check"><input type="checkbox"> رسائل الإدارة</label>
+        <label class="check"><input type="checkbox" checked> تحديثات السائق</label>
+      </div>
+
+      <div class="field">
+        <span class="field__label">اللغة المفضّلة</span>
+        <label class="radio"><input type="radio" name="lang" checked> العربية</label>
+        <label class="radio"><input type="radio" name="lang"> English</label>
+        <label class="radio"><input type="radio" name="lang"> Kurdish</label>
+      </div>
+
+      <div class="field full">
+        <label class="switch">
+          <input type="checkbox" checked>
+          <span class="switch__track"></span>
+          الوضع الليلي (في تطبيق السائق)
+        </label>
+        <label class="switch" style="margin-top:6px">
+          <input type="checkbox">
+          <span class="switch__track"></span>
+          الموقع في الخلفية
+        </label>
+      </div>
+
+      <div class="field full">
+        <label class="field__label" for="f-range">نصف قطر البحث (كم)</label>
+        <input class="range" id="f-range" type="range" min="1" max="20" value="5">
+      </div>
+
+      <div class="full cluster" style="justify-content:flex-end">
+        <button class="btn btn--ghost" type="button">إلغاء</button>
+        <button class="btn btn--primary" type="submit">حفظ التغييرات</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- ── 12. BADGES, TAGS, ALERTS ───────────────────────────────────────── -->
+<section class="section paper">
+  <div class="container">
+    <header class="head reveal">
+      <span class="num">08 · الشارات والتنبيهات</span>
+      <h2>عناصر بصرية صغيرة</h2>
+      <p>الشارات لحالة الحافلة، الوسوم لتصنيف الخطوط، التنبيهات لإخطار المشغّلين بأحداث الشبكة.</p>
+    </header>
+
+    <div class="reveal" style="display:grid;gap:32px">
+
+      <div class="stack" style="gap:8px">
+        <span style="font-family:var(--mono);font-size:11px;color:var(--gold-700);letter-spacing:.08em;text-transform:uppercase;font-weight:600">Badges — شارات</span>
+        <div class="cluster">
+          <span class="badge badge--dot">نشط</span>
+          <span class="badge badge--gold badge--dot">تأكيد</span>
+          <span class="badge badge--red badge--dot">عطل</span>
+          <span class="badge badge--amber badge--dot">تأخير</span>
+          <span class="badge badge--info badge--dot">جديد</span>
+          <span class="badge badge--neutral">مؤرشَف</span>
+        </div>
+      </div>
+
+      <div class="stack" style="gap:8px">
+        <span style="font-family:var(--mono);font-size:11px;color:var(--gold-700);letter-spacing:.08em;text-transform:uppercase;font-weight:600">Tags — وسوم</span>
+        <div class="cluster">
+          <span class="tag">خط ١٠١ <button class="x" aria-label="إزالة">×</button></span>
+          <span class="tag">دمشق القديمة <button class="x" aria-label="إزالة">×</button></span>
+          <span class="tag">صباحي <button class="x" aria-label="إزالة">×</button></span>
+          <span class="tag">عَودة <button class="x" aria-label="إزالة">×</button></span>
+        </div>
+      </div>
+
+      <div class="stack" style="gap:0">
+        <span style="font-family:var(--mono);font-size:11px;color:var(--gold-700);letter-spacing:.08em;text-transform:uppercase;font-weight:600;margin-bottom:10px">Alerts — تنبيهات</span>
+        <div class="alert">
+          <span class="alert__icon">i</span>
+          <div class="alert__body"><h5>تنبيه عام</h5><p>سيتم تحديث جدول الخطّ ١٠١ خلال ساعة. لن يؤثر التحديث على الرحلات الجارية.</p></div>
+        </div>
+        <div class="alert alert--success">
+          <span class="alert__icon">✓</span>
+          <div class="alert__body"><h5>تم الحفظ</h5><p>تم حفظ إعدادات الإشعارات بنجاح.</p></div>
+        </div>
+        <div class="alert alert--warning">
+          <span class="alert__icon">!</span>
+          <div class="alert__body"><h5>تأخير محتمل</h5><p>اكتظاظ في طريق المزّة قد يؤخّر الرحلات بـ ٥ دقائق.</p></div>
+        </div>
+        <div class="alert alert--danger">
+          <span class="alert__icon">×</span>
+          <div class="alert__body"><h5>خطّ معطّل</h5><p>خطّ ٢٠٢ معطّل مؤقّتاً بسبب صيانة. سيُستأنف الساعة ٤:٠٠ مساءً.</p></div>
+        </div>
+      </div>
+
+      <div class="stack" style="gap:8px">
+        <span style="font-family:var(--mono);font-size:11px;color:var(--gold-700);letter-spacing:.08em;text-transform:uppercase;font-weight:600">Stat cards — بطاقات إحصائية</span>
+        <div class="cards-grid">
+          <div class="stat-card">
+            <span class="stat__label">حافلات نشطة</span>
+            <span class="stat__value">٢٤٣</span>
+            <span class="stat__trend up">↑ ١٢٪ هذا الأسبوع</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat__label">معدّل الوصول</span>
+            <span class="stat__value">٩٤٫٢٪</span>
+            <span class="stat__trend up">↑ ٢٫١٪</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat__label">عطل في الخطّ</span>
+            <span class="stat__value">٣</span>
+            <span class="stat__trend down">↓ ٤ من الأمس</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat__label">سائقون متّصلون</span>
+            <span class="stat__value">١٨٧</span>
+            <span class="stat__trend up">↑ ٥</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stack" style="gap:8px">
+        <span style="font-family:var(--mono);font-size:11px;color:var(--gold-700);letter-spacing:.08em;text-transform:uppercase;font-weight:600">Avatars + breadcrumb</span>
+        <div class="cluster">
+          <span class="avatar avatar--sm">س</span>
+          <span class="avatar">ي</span>
+          <span class="avatar avatar--lg">د<span class="status"></span></span>
+          <span class="avatar">م<span class="status away"></span></span>
+          <span class="avatar">ر<span class="status off"></span></span>
+        </div>
+        <nav class="breadcrumb" aria-label="مسار التنقّل" style="margin-top:12px">
+          <a href="index.html">الرئيسية</a>
+          <span class="sep">›</span>
+          <a href="#">دليل الهوية</a>
+          <span class="sep">›</span>
+          <span class="current">المكوّنات</span>
+        </nav>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── 13. MOTION & ANIMATION ─────────────────────────────────────────── -->
+<section class="section muted">
+  <div class="container">
+    <header class="head reveal">
+      <span class="num">09 · الحركة</span>
+      <h2>المنظومة الحركية</h2>
+      <p>أربعة أنماط حركية: الظهور التدريجي، النبض، البريق، والدوران. كل الحركات تحترم <code style="font-family:var(--mono);font-size:13px;color:var(--gold-700)">prefers-reduced-motion</code>.</p>
+    </header>
+
+    <div class="motion-grid reveal">
+      <div class="motion-tile">
+        <span class="label">Fade-up reveal</span>
+        <div class="demo">
+          <button class="btn btn--secondary" onclick="this.style.animation='none';this.offsetHeight;this.style.animation='fade-up 600ms cubic-bezier(.16,1,.3,1) both'">شغّل العرض</button>
+        </div>
+        <span class="caption">عند ظهور العنصر بالتمرير.</span>
+      </div>
+
+      <div class="motion-tile">
+        <span class="label">Pulse ring</span>
+        <div class="demo"><span class="pulse-dot"></span></div>
+        <span class="caption">للحالة المباشرة (live).</span>
+      </div>
+
+      <div class="motion-tile">
+        <span class="label">Shimmer skeleton</span>
+        <div class="demo" style="width:100%">
+          <div class="stack" style="gap:8px;width:100%">
+            <div class="shimmer-box"></div>
+            <div class="shimmer-box" style="width:78%"></div>
+            <div class="shimmer-box" style="width:60%"></div>
+          </div>
+        </div>
+        <span class="caption">أثناء تحميل البيانات.</span>
+      </div>
+
+      <div class="motion-tile">
+        <span class="label">Spinner</span>
+        <div class="demo"><span class="spinner"></span></div>
+        <span class="caption">لعمليات الشبكة القصيرة.</span>
+      </div>
+
+      <div class="motion-tile">
+        <span class="label">Button shine</span>
+        <div class="demo"><button class="btn btn--primary">حوّم هنا</button></div>
+        <span class="caption">يَمسح لمعة عند التحويم.</span>
+      </div>
+
+      <div class="motion-tile">
+        <span class="label">Card lift</span>
+        <div class="demo" style="width:100%">
+          <div class="card" style="margin:0;padding:14px"><h4 style="font-size:14px;margin:0">حوّم لرفع البطاقة</h4></div>
+        </div>
+        <span class="caption">حركة −٣ بكسل + ظلّ.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 14. Footer ─────────────────────────────────────────────────────── -->
 <footer class="foot">
   <div class="container">
     <div>
       <h6>نقل دمشق</h6>
-      <p style="margin: 0; color: rgba(255,255,255,.82); max-width: 44ch; font-size: 14px; line-height: 1.7;">
-        منصة وطنية مفتوحة المصدر تربط الركاب والسائقين والمشرفين بمواقع الحافلات وأوقات الوصول لحظياً، بدون إعلانات وبدون مقابل.
-      </p>
+      <p class="lede">منصة وطنية مفتوحة المصدر تربط الركاب والسائقين والمشرفين بمواقع الحافلات وأوقات الوصول لحظياً، بدون إعلانات وبدون مقابل.</p>
+      <div class="social-row">
+        <a href="https://github.com/XYHDX/DTS" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.6 5.6.6 11.9c0 5 3.3 9.3 7.8 10.8.6.1.8-.2.8-.5v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.4-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.2 1.2.9-.3 1.9-.4 2.9-.4s2 .1 2.9.4c2.2-1.5 3.2-1.2 3.2-1.2.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.1 0 4.5-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.3v3.4c0 .3.2.7.8.5 4.5-1.5 7.8-5.8 7.8-10.8C23.4 5.6 18.3.5 12 .5Z"/></svg>
+        </a>
+        <a href="#" title="ـ" aria-label="رسائل بريديّة" onclick="event.preventDefault()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+        </a>
+        <a href="#" title="RSS" aria-label="RSS" onclick="event.preventDefault()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1.5" fill="currentColor"/></svg>
+        </a>
+      </div>
     </div>
     <div>
       <h6>الروابط</h6>
@@ -703,19 +1659,92 @@ h1, h2, h3, h4 { margin: 0; font-weight: 700; line-height: 1.2; color: var(--ink
     <div>
       <h6>الهوية</h6>
       <a href="visual-identity.html">دليل الهوية</a>
-      <a href="https://github.com/XYHDX/DTS" target="_blank" rel="noopener">GitHub</a>
-      <a href="https://mofaex.gov.sy" target="_blank" rel="noopener">وزارة الخارجية</a>
+      <a href="#palette">الألوان</a>
+      <a href="#type">الخطوط</a>
+      <a href="#patterns">الزخارف</a>
     </div>
     <div>
       <h6>المرجع</h6>
+      <a href="https://github.com/XYHDX/DTS" target="_blank" rel="noopener">GitHub · المصدر المفتوح</a>
       <a href="https://worldbranddesign.com" target="_blank" rel="noopener">World Brand Design Society</a>
-      <a href="#" style="opacity:.7;cursor:default">Syrian Identity Team · 2025</a>
+      <a href="https://www.behance.net/gallery/168811671/Free-Arabic-Fonts-Reference" target="_blank" rel="noopener">Free Arabic Fonts Reference</a>
+      <a href="#" style="opacity:.7;cursor:default" onclick="event.preventDefault()">Syrian Identity Team · 2025</a>
     </div>
     <div class="copy">
-      © ٢٠٢٦ نقل دمشق · الجمهورية العربية السورية · جميع الحقوق محفوظة · رخصة MIT
+      <span>© ٢٠٢٦ نقل دمشق · الجمهورية العربية السورية · رخصة MIT</span>
+      <span>صُنع في دمشق · v4.0 — ٢٥ مايو ٢٠٢٦</span>
     </div>
   </div>
 </footer>
+
+<!-- Scroll-to-top -->
+<button class="scroll-top" id="scroll-top" aria-label="عودة إلى الأعلى">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6,15 12,9 18,15"/></svg>
+</button>
+
+<script>
+'use strict';
+
+/* ── Sticky nav scroll-shadow ─────────────────────────────────────────── */
+const nav = document.getElementById('primary-nav');
+const scrollTopBtn = document.getElementById('scroll-top');
+function onScroll() {
+  const y = window.scrollY;
+  if (nav) nav.classList.toggle('is-scrolled', y > 8);
+  if (scrollTopBtn) scrollTopBtn.classList.toggle('is-visible', y > 600);
+}
+window.addEventListener('scroll', onScroll, { passive: true });
+onScroll();
+
+/* ── Scroll-to-top click ──────────────────────────────────────────────── */
+if (scrollTopBtn) {
+  scrollTopBtn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
+
+/* ── Reveal-on-scroll (IntersectionObserver) ──────────────────────────── */
+const reveals = document.querySelectorAll('.reveal');
+if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (e.isIntersecting) { e.target.classList.add('is-visible'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+  reveals.forEach((el) => io.observe(el));
+} else {
+  reveals.forEach((el) => el.classList.add('is-visible'));
+}
+
+/* ── Copy-to-clipboard for swatches ───────────────────────────────────── */
+document.querySelectorAll('.copy-btn').forEach((btn) => {
+  btn.addEventListener('click', async () => {
+    const value = btn.getAttribute('data-copy') || '';
+    try {
+      await navigator.clipboard.writeText(value);
+      const old = btn.textContent;
+      btn.textContent = '✓ نُسخ';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = old; btn.classList.remove('copied'); }, 1400);
+    } catch (e) {
+      btn.textContent = '×';
+      setTimeout(() => { btn.textContent = 'نسخ'; }, 1200);
+    }
+  });
+});
+
+/* ── Tag dismiss ──────────────────────────────────────────────────────── */
+document.querySelectorAll('.tag .x').forEach((x) => {
+  x.addEventListener('click', () => {
+    const tag = x.closest('.tag');
+    if (!tag) return;
+    tag.style.transition = 'opacity 200ms, transform 200ms';
+    tag.style.opacity = '0';
+    tag.style.transform = 'scale(.9)';
+    setTimeout(() => tag.remove(), 220);
+  });
+});
+</script>
 
 <script src="lib/i18n.js"></script>
 </body>
