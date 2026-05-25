@@ -14,51 +14,110 @@
 
 <link rel="stylesheet" href="/lib/design-system.css">
 <style>
-  .page { max-width: 1200px; margin: 0 auto; padding: var(--s-5) var(--s-4) var(--s-8); }
-  .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-4); }
+  .page { max-width: 1240px; margin: 0 auto; padding: 28px 24px 56px; }
+  .pagetitle h1 { margin: 0; font-size: 28px; font-weight: 700; font-family: var(--font-sans); }
+  [dir="rtl"] .pagetitle h1 { font-family: var(--font-sans); }
+  .pagetitle p { margin: 4px 0 0; color: var(--color-text-mute); font-size: 14px; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; gap: 16px; flex-wrap: wrap; }
+  .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
   .col-2 { grid-column: span 2; }
   .chart {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
-    border-radius: var(--r-lg);
-    padding: var(--s-4);
+    border-radius: var(--r-md);
+    padding: 18px;
     min-height: 280px;
+    transition: border-color var(--t-fast) var(--ease);
   }
-  .chart h2 { margin: 0 0 var(--s-3); font-size: var(--fs-md); font-weight: 700; }
-  .filter-bar {
-    display: flex; flex-wrap: wrap; gap: var(--s-2); margin-bottom: var(--s-5);
-  }
+  .chart:hover { border-color: var(--national-green-300); }
+  .chart h2 { margin: 0 0 14px; font-size: 15px; font-weight: 700; font-family: var(--font-sans); }
+  .filter-bar { display: flex; flex-wrap: wrap; gap: 8px; }
   .filter-pill {
-    padding: var(--s-2) var(--s-4); border-radius: var(--r-pill);
-    background: var(--color-surface); border: 1px solid var(--color-border);
-    font-size: var(--fs-sm); font-weight: 600; color: var(--color-text-soft); cursor: pointer;
+    padding: 8px 14px; border-radius: var(--r-pill);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    font-size: 13px; font-weight: 600;
+    color: var(--color-text-soft);
+    cursor: pointer;
+    transition: all var(--t-fast) var(--ease);
+    font-family: var(--font-sans);
   }
-  .filter-pill.is-active { background: var(--brand-700); color: #fff; border-color: var(--brand-700); }
+  .filter-pill:hover { border-color: var(--national-green-300); }
+  .filter-pill.is-active { background: var(--national-green); color: #fff; border-color: var(--national-green); }
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 22px; }
   @media (max-width: 800px) {
-    .row { grid-template-columns: 1fr; }
+    .row, .stats-row { grid-template-columns: 1fr; }
     .col-2 { grid-column: auto; }
   }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { text-align: start; color: var(--color-text-mute); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+  thead th { padding: 10px 4px; border-bottom: 1px solid var(--color-border); }
+  tbody td { padding: 12px 4px; border-bottom: 1px solid var(--color-border); font-size: 14px; }
+  tbody tr:hover { background: var(--color-surface-2); }
+
+  .incident-li { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--color-border); font-size: 14px; }
+  .incident-li:last-child { border-bottom: 0; }
+  .incident-li b { font-family: var(--font-mono); color: var(--national-green-700); }
 </style>
 </head>
-<body>
+<body class="with-fade-in">
 
-<header class="app-header">
-  <a class="app-header__brand" href="/">
-    <span class="app-header__brand-mark">DT</span>
-    <span>نقل دمشق</span>
-  </a>
-  <div class="app-header__spacer"></div>
-  <nav class="app-header__nav">
-    <a href="/admin/">الإدارة</a>
-    <a href="/dashboard/analytics.html" class="is-active">التحليلات</a>
-  </nav>
+<div class="flag-strip" aria-hidden="true">
+  <span class="flag-strip__green"></span>
+  <span class="flag-strip__white"></span>
+  <span class="flag-strip__black"></span>
+</div>
+
+<!-- Utility bar -->
+<div class="utility-bar">
+  <div class="container">
+    <span class="gov">الجمهورية العربية السورية · لوحة التحليلات</span>
+    <span class="right">
+      <a href="/admin/">الإدارة</a>
+      <span class="sep"></span>
+      <a href="/">الرئيسية</a>
+    </span>
+  </div>
+</div>
+
+<!-- Masthead -->
+<header class="masthead">
+  <div class="container">
+    <div class="masthead__emblem" aria-hidden="true">
+      <picture>
+        <source srcset="/assets/identity/sy-emblem-eagle.avif" type="image/avif">
+        <img src="/assets/identity/sy-emblem-eagle.png" alt="">
+      </picture>
+    </div>
+    <div class="masthead__text">
+      <h1>التحليلات</h1>
+      <span class="masthead__tag">مؤشرات أداء الأسطول والخطوط</span>
+    </div>
+    <div class="masthead__en">
+      <strong>Analytics</strong>
+      Fleet & route insights
+    </div>
+  </div>
 </header>
 
+<!-- Sticky nav -->
+<nav class="nav-bar" id="primary-nav" aria-label="رئيسية">
+  <div class="container">
+    <a href="/admin/">النظرة العامة</a>
+    <a href="/admin/vehicles.html">الحافلات</a>
+    <a href="/admin/users.html">المستخدمون</a>
+    <a href="/admin/routes.html">الخطوط</a>
+    <a href="/dashboard/analytics.html" class="is-active">التحليلات</a>
+    <a href="/visual-identity.html">الهوية</a>
+  </div>
+</nav>
+
 <main class="page">
-  <div class="cluster between mb-4">
-    <div>
-      <h1 style="margin:0">التحليلات</h1>
-      <p class="muted" style="margin:0">مؤشرات أداء الأسطول والخطوط.</p>
+  <div class="topbar">
+    <div class="pagetitle">
+      <h1>أداء الشبكة</h1>
+      <p>مؤشرات الرحلات، الدقّة، الإشغال، والحوادث.</p>
     </div>
     <div class="filter-bar">
       <button class="filter-pill" data-range="24h">آخر ٢٤ ساعة</button>
@@ -67,33 +126,45 @@
     </div>
   </div>
 
-  <div class="row mb-4">
-    <div class="stat"><span class="stat__label">رحلات هذا الأسبوع</span><span class="stat__value" id="m-trips">—</span><span class="stat__sub" id="m-trips-d">—</span></div>
-    <div class="stat"><span class="stat__label">دقّة المواعيد</span><span class="stat__value" id="m-ontime">—</span><span class="stat__sub">على الموعد ±٣ د</span></div>
-    <div class="stat"><span class="stat__label">انتهاكات السرعة</span><span class="stat__value" id="m-speed">—</span><span class="stat__sub">≥ ٧٠ كم/س داخل المدينة</span></div>
+  <div class="stats-row">
+    <div class="stat-card reveal">
+      <span class="stat__label">رحلات هذا الأسبوع</span>
+      <span class="stat__value" id="m-trips">—</span>
+      <span class="stat__trend up" id="m-trips-d">—</span>
+    </div>
+    <div class="stat-card reveal">
+      <span class="stat__label">دقّة المواعيد</span>
+      <span class="stat__value" id="m-ontime">—</span>
+      <span class="stat__trend up">على الموعد ±٣ د</span>
+    </div>
+    <div class="stat-card reveal">
+      <span class="stat__label">انتهاكات السرعة</span>
+      <span class="stat__value" id="m-speed">—</span>
+      <span class="stat__trend down">≥ ٧٠ كم/س داخل المدينة</span>
+    </div>
   </div>
 
   <section class="row">
-    <div class="chart col-2">
+    <div class="chart col-2 reveal">
       <h2>الرحلات خلال الأسبوع</h2>
       <svg id="trips-chart" viewBox="0 0 600 220" width="100%" height="220" aria-label="مخطط الرحلات"></svg>
     </div>
-    <div class="chart">
+    <div class="chart reveal">
       <h2>توزيع الإشغال</h2>
       <svg id="occ-chart" viewBox="0 0 220 220" width="100%" height="220" aria-label="مخطط الإشغال"></svg>
     </div>
   </section>
 
-  <section class="row mt-4">
-    <div class="chart col-2">
+  <section class="row" style="margin-top: 16px">
+    <div class="chart col-2 reveal">
       <h2>أداء الخطوط</h2>
       <div id="route-table"></div>
     </div>
-    <div class="chart">
+    <div class="chart reveal">
       <h2>أكثر الحوادث شيوعاً</h2>
-      <ul id="incident-list" style="padding-inline-start:var(--s-5);margin:0">
-        <li class="muted">جارٍ التحميل…</li>
-      </ul>
+      <div id="incident-list">
+        <div style="color:var(--color-text-mute);font-size:13px">جارٍ التحميل…</div>
+      </div>
     </div>
   </section>
 </main>
@@ -113,7 +184,6 @@ async function api(path) {
   } catch (_) { return null; }
 }
 
-// ----- Filter pills -----
 document.querySelectorAll('.filter-pill').forEach(p => {
   p.addEventListener('click', () => {
     document.querySelectorAll('.filter-pill').forEach(o => o.classList.remove('is-active'));
@@ -122,7 +192,6 @@ document.querySelectorAll('.filter-pill').forEach(p => {
   });
 });
 
-// ----- Bars chart (SVG, no library) -----
 function drawBars(svgEl, values, labels) {
   while (svgEl.firstChild) svgEl.removeChild(svgEl.firstChild);
   const ns = 'http://www.w3.org/2000/svg';
@@ -136,7 +205,7 @@ function drawBars(svgEl, values, labels) {
     const r = document.createElementNS(ns, 'rect');
     r.setAttribute('x', x); r.setAttribute('y', y);
     r.setAttribute('width', bw); r.setAttribute('height', h);
-    r.setAttribute('rx', 6); r.setAttribute('fill', '#00876f');
+    r.setAttribute('rx', 4); r.setAttribute('fill', '#0E5650');
     svgEl.appendChild(r);
     const t = document.createElementNS(ns,'text');
     t.setAttribute('x', x + bw/2); t.setAttribute('y', H - 8);
@@ -145,15 +214,14 @@ function drawBars(svgEl, values, labels) {
     t.textContent = labels[i];
     svgEl.appendChild(t);
     const tv = document.createElementNS(ns,'text');
-    tv.setAttribute('x', x + bw/2); tv.setAttribute('y', y - 4);
+    tv.setAttribute('x', x + bw/2); tv.setAttribute('y', y - 6);
     tv.setAttribute('text-anchor','middle'); tv.setAttribute('font-size','11');
-    tv.setAttribute('fill','#002623'); tv.setAttribute('font-weight','700');
+    tv.setAttribute('fill','#082B25'); tv.setAttribute('font-weight','700');
     tv.textContent = arDigit(v);
     svgEl.appendChild(tv);
   });
 }
 
-// ----- Donut chart (SVG) -----
 function drawDonut(svgEl, segs) {
   while (svgEl.firstChild) svgEl.removeChild(svgEl.firstChild);
   const ns = 'http://www.w3.org/2000/svg';
@@ -173,7 +241,6 @@ function drawDonut(svgEl, segs) {
     svgEl.appendChild(path);
     a = a2;
   });
-  // legend
   let ly = 200;
   segs.forEach(s => {
     const sw = document.createElementNS(ns,'rect');
@@ -187,7 +254,6 @@ function drawDonut(svgEl, segs) {
   });
 }
 
-// ----- Loaders -----
 async function loadAll(range='7d') {
   const overview = await api('/api/admin/analytics/overview?range='+range) || {};
 
@@ -196,30 +262,29 @@ async function loadAll(range='7d') {
   $('#m-ontime').textContent = overview.on_time_pct != null ? Math.round(overview.on_time_pct)+'٪' : '—';
   $('#m-speed').textContent = arDigit(overview.speed_violations);
 
-  // Trips per day — fall back to mock distribution if no data
   const labels = ['س','ح','إ','ث','أ','خ','ج'];
   const series = overview.trips_by_day || [120,140,180,160,210,190,205];
   drawBars($('#trips-chart'), series, labels);
 
   drawDonut($('#occ-chart'), overview.occupancy_buckets || [
-    { label: 'فارغ <٢٠٪', value: 18, color: '#aedccc' },
-    { label: 'متوسط', value: 52, color: '#00876f' },
-    { label: 'ممتلئ >٨٠٪', value: 30, color: '#b97a14' },
+    { label: 'فارغ <٢٠٪', value: 18, color: '#DCEAE7' },
+    { label: 'متوسط', value: 52, color: '#0E5650' },
+    { label: 'ممتلئ >٨٠٪', value: 30, color: '#C9A95B' },
   ]);
 
   const routes = await api('/api/routes') || [];
   $('#route-table').innerHTML = `
-    <table style="width:100%;border-collapse:collapse">
-      <thead><tr style="text-align:start;color:var(--color-text-mute);font-size:var(--fs-xs);text-transform:uppercase">
-        <th style="padding:8px 4px">الخط</th><th style="padding:8px 4px">رحلات</th><th style="padding:8px 4px">دقة</th><th style="padding:8px 4px">إشغال</th>
+    <table>
+      <thead><tr>
+        <th>الخط</th><th>رحلات</th><th>دقة</th><th>إشغال</th>
       </tr></thead>
       <tbody>
       ${routes.slice(0,8).map(r => `
-        <tr style="border-top:1px solid var(--color-border)">
-          <td style="padding:10px 4px"><span class="badge badge--brand">${r.code || r.short_name || (r.id+'').slice(0,3)}</span> ${r.name_ar || r.name || ''}</td>
-          <td style="padding:10px 4px">${arDigit(r.trips || Math.floor(Math.random()*80)+40)}</td>
-          <td style="padding:10px 4px">${arDigit(r.on_time || Math.floor(Math.random()*15)+80)}٪</td>
-          <td style="padding:10px 4px">${arDigit(r.occupancy || Math.floor(Math.random()*30)+40)}٪</td>
+        <tr>
+          <td><span class="badge badge--brand">${r.code || r.short_name || (r.id+'').slice(0,3)}</span> ${r.name_ar || r.name || ''}</td>
+          <td>${arDigit(r.trips || Math.floor(Math.random()*80)+40)}</td>
+          <td>${arDigit(r.on_time || Math.floor(Math.random()*15)+80)}٪</td>
+          <td>${arDigit(r.occupancy || Math.floor(Math.random()*30)+40)}٪</td>
         </tr>`).join('')}
       </tbody>
     </table>
@@ -230,8 +295,23 @@ async function loadAll(range='7d') {
     { type:'انحراف',   count: 7 },
     { type:'كثافة',    count: 4 },
     { type:'صيانة',    count: 2 },
-  ]).map(x => `<li>${x.type} — <strong>${arDigit(x.count)}</strong></li>`).join('');
+  ]).map(x => `<div class="incident-li"><span>${x.type}</span><b>${arDigit(x.count)}</b></div>`).join('');
 }
+
+// Sticky-nav scroll shadow
+const nav = $('#primary-nav');
+window.addEventListener('scroll', () => {
+  if (nav) nav.classList.toggle('is-scrolled', window.scrollY > 8);
+}, { passive: true });
+
+// Reveal-on-scroll
+const reveals = document.querySelectorAll('.reveal');
+if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-visible'); io.unobserve(e.target); } });
+  }, { threshold: 0.12 });
+  reveals.forEach((el) => io.observe(el));
+} else { reveals.forEach((el) => el.classList.add('is-visible')); }
 
 window.addEventListener('DOMContentLoaded', () => loadAll('7d'));
 </script>

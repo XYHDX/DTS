@@ -19,28 +19,35 @@
 <link rel="stylesheet" href="/lib/design-system.css">
 
 <style>
-  .hero {
-    background: linear-gradient(180deg, var(--national-green-50) 0%, var(--color-bg) 100%);
-    color: var(--color-text);
-    padding-block: var(--s-12) var(--s-8);
-    border-bottom: 1px solid var(--color-border);
+  /* Hero composition — eagle + headline, with pattern band styling already in design-system.css */
+  .hero-band { padding: 80px 0 120px; }
+  .hero-band .container { display: grid; gap: 48px; grid-template-columns: 1fr; align-items: center; }
+  @media (min-width: 900px) { .hero-band .container { grid-template-columns: 1.3fr 1fr; } }
+  .hero-band h1 { font-size: clamp(2rem, 4.5vw, 3.4rem); line-height: 1.15; margin: 18px 0 0; }
+  .hero-band p { font-size: 18px; line-height: 1.75; margin: 18px 0 0; max-width: 56ch; }
+  .hero-band .meta { display: flex; gap: 28px; flex-wrap: wrap; margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,.18); color: rgba(255,255,255,.7); font-size: 13px; }
+  .hero-band .meta b { color: var(--national-gold); font-weight: 600; }
+  .hero-band .cta-row { display: flex; gap: 12px; margin-top: 26px; flex-wrap: wrap; }
+  .hero-emblem-card {
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 12px; padding: 28px; text-align: center;
+    backdrop-filter: blur(6px);
   }
-  .hero h1 {
-    margin: 0 0 var(--s-3);
-    font-size: clamp(2rem, 4vw + 1rem, 3.4rem);
-    line-height: 1.15;
-    font-weight: 600;
-    color: var(--color-text);
-  }
-  [dir="rtl"] .hero h1 { font-weight: 700; }
-  .hero p { color: var(--color-text-soft); max-width: 56ch; margin: 0; font-size: var(--fs-lg); line-height: 1.65; }
-  .hero__cta { margin-top: var(--s-6); display: flex; flex-wrap: wrap; gap: var(--s-3); }
-  .stats-strip { margin-top: calc(-1 * var(--s-8)); z-index: 5; position: relative; }
-  .stats-strip .grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
-  .map-section { margin-top: var(--s-8); }
+  .hero-emblem-card img { width: 100%; max-width: 220px; margin-inline: auto; background: #fff; padding: 18px; border-radius: 6px; }
+  .hero-emblem-card figcaption { margin-top: 14px; color: var(--national-gold); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; }
+
+  /* Stats strip floats over the hero edge */
+  .stats-strip { margin-top: -56px; position: relative; z-index: 5; }
+  .stats-strip .grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 18px; }
+
+  /* Live map section */
+  .map-section { margin-top: 56px; }
+  .map-section .header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
+  .map-section h2 { font-size: 24px; font-weight: 700; margin: 0; font-family: var(--font-sans); }
   .map-wrap {
     height: 520px;
-    border-radius: var(--r-lg);
+    border-radius: var(--r-md);
     overflow: hidden;
     box-shadow: var(--sh-md);
     border: 1px solid var(--color-border);
@@ -48,104 +55,190 @@
   }
   .map-legend {
     position: absolute;
-    inset-inline-start: var(--s-3);
-    top: var(--s-3);
+    inset-inline-start: 16px; top: 16px;
     background: var(--color-surface);
-    border-radius: var(--r-md);
-    padding: var(--s-3) var(--s-4);
+    border-radius: var(--r-sm); padding: 12px 14px;
     box-shadow: var(--sh-md);
-    font-size: var(--fs-sm);
-    z-index: 5;
+    font-size: 13px; z-index: 5;
   }
-  .map-legend .row { display:flex; gap: var(--s-2); align-items: center; }
-  .map-legend .row + .row { margin-top: var(--s-1); }
+  .map-legend .row { display: flex; gap: 8px; align-items: center; }
+  .map-legend .row + .row { margin-top: 4px; }
   .swatch { width: 12px; height: 12px; border-radius: 50%; }
-  .swatch--bus { background: var(--brand-500); border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.2); }
-  .swatch--stop { background: var(--gold-600); }
-  .route-grid { margin-top: var(--s-8); }
+  .swatch--bus { background: var(--national-green-500); border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.2); }
+  .swatch--stop { background: var(--national-gold); }
+
+  /* Routes section */
+  .routes-section { margin-top: 64px; }
+  .routes-section .grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
   .route-card {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: var(--s-3);
-    align-items: center;
+    background: var(--color-surface); border: 1px solid var(--color-border);
+    border-radius: var(--r-md); padding: 18px;
+    display: grid; grid-template-columns: auto 1fr auto;
+    gap: 14px; align-items: center;
+    transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
   }
+  .route-card:hover { transform: translateY(-2px); box-shadow: var(--sh-md); border-color: var(--national-green-300); }
   .route-card__chip {
-    background: var(--brand-100);
-    color: var(--brand-700);
-    font-weight: 700;
-    padding: var(--s-2) var(--s-3);
-    border-radius: var(--r-md);
-    font-size: var(--fs-sm);
+    background: var(--national-green-100); color: var(--national-green-700);
+    font-weight: 700; padding: 8px 12px; border-radius: var(--r-sm);
+    font-size: 14px; min-width: 44px; text-align: center;
   }
-  .feature-grid { margin-top: var(--s-8); }
-  .feature { padding: var(--s-5); border-radius: var(--r-lg); background: var(--color-surface); border: 1px solid var(--color-border); }
-  .feature__icon { width: 44px; height: 44px; border-radius: var(--r-md); background: var(--brand-50); color: var(--brand-600); display: grid; place-items: center; margin-bottom: var(--s-3); }
-  .footer-bar { margin-top: var(--s-16); padding-block: var(--s-8) var(--s-6); border-top: 1px solid var(--color-border); color: var(--color-text-mute); font-size: var(--fs-sm); }
-  .footer-bar .cluster { justify-content: space-between; }
+  .route-card__name { font-weight: 700; font-size: 15px; color: var(--color-text); margin: 0; }
+  .route-card__meta { color: var(--color-text-mute); font-size: 13px; margin-top: 2px; }
+
+  /* Features grid */
+  .features-section { margin-top: 64px; padding-bottom: 80px; }
+  .features-section .grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+  .feature {
+    background: var(--color-surface); border: 1px solid var(--color-border);
+    border-radius: var(--r-md); padding: 24px;
+    transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+    position: relative; overflow: hidden;
+  }
+  .feature::before {
+    content: ""; position: absolute; top: 0; inset-inline-start: 0; bottom: 0;
+    width: 3px; background: var(--national-gold);
+    transform: scaleY(0); transform-origin: top;
+    transition: transform var(--t-base) cubic-bezier(.16, 1, .3, 1);
+  }
+  .feature:hover { transform: translateY(-3px); box-shadow: var(--sh-lg); border-color: var(--national-gold); }
+  .feature:hover::before { transform: scaleY(1); }
+  .feature__icon {
+    width: 44px; height: 44px; border-radius: var(--r-sm);
+    background: var(--national-green-100); color: var(--national-green);
+    display: grid; place-items: center; margin-bottom: 14px;
+    transition: transform var(--t-base) cubic-bezier(.16, 1, .3, 1), background var(--t-fast) var(--ease);
+  }
+  .feature:hover .feature__icon { background: var(--national-gold-100); color: var(--national-gold-700); transform: rotate(-6deg) scale(1.05); }
+  .feature h3 { font-size: 16px; font-weight: 700; margin: 0 0 6px; color: var(--color-text); font-family: var(--font-sans); }
+  .feature p { font-size: 14px; color: var(--color-text-mute); margin: 0; line-height: 1.6; }
+
   @media (max-width: 640px) {
-    .hero { padding-block: var(--s-8) var(--s-6); border-radius: 0 0 var(--r-lg) var(--r-lg); }
+    .hero-band { padding: 56px 0 90px; }
+    .stats-strip { margin-top: -40px; }
     .map-wrap { height: 380px; }
   }
 </style>
 </head>
-<body>
+<body class="with-fade-in">
 
-<!-- Three-band national flag accent strip — present on every page -->
+<!-- Three-band national flag accent strip -->
 <div class="flag-strip" aria-hidden="true">
   <span class="flag-strip__green"></span>
   <span class="flag-strip__white"></span>
   <span class="flag-strip__black"></span>
 </div>
 
-<header class="app-header" role="banner">
-  <a class="app-header__brand" href="/">
-    <span class="app-header__brand-mark" aria-hidden="true">DT</span>
-    <span data-i18n="app.title">نقل دمشق</span>
-  </a>
-  <div class="app-header__spacer"></div>
-  <nav class="app-header__nav" aria-label="رئيسية">
-    <a href="/" class="is-active" data-i18n="header.home">الرئيسية</a>
-    <a href="/passenger/" data-i18n="header.passenger">للركاب</a>
-    <a href="/driver/" class="hide-mobile" data-i18n="header.driver">للسائقين</a>
-    <a href="/admin/login.html" class="hide-mobile" data-i18n="header.admin">دخول الإدارة</a>
-    <a href="/visual-identity.html" class="hide-mobile">الهوية</a>
-    <button id="lang-toggle" class="btn btn--sm btn--ghost" data-i18n-toggle data-i18n="header.toggleLang" data-i18n-aria-label="header.toggleLang">EN</button>
-  </nav>
+<!-- Utility bar -->
+<div class="utility-bar">
+  <div class="container">
+    <span class="gov">الجمهورية العربية السورية · حكومة مفتوحة المصدر</span>
+    <span class="right">
+      <a href="/passenger/" data-i18n="header.passenger">للركاب</a>
+      <span class="sep"></span>
+      <a href="/driver/" data-i18n="header.driver">للسائقين</a>
+      <span class="sep"></span>
+      <a href="/admin/login.html" data-i18n="header.admin">الإدارة</a>
+    </span>
+  </div>
+</div>
+
+<!-- Masthead -->
+<header class="masthead">
+  <div class="container">
+    <div class="masthead__emblem" aria-hidden="true">
+      <picture>
+        <source srcset="/assets/identity/sy-emblem-eagle.avif" type="image/avif">
+        <img src="/assets/identity/sy-emblem-eagle.png" alt="">
+      </picture>
+    </div>
+    <div class="masthead__text">
+      <h1 data-i18n="app.title">نقل دمشق · منصة وطنية لتتبّع الحافلات</h1>
+      <span class="masthead__tag">v4.0 · مايو ٢٠٢٦</span>
+    </div>
+    <div class="masthead__en">
+      <strong>Damascus Transit</strong>
+      Real-time public transit
+    </div>
+  </div>
 </header>
 
-<section class="hero">
+<!-- Sticky nav -->
+<nav class="nav-bar" id="primary-nav" aria-label="رئيسية">
   <div class="container">
-    <span class="eyebrow" data-i18n="hero.eyebrow">الجمهورية العربية السورية · نظام النقل العام</span>
-    <h1 data-i18n="hero.title">تتبع حافلات دمشق في الوقت الحقيقي</h1>
-    <p data-i18n="hero.sub">منصة وطنية مفتوحة المصدر تربط الركاب والسائقين والمشرفين بمواقع الحافلات وأوقات الوصول لحظياً، بدون إعلانات وبدون مقابل.</p>
-    <div class="hero__cta">
-      <a href="/passenger/" class="btn btn--lg" data-i18n="hero.ctaPrimary">ابحث عن خطك</a>
-      <a href="#live-map" class="btn btn--ghost btn--lg" data-i18n="hero.ctaSecondary">عرض الخريطة المباشرة</a>
+    <a href="/" class="is-active" data-i18n="header.home">الرئيسية</a>
+    <a href="/passenger/" data-i18n="header.passenger">للركاب</a>
+    <a href="/driver/" data-i18n="header.driver">للسائقين</a>
+    <a href="/admin/login.html" data-i18n="header.admin">دخول الإدارة</a>
+    <a href="/visual-identity.html">الهوية البصرية</a>
+    <button id="lang-toggle" class="nav-bar__lang-toggle" data-i18n-toggle data-i18n="header.toggleLang">EN</button>
+  </div>
+</nav>
+
+<!-- Hero band -->
+<section class="hero-band">
+  <div class="container">
+    <div class="reveal">
+      <span class="eyebrow" data-i18n="hero.eyebrow">الجمهورية العربية السورية · نظام النقل العام</span>
+      <h1 data-i18n="hero.title">تتبع حافلات دمشق في الوقت الحقيقي</h1>
+      <p data-i18n="hero.sub">منصة وطنية مفتوحة المصدر تربط الركاب والسائقين والمشرفين بمواقع الحافلات وأوقات الوصول لحظياً، بدون إعلانات وبدون مقابل.</p>
+      <div class="cta-row">
+        <a href="/passenger/" class="btn btn--gold-solid btn--lg" data-i18n="hero.ctaPrimary">ابحث عن خطك</a>
+        <a href="#live-map" class="btn btn--outline btn--lg" style="color:#fff;border-color:rgba(255,255,255,.5)" data-i18n="hero.ctaSecondary">عرض الخريطة المباشرة</a>
+      </div>
+      <div class="meta">
+        <span><b>الإصدار</b> · 4.0</span>
+        <span><b>التحديث</b> · كل ٥ ثوانٍ</span>
+        <span><b>الترخيص</b> · MIT</span>
+      </div>
     </div>
-    <div class="cluster mt-6">
-      <span class="badge badge--success"><span class="live-dot" aria-hidden="true"></span> <span data-i18n="hero.liveBadge">البيانات تُحدَّث كل ٥ ثوانٍ</span></span>
-      <span class="badge badge--star">★ ★ ★</span>
-    </div>
+    <figure class="hero-emblem-card reveal">
+      <picture>
+        <source srcset="/assets/identity/sy-emblem-eagle.avif" type="image/avif">
+        <img src="/assets/identity/sy-emblem-eagle.png" alt="الشعار الرسمي">
+      </picture>
+      <figcaption>الشعار الرسمي · النسر الذهبي</figcaption>
+    </figure>
   </div>
 </section>
 
-<main id="main" class="container stats-strip">
-  <div class="grid" id="stats-grid" aria-label="إحصاءات الأسطول الحالية">
-    <div class="stat"><span class="stat__label" data-i18n="stat.active">حافلات عاملة</span><span class="stat__value" id="stat-active"><span class="skeleton" style="display:inline-block;width:60px;height:1.4em"></span></span><span class="stat__sub" id="stat-active-sub" data-i18n="stat.activeFrom">من إجمالي الأسطول</span></div>
-    <div class="stat"><span class="stat__label" data-i18n="stat.routes">عدد الخطوط</span><span class="stat__value" id="stat-routes">—</span><span class="stat__sub" data-i18n="stat.routesSub">تغطي محاور المدينة</span></div>
-    <div class="stat"><span class="stat__label" data-i18n="stat.stops">عدد المحطات</span><span class="stat__value" id="stat-stops">—</span><span class="stat__sub" data-i18n="stat.stopsSub">منتشرة في دمشق</span></div>
-    <div class="stat"><span class="stat__label" data-i18n="stat.occupancy">متوسط الإشغال</span><span class="stat__value" id="stat-occupancy">—</span><span class="stat__sub" data-i18n="stat.occupancySub">حسب آخر تحديث</span></div>
+<main id="main" class="container">
+  <!-- Stats strip -->
+  <div class="stats-strip">
+    <div class="grid" id="stats-grid" aria-label="إحصاءات الأسطول الحالية">
+      <div class="stat-card reveal">
+        <span class="stat__label" data-i18n="stat.active">حافلات عاملة</span>
+        <span class="stat__value" id="stat-active"><span class="skeleton" style="display:inline-block;width:60px;height:1em"></span></span>
+        <span class="stat__trend up" id="stat-active-sub" data-i18n="stat.activeFrom">من إجمالي الأسطول</span>
+      </div>
+      <div class="stat-card reveal">
+        <span class="stat__label" data-i18n="stat.routes">عدد الخطوط</span>
+        <span class="stat__value" id="stat-routes">—</span>
+        <span class="stat__trend up" data-i18n="stat.routesSub">تغطي محاور المدينة</span>
+      </div>
+      <div class="stat-card reveal">
+        <span class="stat__label" data-i18n="stat.stops">عدد المحطات</span>
+        <span class="stat__value" id="stat-stops">—</span>
+        <span class="stat__trend up" data-i18n="stat.stopsSub">منتشرة في دمشق</span>
+      </div>
+      <div class="stat-card reveal">
+        <span class="stat__label" data-i18n="stat.occupancy">متوسط الإشغال</span>
+        <span class="stat__value" id="stat-occupancy">—</span>
+        <span class="stat__trend up" data-i18n="stat.occupancySub">حسب آخر تحديث</span>
+      </div>
+    </div>
   </div>
 
+  <!-- Live map -->
   <section class="map-section" id="live-map" aria-labelledby="map-h">
-    <div class="cluster between mb-4">
-      <h2 id="map-h" class="card__title" style="margin:0;font-size:var(--fs-xl)" data-i18n="map.title">الخريطة المباشرة</h2>
+    <div class="header-row reveal">
+      <h2 id="map-h" data-i18n="map.title">الخريطة المباشرة</h2>
       <span class="badge badge--success" id="conn-badge">
         <span class="live-dot" aria-hidden="true"></span>
         <span data-i18n="map.connected">متصل</span>
       </span>
     </div>
-    <div class="map-wrap">
+    <div class="map-wrap reveal">
       <div id="map" class="map" role="application" aria-label="خريطة الحافلات المباشرة"></div>
       <div class="map-legend" aria-hidden="true">
         <div class="row"><span class="swatch swatch--bus"></span><span>حافلة</span></div>
@@ -154,56 +247,98 @@
     </div>
   </section>
 
-  <section class="route-grid" aria-labelledby="routes-h">
-    <div class="cluster between mb-4">
-      <h2 id="routes-h" class="card__title" style="margin:0;font-size:var(--fs-xl)">الخطوط</h2>
-      <a href="/passenger/" class="btn btn--ghost btn--sm">عرض الكل ←</a>
+  <!-- Routes -->
+  <section class="routes-section" aria-labelledby="routes-h">
+    <div class="header-row reveal">
+      <h2 id="routes-h" style="font-size:24px;font-weight:700;margin:0;font-family:var(--font-sans)">الخطوط الرئيسية</h2>
+      <a href="/passenger/" class="btn btn--link">عرض الكل ←</a>
     </div>
-    <div class="grid grid-2" id="route-list" aria-busy="true">
-      <div class="card"><div class="skeleton" style="height:72px"></div></div>
-      <div class="card"><div class="skeleton" style="height:72px"></div></div>
-      <div class="card"><div class="skeleton" style="height:72px"></div></div>
+    <div class="grid" id="route-list" aria-busy="true">
+      <div class="route-card"><div class="skeleton" style="width:100%;height:48px"></div></div>
+      <div class="route-card"><div class="skeleton" style="width:100%;height:48px"></div></div>
+      <div class="route-card"><div class="skeleton" style="width:100%;height:48px"></div></div>
     </div>
   </section>
 
-  <section class="feature-grid" aria-labelledby="features-h">
-    <h2 id="features-h" class="card__title" style="font-size:var(--fs-xl)">لماذا نقل دمشق؟</h2>
-    <div class="grid grid-3">
-      <article class="feature">
+  <!-- Features -->
+  <section class="features-section" aria-labelledby="features-h">
+    <div class="header-row reveal" style="margin-bottom: 32px">
+      <h2 id="features-h" style="font-size:24px;font-weight:700;margin:0;font-family:var(--font-sans)">لماذا نقل دمشق؟</h2>
+    </div>
+    <div class="grid">
+      <article class="feature reveal">
         <div class="feature__icon" aria-hidden="true">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6m0 0a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0 14v6"/></svg>
         </div>
-        <h3 class="card__title">تتبع لحظي</h3>
-        <p class="muted">مواقع الحافلات تُبَث عبر SSE كل ٥ ثوانٍ. أوقات الوصول دقيقة محسوبة من PostGIS.</p>
+        <h3>تتبع لحظي</h3>
+        <p>مواقع الحافلات تُبَث عبر SSE كل ٥ ثوانٍ. أوقات الوصول دقيقة محسوبة من PostGIS.</p>
       </article>
-      <article class="feature">
+      <article class="feature reveal">
         <div class="feature__icon" aria-hidden="true">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 10h18"/></svg>
         </div>
-        <h3 class="card__title">يعمل دون اتصال</h3>
-        <p class="muted">تطبيق ويب تقدُّمي (PWA) يخزن المحطات والخطوط محلياً ويعمل بدون شبكة.</p>
+        <h3>يعمل دون اتصال</h3>
+        <p>تطبيق ويب تقدُّمي (PWA) يخزن المحطات والخطوط محلياً ويعمل بدون شبكة.</p>
       </article>
-      <article class="feature">
+      <article class="feature reveal">
         <div class="feature__icon" aria-hidden="true">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
         </div>
-        <h3 class="card__title">خصوصية وأمان</h3>
-        <p class="muted">JWT مع RBAC، تشفير bcrypt، CSP صارم، ومراقبة الأخطاء عبر Sentry.</p>
+        <h3>خصوصية وأمان</h3>
+        <p>JWT مع RBAC، تشفير bcrypt، CSP صارم، ومراقبة الأخطاء عبر Sentry.</p>
       </article>
     </div>
   </section>
+</main>
 
-  <footer class="footer-bar">
-    <div class="cluster">
-      <div>© ٢٠٢٦ نقل دمشق — مشروع مفتوح المصدر تحت رخصة MIT.</div>
-      <div class="cluster gap-3">
-        <a href="https://github.com/actuatorsos/SyrianTransitSystem">GitHub</a>
-        <a href="/api/gtfs">GTFS</a>
-        <a href="/api/health">Health</a>
+<!-- Footer -->
+<footer class="foot">
+  <div class="container">
+    <div>
+      <h6>نقل دمشق</h6>
+      <p class="lede">منصة وطنية مفتوحة المصدر تربط الركاب والسائقين والمشرفين بمواقع الحافلات وأوقات الوصول لحظياً، بدون إعلانات وبدون مقابل.</p>
+      <div class="social-row">
+        <a href="https://github.com/XYHDX/DTS" target="_blank" rel="noopener" aria-label="GitHub">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.6 5.6.6 11.9c0 5 3.3 9.3 7.8 10.8.6.1.8-.2.8-.5v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.4-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.2 1.2.9-.3 1.9-.4 2.9-.4s2 .1 2.9.4c2.2-1.5 3.2-1.2 3.2-1.2.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.1 0 4.5-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.3v3.4c0 .3.2.7.8.5 4.5-1.5 7.8-5.8 7.8-10.8C23.4 5.6 18.3.5 12 .5Z"/></svg>
+        </a>
+        <a href="/api/gtfs" aria-label="GTFS feed">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1.5" fill="currentColor"/></svg>
+        </a>
+        <a href="/api/health" aria-label="API health">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg>
+        </a>
       </div>
     </div>
-  </footer>
-</main>
+    <div>
+      <h6>المنصة</h6>
+      <a href="/">الرئيسية</a>
+      <a href="/passenger/">للركاب</a>
+      <a href="/driver/">للسائقين</a>
+      <a href="/admin/login.html">دخول الإدارة</a>
+    </div>
+    <div>
+      <h6>الهوية</h6>
+      <a href="/visual-identity.html">دليل الهوية</a>
+      <a href="/visual-identity.html#palette">الألوان</a>
+      <a href="/visual-identity.html#type">الخطوط</a>
+      <a href="/visual-identity.html#patterns">الزخارف</a>
+    </div>
+    <div>
+      <h6>المرجع</h6>
+      <a href="https://github.com/XYHDX/DTS" target="_blank" rel="noopener">GitHub · المصدر المفتوح</a>
+      <a href="/api/gtfs">GTFS Feed</a>
+      <a href="/api/health">API Health</a>
+    </div>
+    <div class="copy">
+      <span>© ٢٠٢٦ نقل دمشق · الجمهورية العربية السورية · رخصة MIT</span>
+      <span>صُنع في دمشق · v4.0</span>
+    </div>
+  </div>
+</footer>
+
+<button class="scroll-top" id="scroll-top" aria-label="عودة إلى الأعلى">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6,15 12,9 18,15"/></svg>
+</button>
 
 <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script>
@@ -236,19 +371,17 @@ async function loadRoutes() {
   const wrap = $('#route-list');
   wrap.setAttribute('aria-busy', 'false');
   if (!routes || !routes.length) {
-    wrap.innerHTML = '<div class="card muted center">لا توجد خطوط حالياً.</div>';
+    wrap.innerHTML = '<div class="route-card muted center" style="grid-template-columns:1fr">لا توجد خطوط حالياً.</div>';
     return;
   }
   wrap.innerHTML = routes.slice(0, 8).map(r => `
-    <a class="card card--hover" href="/passenger/?route=${encodeURIComponent(r.id)}">
-      <div class="route-card">
-        <span class="route-card__chip">${r.code || r.short_name || (r.id+'').slice(0,3)}</span>
-        <div>
-          <div class="card__title" style="margin:0;font-size:var(--fs-md)">${r.name_ar || r.name || 'خط'}</div>
-          <div class="card__meta">${r.from || ''} ↔ ${r.to || r.name_en || ''}</div>
-        </div>
-        <span class="badge badge--brand">${fmt(r.stops_count)} محطة</span>
+    <a class="route-card" href="/passenger/?route=${encodeURIComponent(r.id)}">
+      <span class="route-card__chip">${r.code || r.short_name || (r.id+'').slice(0,3)}</span>
+      <div>
+        <div class="route-card__name">${r.name_ar || r.name || 'خط'}</div>
+        <div class="route-card__meta">${r.from || ''} ↔ ${r.to || r.name_en || ''}</div>
       </div>
+      <span class="badge badge--brand">${fmt(r.stops_count)} محطة</span>
     </a>
   `).join('');
 }
@@ -274,7 +407,7 @@ function initMap() {
       source: 'vehicles',
       paint: {
         'circle-radius': 7,
-        'circle-color': '#00876f',
+        'circle-color': '#1F7068',
         'circle-stroke-width': 2,
         'circle-stroke-color': '#fff',
       }
@@ -309,8 +442,29 @@ function openStream() {
   };
 }
 
-// i18n toggle is wired via data-i18n-toggle on the button (see lib/i18n.js).
-// When the language changes, re-render the dynamic strings:
+// Sticky nav scroll shadow + scroll-to-top
+const nav = $('#primary-nav');
+const stb = $('#scroll-top');
+window.addEventListener('scroll', () => {
+  const y = window.scrollY;
+  if (nav) nav.classList.toggle('is-scrolled', y > 8);
+  if (stb) stb.classList.toggle('is-visible', y > 600);
+}, { passive: true });
+if (stb) stb.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+// Reveal-on-scroll
+const reveals = document.querySelectorAll('.reveal');
+if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (e.isIntersecting) { e.target.classList.add('is-visible'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+  reveals.forEach((el) => io.observe(el));
+} else {
+  reveals.forEach((el) => el.classList.add('is-visible'));
+}
+
 document.addEventListener('i18n:change', () => { loadStats(); loadRoutes(); });
 
 window.addEventListener('DOMContentLoaded', () => {

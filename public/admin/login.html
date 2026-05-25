@@ -18,166 +18,206 @@
   body {
     min-height: 100vh;
     display: grid;
-    place-items: center;
-    background:
-      radial-gradient(ellipse at top right, rgba(0,108,53,.10), transparent 60%),
-      radial-gradient(ellipse at bottom left, rgba(206,17,38,.06), transparent 60%),
-      var(--color-bg);
-    padding: var(--s-4);
+    grid-template-rows: auto 1fr auto;
+    background: var(--national-green-900);
+    color: #fff;
+    position: relative;
+    overflow-x: hidden;
   }
-  .login-shell { width: 100%; max-width: 420px; }
-  .login-brand {
-    display: flex; align-items: center; gap: var(--s-3);
-    color: #fff; margin-bottom: var(--s-5);
+  body::before {
+    content: ""; position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><g fill='none' stroke='%23C9A95B' stroke-width='1' stroke-opacity='0.16' stroke-linejoin='round' stroke-linecap='round'><polygon points='68,40 51,45 60,60 45,51 40,68 35,51 20,60 29,45 12,40 29,35 20,20 35,29 40,12 45,29 60,20 51,35'/><path d='M68,40 L80,36.5 M68,40 L80,43.5 M40,68 L36.5,80 M40,68 L43.5,80 M12,40 L0,36.5 M12,40 L0,43.5 M40,12 L36.5,0 M40,12 L43.5,0 M60,20 L72,0 M60,20 L80,8 M60,60 L80,72 M60,60 L72,80 M20,60 L8,80 M20,60 L0,72 M20,20 L0,8 M20,20 L8,0'/><polyline points='8,0 8,3.3 3.3,8 0,8'/><polyline points='80,8 76.7,8 72,3.3 72,0'/><polyline points='72,80 72,76.7 76.7,72 80,72'/><polyline points='8,80 8,76.7 3.3,72 0,72'/></g></svg>");
+    background-size: 80px 80px; pointer-events: none;
+    z-index: 0;
   }
-  .login-brand__mark {
-    width: 44px; height: 44px; border-radius: 12px;
-    background: linear-gradient(135deg, var(--brand-500), var(--gold-600));
-    display: grid; place-items: center; color:#fff; font-weight:800;
+  body::after {
+    content: ""; position: fixed; inset: 0;
+    background: radial-gradient(ellipse at 80% 20%, rgba(201,169,91,.18), transparent 55%);
+    pointer-events: none;
+    z-index: 0;
   }
+  body > * { position: relative; z-index: 1; }
+
+  .login-mast {
+    display: flex; align-items: center; gap: 14px;
+    padding: 24px 24px 0;
+    color: #fff;
+  }
+  .login-mast__mark {
+    width: 48px; height: 48px;
+    border-radius: 8px; background: #fff; padding: 6px;
+    display: grid; place-items: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,.20);
+  }
+  .login-mast__mark img { width: 100%; height: 100%; object-fit: contain; }
+  .login-mast__text b { font-family: var(--font-sans); font-size: 16px; font-weight: 700; display: block; }
+  .login-mast__text small { color: var(--national-gold); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; }
+
+  .login-wrap { display: grid; place-items: center; padding: 24px; }
+  .login-shell { width: 100%; max-width: 440px; }
+
   .login-card {
     background: var(--color-surface);
-    border-radius: var(--r-lg);
-    padding: var(--s-6);
-    box-shadow: var(--sh-lg);
-  }
-  .login-meta {
-    color: var(--color-text-mute);
-    font-size: var(--fs-sm);
-    margin-top: var(--s-4);
-    text-align: center;
-  }
-  .role-pills {
-    display: flex; gap: var(--s-2);
-    margin-bottom: var(--s-5);
-  }
-  .role-pill {
-    flex: 1;
-    padding: var(--s-2);
-    border: 1px solid var(--color-border);
     border-radius: var(--r-md);
+    padding: 32px;
+    box-shadow: 0 30px 80px rgba(0,0,0,.40);
+    color: var(--color-text);
+    border-top: 4px solid var(--national-gold);
+  }
+  .login-card h1 {
+    font-family: var(--font-sans);
+    font-size: 24px; font-weight: 700;
+    margin: 0 0 6px;
+    color: var(--color-text);
+  }
+  [dir="rtl"] .login-card h1 { font-family: var(--font-sans); }
+  .login-card .sub { color: var(--color-text-mute); font-size: 14px; margin: 0 0 22px; }
+
+  .role-pills { display: flex; gap: 8px; margin-bottom: 22px; }
+  .role-pill {
+    flex: 1; padding: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-sm);
     text-align: center;
-    font-size: var(--fs-sm);
+    font-size: 13px; font-weight: 600;
     color: var(--color-text-soft);
-    cursor: pointer;
+    cursor: pointer; background: var(--color-surface);
     transition: all var(--t-fast) var(--ease);
+    font-family: var(--font-sans);
   }
+  .role-pill:hover { border-color: var(--national-green-300); color: var(--national-green); }
   .role-pill.is-active {
-    background: var(--brand-100);
-    color: var(--brand-700);
-    border-color: var(--brand-500);
-    font-weight: 600;
+    background: var(--national-green-100);
+    color: var(--national-green-700);
+    border-color: var(--national-green);
+    font-weight: 700;
   }
+
   .password-toggle {
     position: absolute;
-    inset-inline-end: var(--s-3);
-    top: 50%;
-    transform: translateY(-50%);
+    inset-inline-end: 12px; top: 50%; transform: translateY(-50%);
     color: var(--color-text-mute);
-    padding: var(--s-1);
-    background: none;
+    padding: 4px; background: none; border: 0; cursor: pointer;
+    transition: color var(--t-fast) var(--ease);
   }
+  .password-toggle:hover { color: var(--national-green); }
   .field-pw { position: relative; }
   .field-pw input { padding-inline-end: 40px; }
+
   .submit-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: var(--s-2);
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 12px; flex-wrap: wrap; gap: 8px;
   }
-  .submit-row a { font-size: var(--fs-sm); }
+  .submit-row a { font-size: 13px; color: var(--national-green); font-weight: 600; }
+  .submit-row a:hover { text-decoration: none; color: var(--national-gold-700); }
+
+  .login-meta {
+    color: var(--color-text-mute);
+    font-size: 13px;
+    margin-top: 18px; text-align: center;
+  }
+  .login-meta a { color: var(--national-green); font-weight: 600; }
+
   .legal-bar {
     text-align: center;
-    margin-top: var(--s-4);
+    padding: 18px 24px;
     color: rgba(255,255,255,.55);
-    font-size: var(--fs-xs);
+    font-size: 12px;
   }
-  .legal-bar a { color: rgba(255,255,255,.75); }
+  .legal-bar a { color: rgba(255,255,255,.78); }
+  .legal-bar a:hover { color: var(--national-gold); text-decoration: none; }
+
+  .flag-strip-fixed { position: fixed; top: 0; inset-inline: 0; z-index: 50; height: 5px; display: flex; }
+  .flag-strip-fixed > span { flex: 1; }
+  .flag-strip-fixed > .green { background: var(--national-green); }
+  .flag-strip-fixed > .white { background: #fff; }
+  .flag-strip-fixed > .black { background: var(--ink-black); }
 </style>
 </head>
-<body>
+<body class="with-fade-in">
 
-<!-- National flag accent strip — pinned to the top of the viewport -->
-<div class="flag-strip" style="position:fixed;top:0;inset-inline:0;z-index:50" aria-hidden="true">
-  <span class="flag-strip__green"></span>
-  <span class="flag-strip__white"></span>
-  <span class="flag-strip__black"></span>
+<div class="flag-strip-fixed" aria-hidden="true">
+  <span class="green"></span>
+  <span class="white"></span>
+  <span class="black"></span>
 </div>
 
-<main class="login-shell" role="main">
-  <div class="login-brand">
-    <span class="login-brand__mark" aria-hidden="true">DT</span>
-    <div>
-      <div style="font-size:var(--fs-lg);font-weight:700">نقل دمشق</div>
-      <div style="font-size:var(--fs-sm);color:rgba(255,255,255,.6)">لوحة الإدارة</div>
-    </div>
+<header class="login-mast">
+  <span class="login-mast__mark" aria-hidden="true">
+    <picture>
+      <source srcset="/assets/identity/sy-emblem-eagle.avif" type="image/avif">
+      <img src="/assets/identity/sy-emblem-eagle.png" alt="">
+    </picture>
+  </span>
+  <div class="login-mast__text">
+    <b>نقل دمشق</b>
+    <small>لوحة الإدارة · v4.0</small>
   </div>
+</header>
 
-  <section class="login-card">
-    <h1 class="card__title" style="font-size:var(--fs-xl);margin-bottom:var(--s-2)">تسجيل الدخول</h1>
-    <p class="muted" style="margin-bottom:var(--s-5)">للوصول للوحة الإدارة، الموزّعين، والسائقين.</p>
+<main class="login-wrap" role="main">
+  <div class="login-shell">
+    <section class="login-card">
+      <h1>تسجيل الدخول</h1>
+      <p class="sub">للوصول للوحة الإدارة، الموزّعين، والسائقين.</p>
 
-    <div class="role-pills" role="tablist" aria-label="نوع الدخول">
-      <button type="button" class="role-pill is-active" data-role="admin">إدارة</button>
-      <button type="button" class="role-pill" data-role="dispatcher">موزّع</button>
-      <button type="button" class="role-pill" data-role="driver">سائق</button>
-    </div>
-
-    <form id="login-form" class="stack" autocomplete="on" novalidate>
-      <div class="field">
-        <label class="field__label" for="email">البريد الإلكتروني</label>
-        <input class="input" id="email" name="email" type="email" inputmode="email"
-               autocomplete="username" required>
+      <div class="role-pills" role="tablist" aria-label="نوع الدخول">
+        <button type="button" class="role-pill is-active" data-role="admin">إدارة</button>
+        <button type="button" class="role-pill" data-role="dispatcher">موزّع</button>
+        <button type="button" class="role-pill" data-role="driver">سائق</button>
       </div>
 
-      <div class="field">
-        <label class="field__label" for="password">كلمة المرور</label>
-        <div class="field-pw">
-          <input class="input" id="password" name="password" type="password"
-                 autocomplete="current-password" required minlength="6">
-          <button type="button" class="password-toggle" id="toggle-pw" aria-label="إظهار/إخفاء كلمة المرور">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-          </button>
+      <form id="login-form" autocomplete="on" novalidate>
+        <div class="field" style="margin-bottom:14px">
+          <label class="field__label" for="email">البريد الإلكتروني</label>
+          <input class="input" id="email" name="email" type="email" inputmode="email"
+                 autocomplete="username" required>
         </div>
-      </div>
 
-      <p id="error-msg" class="field__error hidden" role="alert">بيانات الدخول غير صحيحة</p>
+        <div class="field" style="margin-bottom:14px">
+          <label class="field__label" for="password">كلمة المرور</label>
+          <div class="field-pw">
+            <input class="input" id="password" name="password" type="password"
+                   autocomplete="current-password" required minlength="6">
+            <button type="button" class="password-toggle" id="toggle-pw" aria-label="إظهار/إخفاء كلمة المرور">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
 
-      <!-- Cloudflare Turnstile — invisible challenge.
-           Enable by setting window.TURNSTILE_SITE_KEY in a small inline script
-           inside your Vercel build (or via a CSP-friendly env injection). -->
-      <div id="turnstile-slot" class="hidden" style="margin: var(--s-3) 0"></div>
+        <p id="error-msg" class="field__error hidden" role="alert">بيانات الدخول غير صحيحة</p>
 
-      <button type="submit" class="btn btn--lg btn--block" id="submit-btn">
-        <span id="btn-label">دخول</span>
-      </button>
+        <div id="turnstile-slot" class="hidden" style="margin:10px 0"></div>
 
-      <div class="submit-row">
-        <label class="cluster gap-2" style="font-size:var(--fs-sm);color:var(--color-text-soft)">
-          <input type="checkbox" id="remember"> تذكّرني لمدة ٣٠ يوماً
-        </label>
-        <a href="/admin/reset.html">نسيت كلمة المرور؟</a>
-      </div>
-    </form>
+        <button type="submit" class="btn btn--lg btn--block btn--primary" id="submit-btn">
+          <span id="btn-label">دخول</span>
+        </button>
 
-    <p class="login-meta">
-      تواجه مشكلة في الدخول؟ <a href="mailto:ops@damascustransit.sy">راسل المسؤول</a>
-    </p>
-  </section>
+        <div class="submit-row">
+          <label class="check"><input type="checkbox" id="remember"> تذكّرني لمدة ٣٠ يوماً</label>
+          <a href="/admin/reset.html">نسيت كلمة المرور؟</a>
+        </div>
+      </form>
 
-  <p class="legal-bar">
-    © ٢٠٢٦ نقل دمشق ·
-    <a href="/">العودة للرئيسية</a> ·
-    <a href="/privacy.html">الخصوصية</a>
-  </p>
+      <p class="login-meta">
+        تواجه مشكلة في الدخول؟ <a href="mailto:ops@damascustransit.sy">راسل المسؤول</a>
+      </p>
+    </section>
+  </div>
 </main>
+
+<footer class="legal-bar">
+  © ٢٠٢٦ نقل دمشق ·
+  <a href="/">العودة للرئيسية</a> ·
+  <a href="/visual-identity.html">دليل الهوية</a> ·
+  <a href="/privacy.html">الخصوصية</a>
+</footer>
 
 <script>
 'use strict';
 const $ = (s, r=document) => r.querySelector(s);
 const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:8000' : '';
 
-// ----- Turnstile bootstrap (step 85) ---------------------------------------
 let turnstileToken = null;
 const TURNSTILE_KEY = window.TURNSTILE_SITE_KEY || '';
 if (TURNSTILE_KEY) {
@@ -189,8 +229,7 @@ if (TURNSTILE_KEY) {
   document.head.appendChild(s);
   window.onTurnstileReady = () => {
     window.turnstile.render(slot, {
-      sitekey: TURNSTILE_KEY,
-      theme: 'light',
+      sitekey: TURNSTILE_KEY, theme: 'light',
       callback: (token) => { turnstileToken = token; },
       'error-callback': () => { turnstileToken = null; },
       'expired-callback': () => { turnstileToken = null; },
@@ -198,7 +237,6 @@ if (TURNSTILE_KEY) {
   };
 }
 
-// Role-tab switching (cosmetic; backend identifies role from token)
 let selectedRole = 'admin';
 document.querySelectorAll('.role-pill').forEach(p => {
   p.addEventListener('click', () => {
@@ -208,13 +246,11 @@ document.querySelectorAll('.role-pill').forEach(p => {
   });
 });
 
-// Show/hide password
 $('#toggle-pw').addEventListener('click', () => {
   const pw = $('#password');
   pw.type = pw.type === 'password' ? 'text' : 'password';
 });
 
-// Submit
 $('#login-form').addEventListener('submit', async (ev) => {
   ev.preventDefault();
   const email = $('#email').value.trim();
@@ -223,13 +259,13 @@ $('#login-form').addEventListener('submit', async (ev) => {
   $('#error-msg').classList.add('hidden');
   const btn = $('#submit-btn');
   btn.disabled = true;
-  $('#btn-label').textContent = '... جاري الدخول';
+  btn.classList.add('is-loading');
   try {
     if (TURNSTILE_KEY && !turnstileToken) {
       $('#error-msg').textContent = 'يرجى إكمال التحقق من خانة الإنسان';
       $('#error-msg').classList.remove('hidden');
       btn.disabled = false;
-      $('#btn-label').textContent = 'دخول';
+      btn.classList.remove('is-loading');
       return;
     }
     const r = await fetch(API_BASE + '/api/auth/login', {
@@ -254,7 +290,7 @@ $('#login-form').addEventListener('submit', async (ev) => {
     $('#error-msg').classList.remove('hidden');
   } finally {
     btn.disabled = false;
-    $('#btn-label').textContent = 'دخول';
+    btn.classList.remove('is-loading');
   }
 });
 </script>

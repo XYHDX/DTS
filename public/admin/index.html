@@ -18,117 +18,170 @@
 <style>
   .admin-shell {
     display: grid;
-    grid-template-columns: 240px 1fr;
+    grid-template-columns: 252px 1fr;
     min-height: 100vh;
   }
+  /* Sidebar — dark teal-green with subtle octagram + gold accent */
   .sidebar {
-    background: var(--brand-800);
+    background: var(--national-green-900);
     color: rgba(255,255,255,.85);
-    padding: var(--s-5) var(--s-3);
-    border-inline-end: 1px solid var(--brand-900);
+    padding: 22px 14px 18px;
+    border-inline-end: 1px solid var(--national-gold);
     display: flex; flex-direction: column;
-  }
-  .sidebar__brand {
-    display:flex; align-items:center; gap: var(--s-3);
-    color:#fff; font-weight:700; padding: 0 var(--s-3) var(--s-5);
-    border-bottom: 1px solid rgba(255,255,255,.08);
-  }
-  .sidebar__brand-mark {
-    width: 36px; height: 36px; border-radius: 10px;
-    background: linear-gradient(135deg, var(--brand-500), var(--gold-600));
-    display: grid; place-items: center; color:#fff; font-weight:800;
-  }
-  .sidebar nav {
-    margin-top: var(--s-4);
-    display: flex; flex-direction: column; gap: var(--s-1);
-  }
-  .sidebar nav a {
-    display: flex; align-items: center; gap: var(--s-3);
-    padding: var(--s-3); border-radius: var(--r-md);
-    color: rgba(255,255,255,.7);
-    font-weight: 500;
-    transition: background var(--t-fast);
-  }
-  .sidebar nav a:hover { background: rgba(255,255,255,.06); color: #fff; text-decoration:none; }
-  .sidebar nav a.is-active { background: rgba(255,255,255,.12); color: #fff; }
-  .sidebar nav svg { width: 18px; height: 18px; }
-  .sidebar__footer {
-    margin-top: auto;
-    padding-top: var(--s-4);
-    border-top: 1px solid rgba(255,255,255,.08);
-  }
-  .sidebar__user {
-    display: flex; align-items: center; gap: var(--s-3);
-    padding: var(--s-3); color: rgba(255,255,255,.85);
-    font-size: var(--fs-sm);
-  }
-  .sidebar__user .avatar {
-    width: 36px; height: 36px; border-radius: 50%;
-    background: var(--brand-500);
-    display: grid; place-items: center; color: #fff; font-weight: 700;
-  }
-
-  .main { padding: var(--s-5) var(--s-6) var(--s-8); }
-  .topbar {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: var(--s-5);
-  }
-  .pagetitle h1 { margin: 0; font-size: var(--fs-2xl); }
-  .pagetitle p { margin: 0; color: var(--color-text-mute); }
-
-  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-4); margin-bottom: var(--s-5); }
-  .kpi {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--r-lg);
-    padding: var(--s-4);
     position: relative;
     overflow: hidden;
   }
+  .sidebar::before {
+    content: ""; position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><g fill='none' stroke='%23C9A95B' stroke-width='1' stroke-opacity='0.16' stroke-linejoin='round' stroke-linecap='round'><polygon points='68,40 51,45 60,60 45,51 40,68 35,51 20,60 29,45 12,40 29,35 20,20 35,29 40,12 45,29 60,20 51,35'/><path d='M68,40 L80,36.5 M68,40 L80,43.5 M40,68 L36.5,80 M40,68 L43.5,80 M12,40 L0,36.5 M12,40 L0,43.5 M40,12 L36.5,0 M40,12 L43.5,0 M60,20 L72,0 M60,20 L80,8 M60,60 L80,72 M60,60 L72,80 M20,60 L8,80 M20,60 L0,72 M20,20 L0,8 M20,20 L8,0'/><polyline points='8,0 8,3.3 3.3,8 0,8'/><polyline points='80,8 76.7,8 72,3.3 72,0'/><polyline points='72,80 72,76.7 76.7,72 80,72'/><polyline points='8,80 8,76.7 3.3,72 0,72'/></g></svg>");
+    background-size: 80px 80px; pointer-events: none;
+  }
+  .sidebar > * { position: relative; z-index: 1; }
+  .sidebar__brand {
+    display: flex; align-items: center; gap: 12px;
+    color: #fff; font-weight: 700;
+    padding: 4px 8px 18px;
+    border-bottom: 1px solid rgba(255,255,255,.10);
+    text-decoration: none;
+  }
+  .sidebar__brand:hover { text-decoration: none; }
+  .sidebar__brand-mark {
+    width: 42px; height: 42px; border-radius: 6px;
+    background: #fff; padding: 4px;
+    display: grid; place-items: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,.18);
+  }
+  .sidebar__brand-mark img { width: 100%; height: 100%; object-fit: contain; }
+  .sidebar__brand-text { display: flex; flex-direction: column; line-height: 1.15; }
+  .sidebar__brand-text b { font-family: var(--font-sans); font-size: 14px; font-weight: 700; color: #fff; }
+  .sidebar__brand-text small { font-size: 10px; color: var(--national-gold); letter-spacing: .08em; text-transform: uppercase; font-weight: 600; }
+  .sidebar nav {
+    margin-top: 18px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .sidebar nav a {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 12px;
+    border-radius: var(--r-sm);
+    color: rgba(255,255,255,.72);
+    font-weight: 500; font-size: 14px;
+    transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+    text-decoration: none;
+    position: relative;
+  }
+  .sidebar nav a:hover { background: rgba(255,255,255,.08); color: #fff; text-decoration: none; }
+  .sidebar nav a.is-active {
+    background: rgba(255,255,255,.10);
+    color: #fff; font-weight: 600;
+  }
+  .sidebar nav a.is-active::before {
+    content: ""; position: absolute;
+    inset-inline-start: 0; top: 8px; bottom: 8px;
+    width: 3px; background: var(--national-gold);
+    border-radius: 2px;
+  }
+  .sidebar nav svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+  .sidebar__footer {
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255,255,255,.10);
+  }
+  .sidebar__user {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 8px;
+    color: #fff;
+    font-size: 13px;
+  }
+  .sidebar__user .avatar-circle {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--national-gold); color: var(--national-green-950);
+    display: grid; place-items: center; font-weight: 700; font-size: 14px;
+    flex-shrink: 0;
+  }
+  .sidebar__user .name { font-weight: 600; font-family: var(--font-sans); }
+  .sidebar__user .role { color: rgba(255,255,255,.55); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+  .sidebar__logout {
+    width: 100%;
+    background: rgba(255,255,255,.06);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: var(--r-sm);
+    padding: 9px 14px;
+    font-weight: 600; font-size: 13px;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+  }
+  .sidebar__logout:hover { background: rgba(255,255,255,.14); border-color: var(--national-gold); color: var(--national-gold); }
+
+  .main { padding: 22px 28px 36px; }
+  .topbar {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 22px; gap: 16px; flex-wrap: wrap;
+  }
+  .pagetitle h1 { margin: 0; font-size: 28px; font-weight: 700; font-family: var(--font-sans); }
+  [dir="rtl"] .pagetitle h1 { font-family: var(--font-sans); }
+  .pagetitle p { margin: 4px 0 0; color: var(--color-text-mute); font-size: 14px; }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 22px; }
+  .kpi {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+  }
+  .kpi:hover { transform: translateY(-2px); box-shadow: var(--sh-md); }
   .kpi::after {
     content: "";
     position: absolute;
-    inset-block: 0;
-    inset-inline-end: -20px;
+    inset-block: 0; inset-inline-end: -20px;
     width: 80px;
-    background: linear-gradient(135deg, transparent, var(--brand-100));
-    opacity: .4;
+    background: linear-gradient(135deg, transparent, var(--national-gold-100));
+    opacity: .5;
   }
-  .kpi__label { color: var(--color-text-mute); font-size: var(--fs-xs); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
-  .kpi__value { font-size: var(--fs-3xl); font-weight: 700; line-height: 1; margin: var(--s-2) 0; font-variant-numeric: tabular-nums; }
-  .kpi__delta { font-size: var(--fs-sm); font-weight: 600; }
-  .kpi__delta.up { color: var(--success); }
-  .kpi__delta.down { color: var(--danger); }
+  .kpi__label { color: var(--color-text-mute); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; position: relative; z-index: 1; }
+  .kpi__value { font-size: 30px; font-weight: 700; line-height: 1; margin: 8px 0 6px; font-variant-numeric: tabular-nums; position: relative; z-index: 1; font-family: var(--font-sans); }
+  .kpi__delta { font-size: 13px; font-weight: 600; position: relative; z-index: 1; }
+  .kpi__delta.up { color: var(--national-green); }
+  .kpi__delta.down { color: var(--national-red); }
 
-  .grid-2col { display: grid; grid-template-columns: 1.5fr 1fr; gap: var(--s-5); }
+  .grid-2col { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; }
   .panel {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
-    border-radius: var(--r-lg);
+    border-radius: var(--r-md);
     overflow: hidden;
   }
   .panel__header {
     display: flex; justify-content: space-between; align-items: center;
-    padding: var(--s-4) var(--s-5);
+    padding: 14px 18px;
     border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface-2);
   }
-  .panel__header h2 { margin: 0; font-size: var(--fs-md); font-weight: 700; }
-  .panel__body { padding: var(--s-4) var(--s-5); }
+  .panel__header h2 { margin: 0; font-size: 15px; font-weight: 700; font-family: var(--font-sans); }
+  .panel__header a { font-size: 13px; color: var(--national-green); font-weight: 600; }
+  .panel__body { padding: 14px 18px; }
   #map { height: 460px; }
 
   .alert-row {
-    display: grid; grid-template-columns: auto 1fr auto; gap: var(--s-3);
-    align-items: center; padding: var(--s-3) 0;
+    display: grid; grid-template-columns: auto 1fr auto; gap: 12px;
+    align-items: center; padding: 12px 0;
     border-bottom: 1px solid var(--color-border);
   }
   .alert-row:last-child { border-bottom: 0; }
   .alert-row__icon {
-    width: 36px; height: 36px; border-radius: 10px;
+    width: 36px; height: 36px; border-radius: var(--r-sm);
     background: var(--color-surface-2);
     display: grid; place-items: center;
   }
-  .alert-row__icon.warn { background: #fbeed5; color: #7a4c0d; }
-  .alert-row__icon.danger { background: #fbe1de; color: #7c241c; }
+  .alert-row__icon.warn { background: #FBEFD5; color: #C58A2B; }
+  .alert-row__icon.danger { background: var(--national-red-100); color: var(--national-red-700); }
+  .alert-row__title { font-weight: 700; font-size: 14px; color: var(--color-text); }
+  .alert-row__meta { font-size: 12px; color: var(--color-text-mute); margin-top: 2px; }
 
   @media (max-width: 1024px) {
     .admin-shell { grid-template-columns: 1fr; }
@@ -138,14 +191,28 @@
   }
 </style>
 </head>
-<body>
+<body class="with-fade-in">
+
+<div class="flag-strip" aria-hidden="true">
+  <span class="flag-strip__green"></span>
+  <span class="flag-strip__white"></span>
+  <span class="flag-strip__black"></span>
+</div>
 
 <div class="admin-shell">
 
   <aside class="sidebar" aria-label="القائمة الجانبية">
     <a href="/" class="sidebar__brand">
-      <span class="sidebar__brand-mark">DT</span>
-      <span>نقل دمشق</span>
+      <span class="sidebar__brand-mark" aria-hidden="true">
+        <picture>
+          <source srcset="/assets/identity/sy-emblem-eagle.avif" type="image/avif">
+          <img src="/assets/identity/sy-emblem-eagle.png" alt="">
+        </picture>
+      </span>
+      <span class="sidebar__brand-text">
+        <b>نقل دمشق</b>
+        <small>لوحة الإدارة</small>
+      </span>
     </a>
 
     <nav aria-label="إدارة">
@@ -173,17 +240,21 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-7"/></svg>
         التحليلات
       </a>
+      <a href="/visual-identity.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2l3 4-3 4-3-4 3-4ZM12 14l3 4-3 4-3-4 3-4ZM2 12l4-3 4 3-4 3-4-3ZM14 12l4-3 4 3-4 3-4-3Z"/></svg>
+        الهوية البصرية
+      </a>
     </nav>
 
     <div class="sidebar__footer">
       <div class="sidebar__user">
-        <div class="avatar" id="user-initial">؟</div>
+        <div class="avatar-circle" id="user-initial">؟</div>
         <div>
-          <div id="user-name">المسؤول</div>
-          <div style="color:rgba(255,255,255,.5);font-size:var(--fs-xs)" id="user-role">—</div>
+          <div class="name" id="user-name">المسؤول</div>
+          <div class="role" id="user-role">—</div>
         </div>
       </div>
-      <button class="btn btn--ghost btn--sm" id="logout-btn" style="width:100%;background:rgba(255,255,255,.05);color:#fff;border-color:rgba(255,255,255,.12)">خروج</button>
+      <button class="sidebar__logout" id="logout-btn">تسجيل الخروج</button>
     </div>
   </aside>
 
@@ -194,28 +265,31 @@
         <p>حالة الأسطول، التنبيهات، والخريطة المباشرة.</p>
       </div>
       <div class="cluster">
-        <span class="badge badge--success"><span class="live-dot"></span> مباشر</span>
-        <button class="btn btn--ghost btn--sm" id="refresh-btn">تحديث</button>
+        <span class="badge badge--success"><span class="live-dot" aria-hidden="true"></span> مباشر</span>
+        <button class="btn btn--outline btn--sm" id="refresh-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
+          تحديث
+        </button>
       </div>
     </div>
 
     <div class="kpis">
-      <div class="kpi">
+      <div class="kpi reveal">
         <div class="kpi__label">الحافلات العاملة</div>
         <div class="kpi__value" id="kpi-active">—</div>
         <div class="kpi__delta up" id="kpi-active-delta">+٢ منذ الأمس</div>
       </div>
-      <div class="kpi">
+      <div class="kpi reveal">
         <div class="kpi__label">إجمالي الرحلات اليوم</div>
         <div class="kpi__value" id="kpi-trips">—</div>
         <div class="kpi__delta up" id="kpi-trips-delta">+١٢٪</div>
       </div>
-      <div class="kpi">
+      <div class="kpi reveal">
         <div class="kpi__label">متوسط الإشغال</div>
         <div class="kpi__value" id="kpi-occ">—</div>
         <div class="kpi__delta" id="kpi-occ-delta">—</div>
       </div>
-      <div class="kpi">
+      <div class="kpi reveal">
         <div class="kpi__label">تنبيهات مفتوحة</div>
         <div class="kpi__value" id="kpi-alerts">—</div>
         <div class="kpi__delta down" id="kpi-alerts-delta">٣ عاجلة</div>
@@ -223,7 +297,7 @@
     </div>
 
     <div class="grid-2col">
-      <section class="panel">
+      <section class="panel reveal">
         <div class="panel__header">
           <h2>الخريطة المباشرة</h2>
           <span class="badge badge--brand">يُحدَّث كل ٥ ثوانٍ</span>
@@ -231,10 +305,10 @@
         <div id="map"></div>
       </section>
 
-      <section class="panel">
+      <section class="panel reveal">
         <div class="panel__header">
           <h2>التنبيهات الأخيرة</h2>
-          <a href="/admin/alerts.html" class="text-sm">عرض الكل ←</a>
+          <a href="/admin/alerts.html">عرض الكل ←</a>
         </div>
         <div class="panel__body" id="alerts-list" aria-busy="true">
           <div class="alert-row">
@@ -261,7 +335,7 @@ const $ = (s,r=document) => r.querySelector(s);
 const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:8000' : '';
 const arDigit = (n) => (n==null || isNaN(n)) ? '—' : Number(n).toLocaleString('ar-EG',{maximumFractionDigits:0});
 
-// ----- Auth guard -----
+// Auth guard
 const token = localStorage.getItem('dt_token') || sessionStorage.getItem('dt_token');
 const user = JSON.parse(localStorage.getItem('dt_user') || sessionStorage.getItem('dt_user') || 'null');
 if (!token) { location.href = '/admin/login.html'; }
@@ -285,7 +359,6 @@ async function api(path) {
   } catch (e) { console.warn(path, e); return null; }
 }
 
-// ----- KPIs -----
 async function loadKpis() {
   const stats = await api('/api/stats');
   const overview = await api('/api/admin/analytics/overview') || {};
@@ -297,13 +370,12 @@ async function loadKpis() {
   $('#kpi-alerts').textContent = arDigit(overview.open_alerts);
 }
 
-// ----- Alerts -----
 async function loadAlerts() {
   const alerts = await api('/api/admin/alerts?limit=5');
   const list = $('#alerts-list');
   list.setAttribute('aria-busy', 'false');
   if (!alerts || !alerts.length) {
-    list.innerHTML = '<div class="muted center">لا تنبيهات جديدة.</div>';
+    list.innerHTML = '<div style="text-align:center;color:var(--color-text-mute);padding:14px 0">لا تنبيهات جديدة.</div>';
     return;
   }
   list.innerHTML = alerts.map(a => {
@@ -314,8 +386,8 @@ async function loadAlerts() {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.7 3h16.96a2 2 0 0 0 1.7-3L13.7 3.86a2 2 0 0 0-3.4 0Z"/></svg>
         </div>
         <div>
-          <div class="font-bold">${a.title || a.type || 'تنبيه'}</div>
-          <div class="text-xs muted">${a.vehicle_code || ''} · ${a.created_at ? new Date(a.created_at).toLocaleTimeString('ar-EG') : ''}</div>
+          <div class="alert-row__title">${a.title || a.type || 'تنبيه'}</div>
+          <div class="alert-row__meta">${a.vehicle_code || ''} · ${a.created_at ? new Date(a.created_at).toLocaleTimeString('ar-EG') : ''}</div>
         </div>
         <span class="badge badge--${sev}">${a.severity || 'low'}</span>
       </div>
@@ -323,7 +395,7 @@ async function loadAlerts() {
   }).join('');
 }
 
-// ----- Map -----
+// Map
 let map;
 function initMap() {
   map = new maplibregl.Map({
@@ -338,7 +410,7 @@ function initMap() {
   map.on('load', () => {
     map.addSource('vehicles', { type:'geojson', data:{type:'FeatureCollection',features:[]} });
     map.addLayer({ id:'vehicles', type:'circle', source:'vehicles',
-      paint: { 'circle-radius':7, 'circle-color':'#00876f', 'circle-stroke-width':2, 'circle-stroke-color':'#fff' }});
+      paint: { 'circle-radius':7, 'circle-color':'#1F7068', 'circle-stroke-width':2, 'circle-stroke-color':'#fff' }});
   });
 }
 
@@ -357,6 +429,15 @@ function openStream() {
 }
 
 $('#refresh-btn').addEventListener('click', () => { loadKpis(); loadAlerts(); });
+
+// Reveal-on-scroll
+const reveals = document.querySelectorAll('.reveal');
+if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-visible'); io.unobserve(e.target); } });
+  }, { threshold: 0.12 });
+  reveals.forEach((el) => io.observe(el));
+} else { reveals.forEach((el) => el.classList.add('is-visible')); }
 
 window.addEventListener('DOMContentLoaded', () => {
   initMap();

@@ -1,152 +1,150 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#0E5650">
-    <title>404 — الصفحة غير موجودة | SyriaTransit</title>
-    <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200;300;400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0E5650">
+<title>404 — الصفحة غير موجودة | نقل دمشق</title>
 
-        :root {
-            --green-dark: #002623;
-            --green-mid:  #054239;
-            --green-light:#428177;
-            --golden:     #edebe0;
-            --golden-mid: #b9a779;
-            --charcoal:   #161616;
-            --text-muted: #888;
-        }
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 
-        html, body {
-            height: 100%;
-            background: var(--charcoal);
-            color: var(--golden);
-            font-family: 'Noto Naskh Arabic','Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        }
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200;300;400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 32px 24px;
-            text-align: center;
-            gap: 0;
-        }
+<link rel="stylesheet" href="/lib/design-system.css">
 
-        .bus-icon {
-            font-size: 72px;
-            margin-bottom: 24px;
-            animation: bus-sway 3s ease-in-out infinite;
-        }
+<style>
+  body {
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    background: var(--national-green-900);
+    color: #fff;
+    position: relative;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><g fill='none' stroke='%23C9A95B' stroke-width='1' stroke-opacity='0.18' stroke-linejoin='round' stroke-linecap='round'><polygon points='68,40 51,45 60,60 45,51 40,68 35,51 20,60 29,45 12,40 29,35 20,20 35,29 40,12 45,29 60,20 51,35'/><path d='M68,40 L80,36.5 M68,40 L80,43.5 M40,68 L36.5,80 M40,68 L43.5,80 M12,40 L0,36.5 M12,40 L0,43.5 M40,12 L36.5,0 M40,12 L43.5,0 M60,20 L72,0 M60,20 L80,8 M60,60 L80,72 M60,60 L72,80 M20,60 L8,80 M20,60 L0,72 M20,20 L0,8 M20,20 L8,0'/><polyline points='8,0 8,3.3 3.3,8 0,8'/><polyline points='80,8 76.7,8 72,3.3 72,0'/><polyline points='72,80 72,76.7 76.7,72 80,72'/><polyline points='8,80 8,76.7 3.3,72 0,72'/></g></svg>");
+    background-size: 80px 80px; pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: ""; position: fixed; inset: 0;
+    background: radial-gradient(ellipse at center, rgba(201,169,91,.15), transparent 60%);
+    pointer-events: none; z-index: 0;
+  }
+  body > * { position: relative; z-index: 1; }
 
-        @keyframes bus-sway {
-            0%, 100% { transform: rotate(-2deg); }
-            50%       { transform: rotate(2deg); }
-        }
+  .ml { display: flex; align-items: center; gap: 14px; padding: 24px 28px 0; }
+  .ml__mark { width: 44px; height: 44px; border-radius: 8px; background: #fff; padding: 5px; display: grid; place-items: center; }
+  .ml__mark img { width: 100%; height: 100%; object-fit: contain; }
+  .ml__text b { font-family: var(--font-sans); font-size: 15px; font-weight: 700; display: block; }
+  .ml__text small { color: var(--national-gold); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; }
 
-        .code {
-            font-size: clamp(72px, 20vw, 120px);
-            font-weight: 700;
-            color: var(--green-light);
-            line-height: 1;
-            letter-spacing: -2px;
-            margin-bottom: 16px;
-        }
+  .wrap {
+    display: grid; place-items: center;
+    padding: 24px; text-align: center;
+  }
+  .pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,.08);
+    border: 1px solid var(--national-gold);
+    color: var(--national-gold);
+    padding: 6px 14px; border-radius: var(--r-pill);
+    font-size: 12px; font-weight: 700;
+    letter-spacing: .12em; text-transform: uppercase;
+    margin-bottom: 22px;
+  }
+  .code {
+    font-family: var(--font-mono);
+    font-size: clamp(80px, 18vw, 140px);
+    font-weight: 700; line-height: 1; letter-spacing: -3px;
+    color: var(--national-gold);
+    text-shadow: 0 4px 30px rgba(201,169,91,.25);
+  }
+  .title-ar {
+    font-family: var(--font-sans);
+    font-size: clamp(22px, 4vw, 30px);
+    font-weight: 700; color: #fff;
+    margin: 18px 0 6px;
+  }
+  .title-en {
+    font-family: var(--font-serif);
+    font-size: clamp(14px, 3vw, 17px);
+    font-weight: 500; color: var(--national-gold);
+    margin-bottom: 24px;
+  }
+  .desc {
+    font-size: 15px;
+    color: rgba(255,255,255,.78);
+    max-width: 460px;
+    line-height: 1.7;
+    margin-bottom: 28px;
+  }
+  .btn-group {
+    display: flex; gap: 12px; flex-wrap: wrap;
+    justify-content: center;
+  }
+  .legal {
+    text-align: center;
+    padding: 18px 24px;
+    color: rgba(255,255,255,.55);
+    font-size: 12px;
+  }
+  .legal a { color: rgba(255,255,255,.78); }
+  .legal a:hover { color: var(--national-gold); text-decoration: none; }
 
-        .title-ar {
-            font-size: clamp(20px, 5vw, 26px);
-            font-weight: 700;
-            color: var(--golden);
-            margin-bottom: 6px;
-        }
-
-        .title-en {
-            font-size: clamp(14px, 3vw, 17px);
-            font-weight: 400;
-            color: var(--golden-mid);
-            margin-bottom: 32px;
-        }
-
-        .desc-ar {
-            font-size: 15px;
-            color: var(--text-muted);
-            max-width: 380px;
-            line-height: 1.7;
-            margin-bottom: 6px;
-        }
-
-        .desc-en {
-            font-size: 13px;
-            color: #555;
-            max-width: 380px;
-            margin-bottom: 40px;
-            line-height: 1.6;
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .btn {
-            padding: 12px 28px;
-            border-radius: 8px;
-            font-size: 15px;
-            font-family: inherit;
-            cursor: pointer;
-            border: none;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: background .15s, transform .1s;
-        }
-
-        .btn:active { transform: scale(.97); }
-
-        .btn-primary {
-            background: var(--green-light);
-            color: #fff;
-        }
-
-        .btn-primary:hover { background: #54a59a; }
-
-        .btn-secondary {
-            background: transparent;
-            color: var(--golden-mid);
-            border: 1px solid #3a3a3a;
-        }
-
-        .btn-secondary:hover { background: #1a1a1a; }
-
-        .brand {
-            margin-top: 48px;
-            font-size: 12px;
-            color: #3a3a3a;
-            letter-spacing: 0.5px;
-        }
-    </style>
+  .flag-strip-fixed { position: fixed; top: 0; inset-inline: 0; z-index: 50; height: 5px; display: flex; }
+  .flag-strip-fixed > span { flex: 1; }
+  .flag-strip-fixed > .green { background: var(--national-green); }
+  .flag-strip-fixed > .white { background: #fff; }
+  .flag-strip-fixed > .black { background: var(--ink-black); }
+</style>
 </head>
-<body>
-    <div class="bus-icon">🦅</div>
+<body class="with-fade-in">
+
+<div class="flag-strip-fixed" aria-hidden="true">
+  <span class="green"></span>
+  <span class="white"></span>
+  <span class="black"></span>
+</div>
+
+<header class="ml">
+  <span class="ml__mark" aria-hidden="true">
+    <picture>
+      <source srcset="/assets/identity/sy-emblem-eagle.avif" type="image/avif">
+      <img src="/assets/identity/sy-emblem-eagle.png" alt="">
+    </picture>
+  </span>
+  <div class="ml__text">
+    <b>نقل دمشق</b>
+    <small>الجمهورية العربية السورية</small>
+  </div>
+</header>
+
+<main class="wrap">
+  <div>
+    <span class="pill">★ خطأ ٤٠٤</span>
     <div class="code">404</div>
-    <div class="title-ar">هذه الصفحة غير موجودة</div>
-    <div class="title-en">Page not found</div>
-    <p class="desc-ar">
-        الصفحة التي تبحث عنها ربما نُقلت أو حُذفت أو أن الرابط غير صحيح.
+    <h1 class="title-ar">هذه الصفحة غير موجودة</h1>
+    <p class="title-en">Page Not Found</p>
+    <p class="desc">
+      الصفحة التي تبحث عنها ربما نُقلت أو حُذفت أو أن الرابط غير صحيح. تحقّق من العنوان أو عُد إلى الرئيسية للمتابعة.
     </p>
-    <p class="desc-en">
-        The page you're looking for may have been moved, deleted, or the link is incorrect.
-    </p>
-    <div class="btn-group">
-        <a href="/" class="btn btn-primary">🏠 العودة للرئيسية &nbsp;|&nbsp; Home</a>
-        <a href="/passenger/" class="btn btn-secondary">🗺️ خريطة المواصلات</a>
+    <div class="btn-group on-green-bg">
+      <a href="/" class="btn btn--primary btn--lg">العودة للرئيسية</a>
+      <a href="/passenger/" class="btn btn--outline btn--lg">خريطة المواصلات</a>
     </div>
-    <div class="brand">SyriaTransit &mdash; منصة النقل الذكي لدمشق</div>
+  </div>
+</main>
+
+<footer class="legal">
+  © ٢٠٢٦ نقل دمشق ·
+  <a href="/">الرئيسية</a> ·
+  <a href="/visual-identity.html">دليل الهوية</a>
+</footer>
+
 </body>
 </html>
