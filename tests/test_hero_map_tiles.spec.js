@@ -21,6 +21,12 @@ const { test, expect } = require('@playwright/test');
 // Tile patterns per page.
 // Each entry: { path, tilePattern, description }
 // tilePattern is matched against the full request URL.
+//
+// v4.0 page inventory:
+//   / (index)     — OSM raster tiles via maplibre
+//   /passenger    — OSM raster tiles via maplibre (changed from CartoCDN)
+//   /admin/       — OSM raster tiles via maplibre (auth-gated; not canaried)
+//   /driver/      — NO map by design (only trip-control UI). Skipped here.
 const MAP_PAGES = [
   {
     path: '/',
@@ -28,14 +34,9 @@ const MAP_PAGES = [
     description: 'hero map (index) — OSM raster tiles',
   },
   {
-    path: '/driver',
-    tilePattern: /basemaps\.cartocdn\.com\/.+\/\d+\/\d+\/\d+\.(png|pbf|mvt)/,
-    description: 'driver page — CartoCDN vector tiles',
-  },
-  {
     path: '/passenger',
-    tilePattern: /basemaps\.cartocdn\.com\/.+\/\d+\/\d+\/\d+\.(png|pbf|mvt)/,
-    description: 'passenger page — CartoCDN vector tiles',
+    tilePattern: /tile\.openstreetmap\.org\/\d+\/\d+\/\d+\.png/,
+    description: 'passenger page — OSM raster tiles',
   },
 ];
 

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0E5650">
+<title>سياسة الخصوصية — نقل دمشق</title>
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200;300;400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/lib/design-system.css">
+<style>
+  .privacy-shell { max-width: 760px; margin: 0 auto; padding: 40px 20px 80px; }
+  .privacy-shell h1 { font-size: 28px; margin-bottom: 6px; }
+  .privacy-shell .lead { color: var(--ink-2); margin-bottom: 24px; }
+  .privacy-shell h2 { margin-top: 32px; margin-bottom: 8px; font-size: 18px; color: var(--national-green-900); }
+  .privacy-shell p, .privacy-shell li { line-height: 1.8; color: var(--ink-1); font-size: 15px; }
+  .privacy-shell ul { padding-inline-start: 22px; }
+  .privacy-shell code { background: var(--surface-soft); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+  .privacy-shell .updated { color: var(--ink-3); font-size: 13px; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div class="utility-bar">
+  <div class="container">
+    <span class="gov">الجمهورية العربية السورية</span>
+    <span class="right">
+      <a href="/passenger/">للركاب</a>
+      <span class="sep"></span>
+      <a href="/driver/">للسائقين</a>
+      <span class="sep"></span>
+      <a href="/admin/login.html">الإدارة</a>
+    </span>
+  </div>
+</div>
+
+<main class="privacy-shell">
+  <h1>سياسة الخصوصية</h1>
+  <p class="lead">كيف نتعامل مع بياناتك في منصة <b>نقل دمشق</b>.</p>
+  <p class="updated">آخر تحديث: 26 أيار 2026</p>
+
+  <h2>١. ما البيانات التي نجمعها؟</h2>
+  <ul>
+    <li><b>للركاب:</b> لا حسابات، لا تتبع. ما نجمعه فقط: موقعك في المتصفح (لإيجاد أقرب المحطات)، ويُستخدم محلياً ولا يُخزَّن.</li>
+    <li><b>للسائقين:</b> الاسم، البريد الإلكتروني، ومواقع GPS المسجّلة أثناء الرحلات (مرتبطة برقم الحافلة، لا بالشخص).</li>
+    <li><b>للمسؤولين والموزّعين:</b> الاسم، البريد، الصلاحية، وقت آخر دخول، والإجراءات على لوحة الإدارة.</li>
+  </ul>
+
+  <h2>٢. كيف نستخدم البيانات؟</h2>
+  <ul>
+    <li>عرض مواقع الحافلات والمحطات للركاب لحظياً.</li>
+    <li>تحليل أداء الخطوط (دقة المواعيد، الإشغال) للتحسين التشغيلي.</li>
+    <li>الاستجابة للحوادث المُبلَّغ عنها من السائقين.</li>
+  </ul>
+
+  <h2>٣. ما الذي لا نفعله؟</h2>
+  <ul>
+    <li>لا نبيع البيانات لأي طرف ثالث.</li>
+    <li>لا نضع إعلانات.</li>
+    <li>لا نستخدم تتبعاً عبر المواقع (no third-party cookies).</li>
+    <li>لا نطلب رقم الهوية أو الهاتف من الركاب.</li>
+  </ul>
+
+  <h2>٤. حفظ البيانات</h2>
+  <p>
+    البيانات تُخزَّن على بنية تحتية مُدارة بـ Supabase (PostgreSQL مع تشفير
+    أثناء النقل وأثناء التخزين). الخوادم مرتبطة بمنطقة قريبة جغرافياً.
+    مواقع الحافلات تُحفظ لمدة ٩٠ يوماً ثم تُجمَّع كإحصاءات وتُحذف الإحداثيات
+    الخام.
+  </p>
+
+  <h2>٥. حقوقك</h2>
+  <p>
+    أي مستخدم مُسجَّل (سائق/مسؤول/موزّع) له الحق في:
+  </p>
+  <ul>
+    <li>الاطلاع على بياناته.</li>
+    <li>طلب تصحيحها.</li>
+    <li>طلب حذف حسابه (يتم خلال ٣٠ يوماً ما لم يكن مرتبطاً برحلات تشغيلية مفتوحة).</li>
+  </ul>
+  <p>للتواصل: <code>privacy@damascus-transit.demo</code></p>
+
+  <h2>٦. الكوكيز و التخزين المحلي</h2>
+  <p>
+    نستخدم <code>localStorage</code> لحفظ:
+  </p>
+  <ul>
+    <li>لغة الواجهة المُختارة (ar / en).</li>
+    <li>رمز جلسة JWT للمسؤولين والسائقين (لا يحوي كلمة المرور، فقط هويّة موقّعة).</li>
+  </ul>
+  <p>لا نستخدم كوكيز تتبع، ولا نشارك أي بيانات مع شبكات إعلانات أو تحليلات خارجية.</p>
+
+  <h2>٧. التغييرات على هذه السياسة</h2>
+  <p>
+    أي تغيير جوهري يُعلَن عبر الصفحة الرئيسية قبل ٧ أيام على الأقل من
+    تطبيقه. النص الكامل لكل النسخ متاح في
+    <a href="https://github.com/XYHDX/DTS" rel="noopener">المستودع المفتوح</a>.
+  </p>
+
+  <p style="margin-top:40px"><a class="btn btn--primary" href="/">العودة للرئيسية</a></p>
+</main>
+
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#002623">
+<meta name="theme-color" content="#0E5650">
 <title>نقل دمشق — للسائقين</title>
 
 <link rel="manifest" href="/driver/manifest.json">
@@ -12,173 +12,290 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200;300;400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="/lib/design-system.css">
 
 <style>
   body { background: var(--color-bg); padding-bottom: 0; }
-  .driver-shell {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-  .driver-bar {
-    background: var(--brand-800);
-    color: #fff;
-    padding: calc(env(safe-area-inset-top) + var(--s-4)) var(--s-4) var(--s-4);
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: var(--s-3);
-    align-items: center;
-  }
-  .driver-bar h1 { margin: 0; font-size: var(--fs-md); font-weight: 600; }
-  .driver-bar .vehicle-id { font-weight: 700; font-size: var(--fs-lg); }
-  .gps-pill {
-    display: inline-flex; align-items: center; gap: var(--s-2);
-    background: rgba(255,255,255,.1); color:#fff;
-    padding: var(--s-1) var(--s-3); border-radius: var(--r-pill);
-    font-size: var(--fs-xs); font-weight: 600;
-  }
-  .gps-pill .live-dot { background: var(--success); }
-  .gps-pill.is-off .live-dot { background: var(--danger); animation: none; }
+  .driver-shell { min-height: 100vh; display: flex; flex-direction: column; }
 
-  .login-pane, .trip-pane {
-    flex: 1;
-    padding: var(--s-5) var(--s-4) var(--s-8);
+  /* Driver bar — dark teal-green with subtle pattern overlay */
+  .driver-bar {
+    background: var(--national-green-900);
+    color: #fff;
+    padding: calc(env(safe-area-inset-top) + 14px) 16px 14px;
+    display: grid;
+    grid-template-columns: auto auto auto 1fr auto;
+    gap: 10px;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    border-bottom: 1px solid var(--national-gold);
   }
-  .login-pane { display: grid; place-content: center; max-width: 420px; margin: 0 auto; }
+  .driver-bar::before {
+    content: ""; position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><g fill='none' stroke='%23C9A95B' stroke-width='1' stroke-opacity='0.22' stroke-linejoin='round' stroke-linecap='round'><polygon points='68,40 51,45 60,60 45,51 40,68 35,51 20,60 29,45 12,40 29,35 20,20 35,29 40,12 45,29 60,20 51,35'/><path d='M68,40 L80,36.5 M68,40 L80,43.5 M40,68 L36.5,80 M40,68 L43.5,80 M12,40 L0,36.5 M12,40 L0,43.5 M40,12 L36.5,0 M40,12 L43.5,0 M60,20 L72,0 M60,20 L80,8 M60,60 L80,72 M60,60 L72,80 M20,60 L8,80 M20,60 L0,72 M20,20 L0,8 M20,20 L8,0'/><polyline points='8,0 8,3.3 3.3,8 0,8'/><polyline points='80,8 76.7,8 72,3.3 72,0'/><polyline points='72,80 72,76.7 76.7,72 80,72'/><polyline points='8,80 8,76.7 3.3,72 0,72'/></g></svg>");
+    background-size: 80px 80px;
+    pointer-events: none;
+  }
+  .driver-bar > * { position: relative; z-index: 1; }
+  .driver-bar .label { color: rgba(255,255,255,.7); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+  .driver-bar .vehicle-id { font-weight: 800; font-size: 22px; font-family: var(--font-mono); color: var(--national-gold); line-height: 1.1; }
+  .gps-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,.10); color: #fff;
+    padding: 6px 12px; border-radius: var(--r-pill);
+    font-size: 12px; font-weight: 600;
+    border: 1px solid rgba(255,255,255,.18);
+  }
+  .gps-pill .live-dot { background: var(--national-gold); }
+  .gps-pill.is-off .live-dot { background: var(--national-red); animation: none; }
+  .logout-btn {
+    background: rgba(255,255,255,.10); color: #fff;
+    border: 1px solid rgba(255,255,255,.22);
+    width: 40px; height: 40px; border-radius: 50%;
+    display: grid; place-items: center;
+    cursor: pointer;
+    transition: background var(--t-fast) var(--ease);
+  }
+  .logout-btn:hover { background: rgba(255,255,255,.18); }
+
+  /* Inline back-to-home button inside the driver-bar */
+  .home-btn {
+    background: rgba(255,255,255,.10); color: #fff;
+    border: 1px solid rgba(255,255,255,.22);
+    width: 40px; height: 40px; border-radius: 50%;
+    display: grid; place-items: center;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+  }
+  .home-btn:hover {
+    background: var(--national-gold);
+    color: var(--national-green-950);
+    border-color: var(--national-gold);
+    text-decoration: none;
+  }
+  .home-btn svg { width: 16px; height: 16px; }
+  [dir="rtl"] .home-btn svg { transform: scaleX(-1); }
+
+  /* Language toggle pill (matches home-btn styling) */
+  .lang-btn {
+    background: rgba(255,255,255,.10); color: #fff;
+    border: 1px solid rgba(255,255,255,.22);
+    height: 40px; min-width: 40px; padding: 0 12px;
+    border-radius: var(--r-pill);
+    font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+    cursor: pointer;
+    transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+  }
+  .lang-btn:hover {
+    background: var(--national-gold);
+    color: var(--national-green-950);
+    border-color: var(--national-gold);
+  }
+
+  /* When the driver isn't logged in, hide EVERYTHING in the bar except the
+     home button + language toggle. This prevents stale "—" / "connecting…"
+     placeholders that make the login screen look like a broken trip view.
+     pointer-events:none also blocks dead clicks on invisible elements. */
+  body.is-logged-out .driver-bar > *:not(.home-btn):not(.lang-btn) {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .login-pane, .trip-pane { flex: 1; padding: 24px 16px 32px; }
+  .login-pane { display: grid; place-content: center; max-width: 440px; margin: 0 auto; width: 100%; }
   .login-card {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
-    padding: var(--s-6);
-    border-radius: var(--r-lg);
+    padding: 28px;
+    border-radius: var(--r-md);
     box-shadow: var(--sh-md);
     width: 100%;
   }
-  .biometric-btn {
-    display: flex; align-items: center; justify-content: center; gap: var(--s-2);
-    width: 100%;
-    background: var(--color-surface-2);
-    color: var(--brand-700);
-    border: 1px solid var(--color-border);
-    border-radius: var(--r-md);
-    padding: var(--s-3);
-    font-weight: 600;
-    margin-bottom: var(--s-3);
+  .login-card h2 {
+    font-family: var(--font-sans);
+    font-size: 22px; font-weight: 700;
+    margin: 0 0 8px;
   }
+  .login-card .sub { color: var(--color-text-mute); font-size: 14px; margin: 0 0 22px; }
+
+  .biometric-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%;
+    background: var(--national-green-100);
+    color: var(--national-green-700);
+    border: 1px solid var(--national-green-300);
+    border-radius: var(--r-sm);
+    padding: 14px;
+    font-weight: 600; font-size: 15px;
+    margin-bottom: 14px;
+    cursor: pointer;
+    transition: background var(--t-fast) var(--ease);
+  }
+  .biometric-btn:hover { background: var(--national-green-200); }
 
   /* Trip controls */
   .trip-header {
-    background: linear-gradient(180deg, var(--brand-800), var(--brand-700));
+    background: linear-gradient(180deg, var(--national-green-800), var(--national-green-700));
     color: #fff;
-    padding: var(--s-4);
-    border-radius: var(--r-lg);
-    margin-bottom: var(--s-4);
+    padding: 20px;
+    border-radius: var(--r-md);
+    margin-bottom: 18px;
+    position: relative; overflow: hidden;
+    border: 1px solid var(--national-gold);
   }
-  .trip-header .route-name { font-size: var(--fs-xl); font-weight: 700; margin: var(--s-1) 0; }
-  .trip-header .next-stop { color: rgba(255,255,255,.8); font-size: var(--fs-sm); }
+  .trip-header::after {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(circle at 85% 15%, rgba(201,169,91,.18), transparent 50%);
+    pointer-events: none;
+  }
+  .trip-header > * { position: relative; z-index: 1; }
+  .trip-header .label { color: var(--national-gold); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
+  .trip-header .route-name { font-family: var(--font-sans); font-size: 24px; font-weight: 700; margin: 6px 0; color: #fff; }
+  .trip-header .next-stop { color: rgba(255,255,255,.82); font-size: 14px; }
 
   .big-button {
     display: grid; place-items: center;
-    width: 100%; min-height: 72px;
-    border-radius: var(--r-lg);
-    font-size: var(--fs-xl);
+    width: 100%; min-height: 76px;
+    border-radius: var(--r-md);
+    font-size: 22px;
     font-weight: 700;
     box-shadow: var(--sh-md);
+    cursor: pointer;
+    transition: transform 80ms ease, box-shadow var(--t-fast) var(--ease);
+    border: 0;
+    font-family: var(--font-sans);
   }
-  .big-button--start { background: var(--brand-500); color: #fff; }
-  .big-button--end   { background: var(--danger);    color: #fff; }
-  .big-button:active { transform: translateY(1px); }
+  .big-button--start { background: var(--national-green); color: #fff; }
+  .big-button--start:hover { background: var(--national-green-600); }
+  .big-button--end   { background: var(--national-red); color: #fff; }
+  .big-button--end:hover { background: var(--national-red-700); }
+  .big-button:active { transform: translateY(2px); }
 
   .counter {
     display: grid;
-    grid-template-columns: 64px 1fr 64px;
+    grid-template-columns: 72px 1fr 72px;
     align-items: center;
-    gap: var(--s-3);
+    gap: 14px;
     background: var(--color-surface);
     border: 1px solid var(--color-border);
-    border-radius: var(--r-lg);
-    padding: var(--s-3);
-    margin-block: var(--s-4);
+    border-radius: var(--r-md);
+    padding: 16px;
+    margin-block: 20px;
+    box-shadow: var(--sh-sm);
   }
   .counter button {
-    width: 64px; height: 64px; border-radius: var(--r-md);
-    background: var(--brand-50);
-    color: var(--brand-700);
-    font-size: 2rem; font-weight: 700;
+    width: 72px; height: 72px; border-radius: var(--r-sm);
+    background: var(--national-green-100);
+    color: var(--national-green-700);
+    font-size: 2.2rem; font-weight: 700;
+    border: 0; cursor: pointer;
+    transition: background var(--t-fast) var(--ease), transform 80ms ease;
   }
-  .counter button:active { background: var(--brand-100); }
+  .counter button:hover { background: var(--national-green-200); }
+  .counter button:active { transform: scale(.96); }
   .counter__value {
     text-align: center;
     font-size: 3rem; font-weight: 700;
     color: var(--color-text);
     font-variant-numeric: tabular-nums;
     line-height: 1;
+    font-family: var(--font-mono);
   }
   .counter__label {
     display: block;
     text-align: center;
-    font-size: var(--fs-sm);
+    font-size: 12px;
     color: var(--color-text-mute);
     font-weight: 600;
     text-transform: uppercase;
+    letter-spacing: .04em;
+    margin-top: 6px;
   }
 
-  .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+  .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .meta-card {
     background: var(--color-surface); border: 1px solid var(--color-border);
-    border-radius: var(--r-md); padding: var(--s-3);
+    border-radius: var(--r-sm); padding: 12px;
     text-align: center;
+    transition: border-color var(--t-fast) var(--ease);
   }
-  .meta-card__label { color: var(--color-text-mute); font-size: var(--fs-xs); font-weight: 600; text-transform: uppercase; }
-  .meta-card__value { font-size: var(--fs-xl); font-weight: 700; }
+  .meta-card:hover { border-color: var(--national-green-300); }
+  .meta-card__label { color: var(--color-text-mute); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+  .meta-card__value { font-size: 22px; font-weight: 700; color: var(--color-text); font-family: var(--font-mono); margin-top: 4px; }
+  .meta-card__value .unit { font-size: 12px; font-weight: 500; color: var(--color-text-mute); font-family: var(--font-sans); }
 
   .incident-btn {
     width: 100%;
-    background: rgba(181,58,48,.08);
-    color: var(--danger);
-    border: 1px dashed var(--danger);
-    border-radius: var(--r-md);
-    padding: var(--s-3);
-    font-weight: 600;
-    margin-top: var(--s-4);
+    background: rgba(206,17,38,.06);
+    color: var(--national-red);
+    border: 1.5px dashed var(--national-red);
+    border-radius: var(--r-sm);
+    padding: 14px;
+    font-weight: 600; font-size: 15px;
+    margin-top: 18px;
+    cursor: pointer;
+    transition: background var(--t-fast) var(--ease);
   }
+  .incident-btn:hover { background: rgba(206,17,38,.10); }
 </style>
 </head>
-<body>
+<body class="with-fade-in">
+
+
+<!-- Universal utility bar (gov chip + cross-section links) -->
+<div class="utility-bar">
+  <div class="container">
+    <span class="gov">الجمهورية العربية السورية</span>
+    <span class="right">
+      <a href="/passenger/">للركاب</a>
+      <span class="sep"></span>
+      <a href="/driver/">للسائقين</a>
+      <span class="sep"></span>
+      <a href="/admin/login.html">الإدارة</a>
+    </span>
+  </div>
+</div>
+
 <div class="driver-shell">
 
-<div id="offline-banner" class="offline-banner hidden" role="status">دون اتصال — يتم تخزين المواقع محلياً وستُرسل عند العودة</div>
+<div id="offline-banner" class="offline-banner hidden" role="status" data-i18n="driver.offline">دون اتصال — يتم تخزين المواقع محلياً وستُرسل عند العودة</div>
 
 <header class="driver-bar">
+  <a href="/" class="home-btn" title="العودة إلى الرئيسية" aria-label="العودة إلى الرئيسية">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+  </a>
+  <button id="lang-toggle" class="lang-btn" data-i18n-toggle data-i18n="header.toggleLang" title="EN / AR">EN</button>
   <div>
-    <div class="text-xs muted" style="color:rgba(255,255,255,.7)">حافلة</div>
+    <div class="label">حافلة</div>
     <div class="vehicle-id" id="bar-vehicle">—</div>
   </div>
-  <div class="center">
+  <div style="text-align:center">
     <span class="gps-pill" id="gps-pill">
       <span class="live-dot" aria-hidden="true"></span>
       <span id="gps-text">جاري الاتصال…</span>
     </span>
   </div>
-  <button id="logout-btn" class="btn btn--sm" style="background:rgba(255,255,255,.1);color:#fff" title="تسجيل الخروج">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 17l-5-5 5-5M5 12h14"/></svg>
+  <button id="logout-btn" class="logout-btn" title="تسجيل الخروج" aria-label="تسجيل الخروج">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 17l-5-5 5-5M5 12h14"/></svg>
   </button>
 </header>
 
 <!-- Login pane -->
 <section id="login-pane" class="login-pane">
   <div class="login-card">
-    <h2 class="card__title" style="font-size:var(--fs-xl);margin-bottom:var(--s-2)">دخول السائق</h2>
-    <p class="muted" style="margin-bottom:var(--s-5)">أدخل بريدك وكلمة المرور، أو استخدم البصمة إن كانت مفعّلة.</p>
+    <h2>دخول السائق</h2>
+    <p class="sub">أدخل بريدك وكلمة المرور، أو استخدم البصمة إن كانت مفعّلة.</p>
 
     <button id="biometric-btn" class="biometric-btn hidden">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 12a3 3 0 0 1 6 0v4a1 1 0 0 1-2 0v-4"/></svg>
       الدخول ببصمة الإصبع
     </button>
 
-    <form id="login-form" class="stack">
+    <form id="login-form" style="display:flex;flex-direction:column;gap:14px">
       <div class="field">
         <label class="field__label" for="email">البريد</label>
         <input class="input" id="email" type="email" inputmode="email" autocomplete="username" required>
@@ -197,7 +314,7 @@
 <section id="trip-pane" class="trip-pane hidden">
 
   <div class="trip-header">
-    <div class="text-xs" style="color:rgba(255,255,255,.7);text-transform:uppercase">الخط الحالي</div>
+    <div class="label">الخط الحالي</div>
     <div class="route-name" id="route-name">—</div>
     <div class="next-stop" id="next-stop">المحطة التالية: —</div>
   </div>
@@ -218,15 +335,15 @@
     <div class="meta-grid">
       <div class="meta-card">
         <div class="meta-card__label">السرعة</div>
-        <div class="meta-card__value" id="meta-speed">٠ <span class="text-xs muted">كم/س</span></div>
+        <div class="meta-card__value" id="meta-speed">٠ <span class="unit">كم/س</span></div>
       </div>
       <div class="meta-card">
         <div class="meta-card__label">المسافة</div>
-        <div class="meta-card__value" id="meta-dist">٠ <span class="text-xs muted">كم</span></div>
+        <div class="meta-card__value" id="meta-dist">٠ <span class="unit">كم</span></div>
       </div>
       <div class="meta-card">
         <div class="meta-card__label">المدة</div>
-        <div class="meta-card__value" id="meta-time">٠ <span class="text-xs muted">د</span></div>
+        <div class="meta-card__value" id="meta-time">٠ <span class="unit">د</span></div>
       </div>
       <div class="meta-card">
         <div class="meta-card__label">الإشغال</div>
@@ -242,8 +359,8 @@
 
 </div>
 
-<!-- Capacitor bridge for native plugins -->
 <script src="/lib/capacitor-bridge.js"></script>
+<script src="/lib/i18n.js" defer></script>
 <script>
 'use strict';
 const $ = (s, r=document) => r.querySelector(s);
@@ -263,12 +380,104 @@ let timerInterval = null;
 function showLogin() {
   $('#login-pane').classList.remove('hidden');
   $('#trip-pane').classList.add('hidden');
+  // Hide the GPS pill + vehicle ID before login — they show stale "connecting"
+  // and "—" placeholders otherwise, which look like the page is broken.
+  document.body.classList.add('is-logged-out');
 }
 function showTrip() {
   $('#login-pane').classList.add('hidden');
   $('#trip-pane').classList.remove('hidden');
+  document.body.classList.remove('is-logged-out');
   $('#bar-vehicle').textContent = user?.vehicle_code || user?.vehicle_id || '—';
-  $('#route-name').textContent = user?.route_name || 'بانتظار تخصيص الخط';
+  $('#route-name').textContent  = user?.route_name || 'بانتظار تخصيص الخط';
+  // Track A.3: pull the driver's actual vehicle + route assignment
+  // (fixes the v4.1 bug where the bar said "—" because the login
+  //  response never includes vehicle_code/route_name).
+  hydrateMe();
+  // Poll for dispatched trips so the driver sees "you have a trip
+  // scheduled at 16:30 on R101 — Acknowledge?".
+  pollNextTrip();
+  if (window.__nextTripInterval) clearInterval(window.__nextTripInterval);
+  window.__nextTripInterval = setInterval(pollNextTrip, 30000);
+}
+
+async function hydrateMe() {
+  if (!token) return;
+  try {
+    const r = await fetch(API_BASE + '/api/driver/me', {
+      headers: { 'Authorization': 'Bearer ' + token },
+    });
+    if (!r.ok) return;
+    const d = await r.json();
+    if (d.vehicle?.vehicle_id) $('#bar-vehicle').textContent = d.vehicle.vehicle_id;
+    if (d.route) {
+      const isAr = (document.documentElement.lang || 'ar').slice(0,2) === 'ar';
+      $('#route-name').textContent = isAr ? (d.route.name_ar || d.route.name) : (d.route.name || d.route.name_ar);
+    }
+  } catch (_) {}
+}
+
+async function pollNextTrip() {
+  if (!token) return;
+  try {
+    const r = await fetch(API_BASE + '/api/driver/me/next_trip', {
+      headers: { 'Authorization': 'Bearer ' + token },
+    });
+    if (!r.ok) return;
+    const d = await r.json();
+    renderDispatchBanner(d.trip);
+  } catch (_) {}
+}
+
+function renderDispatchBanner(trip) {
+  let host = document.getElementById('dispatch-banner');
+  if (!host) {
+    host = document.createElement('div');
+    host.id = 'dispatch-banner';
+    host.style.cssText = 'margin:12px 16px;padding:14px;border-radius:10px;background:#fef3c7;color:#78350f;font-family:"Readex Pro",system-ui,sans-serif;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;';
+    $('#trip-pane').prepend(host);
+  }
+  if (!trip || trip.status === 'in_progress') { host.style.display = 'none'; return; }
+  host.style.display = 'flex';
+  const r = trip.route || {};
+  const isAr = (document.documentElement.lang || 'ar').slice(0,2) === 'ar';
+  const when = trip.scheduled_start ? new Date(trip.scheduled_start).toLocaleString(isAr ? 'ar-SY' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+  const routeName = isAr ? (r.name_ar || r.name || r.route_id || '') : (r.name || r.name_ar || r.route_id || '');
+  const statusLabel = ({
+    scheduled:  isAr ? 'مجدول'  : 'Scheduled',
+    dispatched: isAr ? 'مُرسَل'  : 'Dispatched',
+    acked:      isAr ? 'مُعتمَد' : 'Acked',
+  })[trip.status] || trip.status;
+  host.innerHTML =
+    '<div style="flex:1;min-width:200px;">' +
+    '  <div style="font-weight:700;font-size:14px;margin-bottom:4px;">' + statusLabel + ' — ' + escapeText(routeName) + '</div>' +
+    '  <div style="font-size:13px;">' + (isAr ? 'الموعد' : 'When') + ': ' + escapeText(when) +
+        (trip.planned_passengers != null ? '  ·  ' + (isAr ? 'ركاب مخططون' : 'planned pax') + ': ' + trip.planned_passengers : '') + '</div>' +
+    (trip.notes ? '  <div style="font-size:12px;margin-top:4px;color:#92400e;">' + escapeText(trip.notes) + '</div>' : '') +
+    '</div>' +
+    '<div style="display:flex;gap:6px;">' +
+      (trip.status === 'dispatched' || trip.status === 'scheduled'
+        ? '<button id="ack-btn" style="padding:8px 14px;background:#0E5650;color:#fff;border:0;border-radius:8px;cursor:pointer;font:inherit;">' + (isAr ? 'استلام' : 'Acknowledge') + '</button>'
+        : '') +
+    '</div>';
+  const ack = document.getElementById('ack-btn');
+  if (ack) ack.addEventListener('click', async () => {
+    ack.disabled = true;
+    try {
+      const rr = await fetch(API_BASE + '/api/driver/trip/' + encodeURIComponent(trip.id) + '/ack', {
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      });
+      if (!rr.ok) throw new Error('ack');
+      pollNextTrip();
+    } catch (_) {
+      alert(isAr ? 'فشل التأكيد' : 'Ack failed');
+      ack.disabled = false;
+    }
+  });
+}
+
+function escapeText(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
 function setOnline(on) {
@@ -284,7 +493,7 @@ function setGps(connected, text) {
   pill.classList.toggle('is-off', !connected);
 }
 
-// ----- Login -----
+// Login
 $('#login-form').addEventListener('submit', async (ev) => {
   ev.preventDefault();
   const email = $('#email').value.trim();
@@ -317,7 +526,7 @@ $('#logout-btn').addEventListener('click', () => {
   showLogin();
 });
 
-// ----- Biometric -----
+// Biometric
 const cap = window.CapacitorBridge;
 if (cap && cap.IS_NATIVE) {
   cap.getBiometryType().then(t => {
@@ -328,13 +537,12 @@ $('#biometric-btn').addEventListener('click', async () => {
   if (!cap) return;
   const ok = await cap.authenticateBiometric('دخول السائق');
   if (ok) {
-    // Use stored credentials (omitted: rely on backend session refresh)
     $('#login-error').textContent = 'يرجى الدخول بالبريد وكلمة المرور أولاً';
     $('#login-error').classList.remove('hidden');
   }
 });
 
-// ----- GPS -----
+// GPS
 function setupGPS() {
   if (cap && cap.IS_NATIVE) {
     cap.requestLocationPermission().then(perm => {
@@ -358,12 +566,12 @@ function setupGPS() {
 function onPosition(c) {
   setGps(true);
   const speed = c.speed != null ? Math.max(0, Math.round(c.speed * 3.6)) : 0;
-  $('#meta-speed').innerHTML = arDigit(speed) + ' <span class="text-xs muted">كم/س</span>';
+  $('#meta-speed').innerHTML = arDigit(speed) + ' <span class="unit">كم/س</span>';
 
   if (lastPos) {
     const km = haversineKm(lastPos.latitude, lastPos.longitude, c.latitude, c.longitude);
-    if (km < 1) totalKm += km;  // ignore GPS jumps >1 km
-    $('#meta-dist').innerHTML = arDigit(totalKm.toFixed(1)) + ' <span class="text-xs muted">كم</span>';
+    if (km < 1) totalKm += km;
+    $('#meta-dist').innerHTML = arDigit(totalKm.toFixed(1)) + ' <span class="unit">كم</span>';
   }
   lastPos = c;
 
@@ -372,8 +580,58 @@ function onPosition(c) {
       method: 'POST',
       headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
       body: JSON.stringify({ lat: c.latitude, lon: c.longitude, speed, heading: c.heading })
-    }).catch(()=>{ /* queue offline-tolerant */ });
+    }).then(r => r.ok ? r.json() : null).then(applyBunching).catch(()=>{});
   }
+}
+
+// ── Track C: Bunching / hold-here banner ────────────────────────────────────
+// The /api/driver/position response includes hold_seconds when this vehicle
+// is bunched with another on the same route. We show a calm amber banner
+// with a live countdown; nothing is forced — drivers can keep moving. The
+// goal is to give them a clear suggestion that prevents bunching on the
+// next stop.
+let __holdDeadline = null, __holdInterval = null;
+function applyBunching(d) {
+  if (!d || typeof d !== 'object') return;
+  const hold = Number(d.hold_seconds || 0);
+  if (hold <= 0) { clearHoldBanner(); return; }
+  // Extend the deadline if the new reading says we should still be holding,
+  // but don't shrink it (avoid flicker between adjacent GPS ticks).
+  const target = Date.now() + hold * 1000;
+  __holdDeadline = Math.max(__holdDeadline || 0, target);
+  showHoldBanner();
+}
+function showHoldBanner() {
+  let host = document.getElementById('hold-banner');
+  if (!host) {
+    host = document.createElement('div');
+    host.id = 'hold-banner';
+    host.style.cssText = 'margin:12px 16px;padding:14px 16px;border-radius:10px;background:#fde68a;color:#78350f;font-family:"Readex Pro",system-ui,sans-serif;display:flex;align-items:center;gap:12px;border:1px solid #f59e0b;';
+    $('#trip-pane').prepend(host);
+  }
+  function tick() {
+    const left = Math.max(0, Math.ceil((__holdDeadline - Date.now()) / 1000));
+    const isAr = (document.documentElement.lang || 'ar').slice(0,2) === 'ar';
+    host.innerHTML =
+      '<div style="font-size:22px;">⏸</div>' +
+      '<div style="flex:1;">' +
+      '  <div style="font-weight:700;font-size:14px;">' +
+          (isAr ? 'يُوصى بالانتظار عند المحطة القادمة' : 'Recommended: hold at the next stop') + '</div>' +
+      '  <div style="font-size:13px;">' +
+          (isAr ? 'لتفادي تقارب الحافلات. وقت الانتظار المقترح: ' : 'To avoid bunching. Suggested wait: ') +
+          '<b>' + arDigit(left) + (isAr ? ' ث' : 's') + '</b></div>' +
+      '</div>';
+    if (left <= 0) clearHoldBanner();
+  }
+  tick();
+  if (__holdInterval) clearInterval(__holdInterval);
+  __holdInterval = setInterval(tick, 1000);
+}
+function clearHoldBanner() {
+  __holdDeadline = null;
+  if (__holdInterval) { clearInterval(__holdInterval); __holdInterval = null; }
+  const host = document.getElementById('hold-banner');
+  if (host) host.remove();
 }
 
 function haversineKm(lat1,lon1,lat2,lon2){
@@ -383,7 +641,7 @@ function haversineKm(lat1,lon1,lat2,lon2){
   return 2*R*Math.asin(Math.sqrt(a));
 }
 
-// ----- Trip controls -----
+// Trip controls
 $('#start-trip').addEventListener('click', async () => {
   if (!token) return;
   try {
@@ -426,10 +684,10 @@ $('#end-trip').addEventListener('click', async () => {
 function updateTimer() {
   if (!tripStartedAt) return;
   const mins = Math.floor((Date.now() - tripStartedAt) / 60000);
-  $('#meta-time').innerHTML = arDigit(mins) + ' <span class="text-xs muted">د</span>';
+  $('#meta-time').innerHTML = arDigit(mins) + ' <span class="unit">د</span>';
 }
 
-// ----- Passenger counter -----
+// Passenger counter
 $('#inc').addEventListener('click', () => {
   pax = Math.min(120, pax + 1);
   $('#pax-count').textContent = arDigit(pax);
@@ -453,12 +711,11 @@ function syncPax() {
   }).catch(()=>{});
 }
 
-// ----- Incident -----
+// Incident
 $('#incident-btn').addEventListener('click', async () => {
   if (cap?.captureIncidentPhoto) {
     try {
       const photo = await cap.captureIncidentPhoto();
-      // POST photo to backend; backend uploads to storage
       if (token && photo?.dataUrl) {
         await fetch(API_BASE + '/api/driver/incident', {
           method: 'POST',
@@ -473,9 +730,9 @@ $('#incident-btn').addEventListener('click', async () => {
   }
 });
 
-// ----- Boot -----
+// Boot
 window.addEventListener('DOMContentLoaded', () => {
-  if (token && user) { showTrip(); setupGPS(); } else showLogin();
+  if (token && user) { showTrip(); setupGPS(); /* showTrip() also hydrates + starts poll */ } else showLogin();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/driver/service-worker.js').catch(()=>{});
 });
 </script>

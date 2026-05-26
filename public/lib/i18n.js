@@ -1,446 +1,578 @@
 /**
- * Damascus Transit i18n Framework
- * Supports Arabic (RTL) and English (LTR) for all frontend apps.
+ * i18n.js — bilingual (AR + EN) string table + DOM bind.
+ * Updated 25 May 2026 for the Syrian national identity redesign.
  *
- * Usage:
- *   HTML: <span data-i18n="key">fallback text</span>
- *         <input data-i18n-placeholder="key" placeholder="fallback">
- *   JS:   t('key')          — returns translated string
- *         i18n.t('key', { speed: 60 })  — with interpolation
- *         i18n.toggleLanguage()          — switch between ar/en
- *         i18n.getCurrentLang()          — returns 'ar' or 'en'
+ * Usage in HTML:
+ *   <h1 data-i18n="hero.title">…fallback Arabic copy…</h1>
+ *   <input data-i18n-placeholder="passenger.searchHint">
+ *   <button data-i18n-aria-label="header.toggleLang">EN</button>
  *
- * The current language is persisted in localStorage under 'dt_lang'.
+ * The fallback text inside the element is ALWAYS the Arabic copy so the
+ * page reads correctly even if JS is disabled.
+ *
+ * To switch languages at runtime:
+ *   I18N.setLang('en');   // → updates <html lang>, dir, and every data-i18n node
+ *   I18N.setLang('ar');
+ *
+ * Persists to localStorage as `dt_lang`.
  */
-(function (global) {
+(function (window, document) {
   'use strict';
 
-  const STORAGE_KEY = 'dt_lang';
-  const DEFAULT_LANG = 'ar';
+  // ----- Dictionary -----------------------------------------------------------
+  const DICT = {
+    ar: {
+      'app.title':            'نقل دمشق',
+      'app.tagline':          'الجمهورية العربية السورية · نظام النقل العام',
 
-  /* ─────────────────────────────────────────────────────────────────────
-   * TRANSLATIONS
-   * Each key maps to { ar: '...', en: '...' }.
-   * Keys are namespaced by app prefix for clarity:
-   *   (no prefix)  — shared across all apps
-   *   dash.*       — main dashboard (index.html)
-   *   drv.*        — driver app
-   *   adm.*        — admin dashboard
-   *   pax.*        — passenger app
-   * ───────────────────────────────────────────────────────────────────── */
-  const dict = {
+      'header.home':          'الرئيسية',
+      'header.passenger':     'للركاب',
+      'header.driver':        'للسائقين',
+      'header.admin':         'دخول الإدارة',
+      'header.toggleLang':    'EN',
+      'header.live':          'مباشر',
 
-    /* ── Shared ───────────────────────────────────────────────── */
-    loading:                 { ar: 'جاري التحميل...', en: 'Loading...' },
-    loading_short:           { ar: 'جاري التحميل', en: 'Loading' },
-    connected:               { ar: 'متصل', en: 'Connected' },
-    disconnected:            { ar: 'غير متصل', en: 'Disconnected' },
-    route:                   { ar: 'الخط', en: 'Route' },
-    speed:                   { ar: 'السرعة', en: 'Speed' },
-    direction:               { ar: 'الاتجاه', en: 'Direction' },
-    source:                  { ar: 'المصدر', en: 'Source' },
-    simulation:              { ar: 'محاكاة', en: 'Simulation' },
-    type_bus:                { ar: 'حافلة', en: 'Bus' },
-    type_microbus:           { ar: 'ميكروباص', en: 'Microbus' },
-    type_taxi:               { ar: 'تاكسي', en: 'Taxi' },
-    filter_all:              { ar: 'الكل', en: 'All' },
-    filter_buses:            { ar: 'حافلات', en: 'Buses' },
-    filter_microbuses:       { ar: 'ميكروباص', en: 'Microbuses' },
-    filter_taxis:            { ar: 'تاكسي', en: 'Taxis' },
-    cancel:                  { ar: 'إلغاء', en: 'Cancel' },
-    save:                    { ar: 'حفظ', en: 'Save' },
-    close:                   { ar: 'إغلاق', en: 'Close' },
-    refresh:                 { ar: 'تحديث', en: 'Refresh' },
-    email:                   { ar: 'البريد الإلكتروني', en: 'Email' },
-    password:                { ar: 'كلمة المرور', en: 'Password' },
-    login_btn:               { ar: 'دخول', en: 'Sign In' },
-    logout:                  { ar: 'تسجيل الخروج', en: 'Logout' },
-    status_active:           { ar: 'نشطة', en: 'Active' },
-    status_idle:             { ar: 'خامدة', en: 'Idle' },
-    status_maintenance:      { ar: 'صيانة', en: 'Maintenance' },
-    actions:                 { ar: 'الإجراءات', en: 'Actions' },
-    action:                  { ar: 'الإجراء', en: 'Action' },
-    status:                  { ar: 'الحالة', en: 'Status' },
-    type_col:                { ar: 'النوع', en: 'Type' },
-    vehicle:                 { ar: 'المركبة', en: 'Vehicle' },
-    name_col:                { ar: 'الاسم', en: 'Name' },
-    trips:                   { ar: 'الرحلات', en: 'Trips' },
-    lang_toggle:             { ar: 'English', en: 'عربي' },
+      'hero.eyebrow':         'الجمهورية العربية السورية · نظام النقل العام',
+      'hero.title':           'تتبع حافلات دمشق في الوقت الحقيقي',
+      'hero.sub':             'منصة وطنية مفتوحة المصدر تربط الركاب والسائقين والمشرفين بمواقع الحافلات وأوقات الوصول لحظياً، بدون إعلانات وبدون مقابل.',
+      'hero.ctaPrimary':      'ابحث عن خطك',
+      'hero.ctaSecondary':    'عرض الخريطة المباشرة',
+      'hero.liveBadge':       'البيانات تُحدَّث كل ٥ ثوانٍ',
 
-    /* ── Main Dashboard (index.html) ─────────────────────────── */
-    dash_active_vehicles:    { ar: 'مركبات نشطة', en: 'Active Vehicles' },
-    dash_routes:             { ar: 'خطوط', en: 'Routes' },
-    dash_vehicles:           { ar: 'المركبات', en: 'Vehicles' },
-    dash_no_vehicles:        { ar: 'لا توجد مركبات', en: 'No Vehicles' },
-    dash_error_load:         { ar: 'فشل في تحميل البيانات الأولية', en: 'Failed to load initial data' },
-    dash_error_disconnect:   { ar: 'فقدان الاتصال بالخادم', en: 'Lost server connection' },
-    dash_powered_by:         { ar: 'مدعوم من قبل DamascusTransit', en: 'Powered by DamascusTransit' },
-    dash_passenger_app:      { ar: 'تطبيق الركاب', en: 'Passenger App' },
-    dash_route_label:        { ar: 'الخط:', en: 'Route:' },
-    dash_speed_label:        { ar: 'السرعة:', en: 'Speed:' },
-    dash_direction_label:    { ar: 'الاتجاه:', en: 'Direction:' },
-    dash_source_label:       { ar: 'المصدر:', en: 'Source:' },
+      'stat.active':          'حافلات عاملة',
+      'stat.activeFrom':      'من إجمالي الأسطول',
+      'stat.routes':          'عدد الخطوط',
+      'stat.routesSub':       'تغطي محاور المدينة',
+      'stat.stops':           'عدد المحطات',
+      'stat.stopsSub':        'منتشرة في دمشق',
+      'stat.occupancy':       'متوسط الإشغال',
+      'stat.occupancySub':    'حسب آخر تحديث',
+      'stat.fleet':           'إجمالي الحافلة',
 
-    /* ── Driver App ──────────────────────────────────────────── */
-    drv_title:               { ar: '🚌 نقل دمشق', en: '🚌 Damascus Transit' },
-    drv_subtitle:            { ar: 'تطبيق السائق', en: 'Driver App' },
-    drv_email_ph:            { ar: 'البريد الإلكتروني', en: 'Email' },
-    drv_password_ph:         { ar: 'كلمة المرور', en: 'Password' },
-    drv_login_btn:           { ar: 'دخول — Sign In', en: 'Sign In — دخول' },
-    drv_fill_all:            { ar: 'يرجى ملء جميع الحقول', en: 'Please fill all fields' },
-    drv_logging_in:          { ar: 'جاري الدخول...', en: 'Signing in...' },
-    drv_login_failed:        { ar: 'فشل تسجيل الدخول', en: 'Login failed' },
-    drv_connection_error:    { ar: 'خطأ في الاتصال', en: 'Connection error' },
-    drv_driver_label:        { ar: 'سائق', en: 'Driver' },
-    drv_no_trip:             { ar: 'لا رحلة', en: 'No Trip' },
-    drv_on_route:            { ar: 'على المسار', en: 'On Route' },
-    drv_off_route:           { ar: 'خارج المسار!', en: 'Off Route!' },
-    drv_speed_unit:          { ar: 'كم/س', en: 'km/h' },
-    drv_stopped:             { ar: 'متوقف · Stopped', en: 'Stopped · متوقف' },
-    drv_moving:              { ar: 'متحرك · Moving', en: 'Moving · متحرك' },
-    drv_trip_time:           { ar: 'وقت الرحلة', en: 'Trip Time' },
-    drv_km_covered:          { ar: 'كم مقطوع', en: 'Km Covered' },
-    drv_on_time:             { ar: 'الالتزام', en: 'On Time' },
-    drv_next_stop:           { ar: 'المحطة التالية · Next Stop', en: 'Next Stop' },
-    drv_min_abbrev:          { ar: 'د', en: 'min' },
-    drv_passengers:          { ar: 'ركاب · Passengers', en: 'Passengers · ركاب' },
-    drv_trip_idle:           { ar: 'ابدأ رحلة جديدة للبدء بتتبع التوقفات', en: 'Start a trip to begin tracking stops' },
-    drv_trip_idle_sub:       { ar: 'Start a trip to begin tracking stops', en: 'ابدأ رحلة جديدة للبدء بتتبع التوقفات' },
-    drv_start_new_trip:      { ar: 'بدء رحلة جديدة · Start New Trip', en: 'Start New Trip' },
-    drv_select_route_msg:    { ar: 'اختر الخط قبل بدء الرحلة · Select route before starting', en: 'Select route before starting' },
-    drv_line_a:              { ar: 'خط أ — Line A (المرجة ← الغربية)', en: 'Line A (Al-Marjeh ← Western Station)' },
-    drv_line_b:              { ar: 'خط ب — Line B (القابون ← المزة)', en: 'Line B (Al-Qaboun ← Mazzeh)' },
-    drv_line_c:              { ar: 'خط ج — Line C (الميدان ← ركن الدين)', en: 'Line C (Al-Midan ← Rukn Al-Din)' },
-    drv_cancel:              { ar: 'إلغاء · Cancel', en: 'Cancel' },
-    drv_start:               { ar: 'بدء · Start', en: 'Start' },
-    drv_end_trip_title:      { ar: 'إنهاء الرحلة · End Trip', en: 'End Trip' },
-    drv_confirm_end:         { ar: 'هل تريد إنهاء الرحلة الحالية؟ · End the current trip?', en: 'End the current trip?' },
-    drv_back:                { ar: 'رجوع · Back', en: 'Back' },
-    drv_end:                 { ar: 'إنهاء · End', en: 'End' },
-    drv_action_start:        { ar: 'بدء رحلة · Start Trip', en: 'Start Trip · بدء' },
-    drv_action_end:          { ar: 'إنهاء الرحلة · End Trip', en: 'End Trip · إنهاء' },
-    drv_action_arrived:      { ar: 'وصلت · Arrived', en: 'Arrived · وصلت' },
-    drv_action_report:       { ar: 'بلاغ · Report', en: 'Report · بلاغ' },
-    drv_speed_warning:       { ar: '⚠️ تجاوز الحد المسموح! {speed} كم/س — Speed limit exceeded!', en: '⚠️ Speed limit exceeded! {speed} km/h' },
-    drv_approaching:         { ar: '🚏 اقتراب من {nameAr} — Approaching {name}', en: '🚏 Approaching {name} — اقتراب من {nameAr}' },
-    drv_off_route_alert:     { ar: '⚠️ خارج المسار المحدد! — You are off the designated route!', en: '⚠️ You are off the designated route! — خارج المسار!' },
-    drv_km_ahead:            { ar: '{dist} كم · km ahead', en: '{dist} km ahead' },
+      'map.title':            'الخريطة المباشرة',
+      'map.connected':        'متصل',
+      'map.disconnected':     'انقطع البث',
+      'map.legendBus':        'حافلة',
+      'map.legendStop':       'محطة',
 
-    /* ── Admin Dashboard ─────────────────────────────────────── */
-    adm_resolve:             { ar: 'حل', en: 'Resolve' },
-    adm_resolved:            { ar: 'تم الحل', en: 'Resolved' },
-    adm_assign:              { ar: 'تعيين', en: 'Assign' },
-    adm_edit:                { ar: 'تحرير', en: 'Edit' },
-    adm_no_data:             { ar: 'لا بيانات', en: 'No data' },
-    adm_all_alerts_tab:      { ar: 'جميع التنبيهات', en: 'All Alerts' },
-    adm_no_alerts_active:    { ar: 'لا توجد تنبيهات نشطة', en: 'No active alerts — all systems normal' },
-    adm_no_alerts_short:     { ar: 'لا توجد تنبيهات', en: 'No alerts' },
-    adm_no_vehicles_reg:     { ar: 'لا توجد مركبات مسجّلة', en: 'No vehicles registered' },
-    adm_add_vehicle_hint:    { ar: 'أضف مركبة جديدة باستخدام زر الإضافة', en: 'Add a vehicle using the add button' },
-    adm_no_routes_def:       { ar: 'لا توجد مسارات مُعرَّفة', en: 'No routes defined' },
-    adm_add_routes_hint:     { ar: 'أضف مسارات عبر واجهة إدارة الشبكة', en: 'Add routes via the network management interface' },
-    adm_no_drivers_reg:      { ar: 'لا يوجد سائقون مسجّلون', en: 'No drivers registered' },
-    adm_add_driver_hint:     { ar: 'أضف سائقاً جديداً باستخدام زر الإضافة', en: 'Add a driver using the add button' },
-    adm_driver_active:       { ar: 'نشط', en: 'Active' },
-    adm_driver_inactive:     { ar: 'غير نشط', en: 'Inactive' },
-    adm_chart_active:        { ar: 'نشطة', en: 'Active' },
-    adm_chart_idle:          { ar: 'خاملة', en: 'Idle' },
-    adm_chart_hour:          { ar: 'الساعة:', en: 'Hour:' },
-    adm_vehicle_count:       { ar: 'عدد المركبات', en: 'Vehicle Count' },
-    adm_route_type:          { ar: 'النوع:', en: 'Type:' },
-    adm_route_stops:         { ar: 'عدد المحطات:', en: 'Stops:' },
-    adm_route_distance:      { ar: 'المسافة:', en: 'Distance:' },
-    adm_route_frequency:     { ar: 'التكرار:', en: 'Frequency:' },
-    adm_general_type:        { ar: 'عام', en: 'General' },
-    adm_role_admin:          { ar: 'مدير النظام', en: 'System Admin' },
-    adm_role_super:          { ar: 'مدير عام', en: 'General Manager' },
-    adm_role_dispatcher:     { ar: 'مشغّل', en: 'Dispatcher' },
-    adm_connection_timeout:  { ar: 'انتهت مهلة الاتصال بالخادم', en: 'Connection timed out. Check your network.' },
-    adm_connection_lost:     { ar: 'تعذّر الاتصال — جارٍ إعادة المحاولة', en: 'Connection lost, retrying...' },
-    adm_no_data_drivers:     { ar: 'لا بيانات سائقين', en: 'No driver data' },
-    adm_urban:               { ar: 'حضر', en: 'Urban' },
-    adm_speed_unit:          { ar: 'كم/س', en: 'km/h' },
-    adm_logo:                { ar: 'نقل دمشق', en: 'Damascus Transit' },
-    adm_panel:               { ar: 'Damascus Transit Admin Panel', en: 'Damascus Transit Admin Panel' },
-    adm_email_ph:            { ar: 'البريد الإلكتروني', en: 'Email' },
-    adm_password_ph:         { ar: 'كلمة المرور', en: 'Password' },
-    adm_login_btn:           { ar: 'دخول', en: 'Sign In' },
-    adm_subtitle:            { ar: 'Admin Panel', en: 'لوحة تحكم' },
-    adm_system_admin:        { ar: 'مدير النظام', en: 'System Admin' },
-    adm_nav_dashboard:       { ar: 'لوحة التحكم', en: 'Dashboard' },
-    adm_nav_vehicles:        { ar: 'المركبات', en: 'Vehicles' },
-    adm_nav_routes:          { ar: 'المسارات', en: 'Routes' },
-    adm_nav_alerts:          { ar: 'التنبيهات', en: 'Alerts' },
-    adm_nav_drivers:         { ar: 'السائقون', en: 'Drivers' },
-    adm_nav_analytics:       { ar: 'التحليلات', en: 'Analytics' },
-    adm_page_dashboard:      { ar: 'لوحة التحكم', en: 'Dashboard' },
-    adm_total_vehicles:      { ar: 'إجمالي المركبات', en: 'Total Vehicles' },
-    adm_all_vehicles:        { ar: '📍 جميع المركبات', en: '📍 All Vehicles' },
-    adm_active_vehicles:     { ar: 'المركبات النشطة', en: 'Active Vehicles' },
-    adm_in_service:          { ar: '🟢 في الخدمة', en: '🟢 In Service' },
-    adm_idle_vehicles:       { ar: 'مركبات خامدة', en: 'Idle Vehicles' },
-    adm_stopped_vehicles:    { ar: '🔴 متوقفة', en: '🔴 Stopped' },
-    adm_maintenance:         { ar: 'الصيانة', en: 'Maintenance' },
-    adm_under_maintenance:   { ar: '🔧 قيد الصيانة', en: '🔧 Under Maintenance' },
-    adm_trips_today:         { ar: 'الرحلات اليوم', en: 'Trips Today' },
-    adm_schedule_adherence:  { ar: 'الالتزام بالجدول', en: 'Schedule Adherence' },
-    adm_active_alerts:       { ar: 'التنبيهات النشطة', en: 'Active Alerts' },
-    adm_add_vehicle:         { ar: '+ إضافة مركبة', en: '+ Add Vehicle' },
-    adm_manage_vehicles:     { ar: 'إدارة المركبات', en: 'Manage Vehicles' },
-    adm_manage_routes:       { ar: 'إدارة المسارات', en: 'Manage Routes' },
-    adm_all_alerts:          { ar: 'جميع التنبيهات', en: 'All Alerts' },
-    adm_all_types:           { ar: 'جميع الأنواع', en: 'All Types' },
-    adm_all_statuses:        { ar: 'جميع الحالات', en: 'All Statuses' },
-    adm_all_levels:          { ar: 'جميع المستويات', en: 'All Levels' },
-    adm_critical:            { ar: 'حرج', en: 'Critical' },
-    adm_warning:             { ar: 'تحذير', en: 'Warning' },
-    adm_info_level:          { ar: 'معلومة', en: 'Info' },
-    adm_fuel:                { ar: 'وقود', en: 'Fuel' },
-    adm_speed_alert:         { ar: 'السرعة', en: 'Speed' },
-    adm_bus_filter:          { ar: 'باص', en: 'Bus' },
-    adm_vehicle_num_col:     { ar: 'رقم المركبة', en: 'Vehicle No.' },
-    adm_vehicle_type_col:    { ar: 'النوع', en: 'Type' },
-    adm_vehicle_status_col:  { ar: 'الحالة', en: 'Status' },
-    adm_vehicle_route_col:   { ar: 'المسار', en: 'Route' },
-    adm_vehicle_gps_col:     { ar: 'جهاز GPS', en: 'GPS Device' },
-    adm_vehicle_name_col:    { ar: 'الاسم', en: 'Name' },
-    adm_severity_col:        { ar: 'مستوى الخطورة', en: 'Severity' },
-    adm_time_col:            { ar: 'الوقت', en: 'Time' },
-    adm_add_driver:          { ar: '+ إضافة سائق', en: '+ Add Driver' },
-    adm_manage_drivers:      { ar: 'إدارة السائقين', en: 'Manage Drivers' },
-    adm_driver_id_col:       { ar: 'رقم السائق', en: 'Driver No.' },
-    adm_driver_email_col:    { ar: 'البريد الإلكتروني', en: 'Email' },
-    adm_driver_phone_col:    { ar: 'رقم الهاتف', en: 'Phone' },
-    adm_assigned_vehicle:    { ar: 'المركبة المخصصة', en: 'Assigned Vehicle' },
-    adm_analytics_title:     { ar: 'التحليلات والإحصائيات', en: 'Analytics & Statistics' },
-    adm_fleet_utilization:   { ar: 'استخدام الأسطول', en: 'Fleet Utilization' },
-    adm_avg_speed:           { ar: 'متوسط السرعة', en: 'Avg Speed' },
-    adm_daily_trips:         { ar: 'الرحلات اليومية', en: 'Daily Trips' },
-    adm_gps_points_24h:      { ar: 'نقاط GPS (24 ساعة)', en: 'GPS Points (24h)' },
-    adm_fleet_util_chart:    { ar: 'استخدام الأسطول — المركبات النشطة مقابل الخاملة (24 ساعة)', en: 'Fleet Utilization — Active vs Idle Vehicles (24h)' },
-    adm_no_trip_data:        { ar: 'لا بيانات رحلات في آخر 24 ساعة', en: 'No trip data in last 24 hours' },
-    adm_route_perf_title:    { ar: 'أداء المسارات — نسبة الالتزام بالمواعيد ومتوسط التأخير (7 أيام)', en: 'Route Performance — On-Time Rate & Avg Delay (7 days)' },
-    adm_avg_delay_col:       { ar: 'متوسط التأخير (د)', en: 'Avg Delay (min)' },
-    adm_on_time_col:         { ar: 'الالتزام بالمواعيد', en: 'On Time' },
-    adm_route_col:           { ar: 'المسار', en: 'Route' },
-    adm_driver_scoreboard:   { ar: 'لوحة السائقين — الرحلات المكتملة والتزام المسار (30 يوماً)', en: 'Driver Scoreboard — Completed Trips & Route Adherence (30 days)' },
-    adm_total_distance:      { ar: 'المسافة الكلية (كم)', en: 'Total Distance (km)' },
-    adm_route_adherence:     { ar: 'الالتزام بالمسار', en: 'Route Adherence' },
-    adm_driver_col:          { ar: 'السائق', en: 'Driver' },
-    adm_gps_heatmap:         { ar: 'خريطة تغطية GPS — كثافة إشارة المركبات (24 ساعة)', en: 'GPS Coverage Map — Vehicle Signal Density (24h)' },
-    adm_high_coverage:       { ar: 'تغطية عالية', en: 'High Coverage' },
-    adm_mid_coverage:        { ar: 'تغطية متوسطة', en: 'Medium Coverage' },
-    adm_low_coverage:        { ar: 'تغطية منخفضة', en: 'Low Coverage' },
-    adm_no_gps_data:         { ar: 'لا بيانات GPS متاحة', en: 'No GPS data available' },
-    adm_edit_vehicle:        { ar: 'تحرير المركبة', en: 'Edit Vehicle' },
-    adm_vehicle_id_label:    { ar: 'رقم المركبة', en: 'Vehicle ID' },
-    adm_name_ar_label:       { ar: 'الاسم (عربي)', en: 'Name (Arabic)' },
-    adm_type_label:          { ar: 'النوع', en: 'Type' },
-    adm_status_label:        { ar: 'الحالة', en: 'Status' },
-    adm_assigned_route:      { ar: 'المسار المخصص', en: 'Assigned Route' },
-    adm_no_route:            { ar: 'لا يوجد', en: 'None' },
-    adm_gps_device_label:    { ar: 'رقم GPS Device', en: 'GPS Device ID' },
-    adm_gps_device_ph:       { ar: 'رقم الجهاز', en: 'Device number' },
-    adm_add_driver_modal:    { ar: 'إضافة سائق', en: 'Add Driver' },
-    adm_full_name_label:     { ar: 'الاسم الكامل', en: 'Full Name' },
-    adm_driver_name_ph:      { ar: 'اسم السائق', en: 'Driver name' },
-    adm_email_label:         { ar: 'البريد الإلكتروني', en: 'Email' },
-    adm_email_ph:            { ar: 'بريد إلكتروني', en: 'Email address' },
-    adm_phone_label:         { ar: 'رقم الهاتف', en: 'Phone Number' },
-    adm_phone_ph:            { ar: 'رقم الهاتف', en: 'Phone number' },
-    adm_password_label:      { ar: 'كلمة المرور', en: 'Password' },
-    adm_strong_password_ph:  { ar: 'كلمة مرور قوية', en: 'Strong password' },
-    adm_assign_vehicle:      { ar: 'تعيين المركبة', en: 'Assign Vehicle' },
-    adm_no_assignment:       { ar: 'بدون تعيين', en: 'No assignment' },
-    adm_create_btn:          { ar: 'إنشاء', en: 'Create' },
-    adm_vehicle_name_ph:     { ar: 'اسم المركبة', en: 'Vehicle name' },
-    adm_unknown_route:       { ar: 'خط غير معروف', en: 'Unknown Route' },
+      'routes.title':         'الخطوط',
+      'routes.viewAll':       'عرض الكل',
+      'routes.stopsCount':    'محطة',
+      'routes.none':          'لا توجد خطوط حالياً.',
 
-    /* ── Passenger App ───────────────────────────────────────── */
-    pax_connection_lost_bar: { ar: '🔄 انقطع الاتصال — جارٍ إعادة الاتصال بالبيانات المباشرة...', en: '🔄 Connection lost, retrying live data...' },
-    pax_active_vehicle_s:    { ar: 'مركبة نشطة', en: 'active vehicle' },
-    pax_next_arrival:        { ar: 'أقرب وصول', en: 'Next Arrival' },
-    pax_estimated:           { ar: 'تقدير', en: 'Est.' },
-    pax_push_unsupported:    { ar: 'إشعارات الدفع غير مدعومة في هذا المتصفح', en: 'Push notifications not supported in this browser.' },
-    pax_enable_notif:        { ar: 'تفعيل الإشعارات', en: 'Enable Notifications' },
-    pax_disable_notif:       { ar: 'إيقاف الإشعارات', en: 'Disable Notifications' },
-    pax_push_failed:         { ar: 'فشل تفعيل الإشعارات', en: 'Failed to enable push notifications.' },
-    pax_loading_fleet:       { ar: 'جاري تحميل بيانات الأسطول...', en: 'Loading fleet data...' },
-    pax_reconnecting:        { ar: 'جاري إعادة الاتصال بالبيانات المباشرة...', en: 'Reconnecting to live data...' },
-    pax_live_badge:          { ar: 'مباشر', en: 'Live' },
-    pax_search_ph:           { ar: 'ابحث عن خطوط...', en: 'Search routes...' },
-    pax_nearby_routes:       { ar: 'الخطوط القريبة', en: 'Nearby Routes' },
-    pax_back_to_routes:      { ar: '→ العودة إلى الخطوط', en: '← Back to Routes' },
-    pax_nav_map:             { ar: 'الخريطة', en: 'Map' },
-    pax_nav_routes:          { ar: 'الخطوط', en: 'Routes' },
-    pax_nav_stops:           { ar: 'المحطات', en: 'Stops' },
-    pax_nav_alerts:          { ar: 'التنبيهات', en: 'Alerts' },
-    pax_press_to_view:       { ar: 'اضغط لعرض المواعيد ←', en: 'Tap to view times →' },
-    pax_unknown_route:       { ar: 'خط غير معروف', en: 'Unknown Route' },
-    pax_real_gps:            { ar: 'GPS حقيقي', en: 'Real GPS' },
-    pax_min_label:           { ar: 'د', en: 'min' },
-    pax_routes_suffix:       { ar: 'خطوط', en: 'routes' },
-    pax_stops_label:         { ar: 'محطة', en: 'stops' },
-    pax_km:                  { ar: 'كم', en: 'km' },
-    pax_buses_label:         { ar: 'حافلة', en: 'bus' },
-    pax_buses_label_pl:      { ar: 'حافلات', en: 'buses' },
-    pax_no_vehicles_on_route: { ar: 'لا مركبات على هذا الخط', en: 'No vehicles on this route' },
-    pax_eta_loading:          { ar: 'جاري تحميل المواعيد...', en: 'Loading arrivals...' },
-    pax_eta_no_arrivals:      { ar: 'لا حافلات متاحة حاليًا', en: 'No buses available now' },
-    pax_eta_arriving_soon:    { ar: 'وصول الآن', en: 'Arriving now' },
-    pax_eta_source_real:      { ar: 'GPS حقيقي', en: 'Real GPS' },
-    pax_eta_source_est:       { ar: 'تقدير', en: 'Est.' },
-    pax_eta_countdown_min:    { ar: 'دقيقة', en: 'min' },
-    pax_eta_tap_stop:         { ar: 'اضغط على محطة لعرض مواعيد الوصول', en: 'Tap a stop to see arrival times' },
+      'features.title':       'لماذا نقل دمشق؟',
+      'features.live.title':  'تتبع لحظي',
+      'features.live.body':   'مواقع الحافلات تُبَث عبر SSE كل ٥ ثوانٍ. أوقات الوصول دقيقة محسوبة من PostGIS.',
+      'features.offline.title': 'يعمل دون اتصال',
+      'features.offline.body':  'تطبيق ويب تقدُّمي (PWA) يخزن المحطات والخطوط محلياً ويعمل بدون شبكة.',
+      'features.security.title':'خصوصية وأمان',
+      'features.security.body': 'JWT مع RBAC، تشفير bcrypt، CSP صارم، ومراقبة الأخطاء عبر Sentry.',
 
-    /* ── Driver Analytics Page ───────────────────────────────── */
-    da_title:                { ar: 'تحليلات أداء السائقين', en: 'Driver Performance Analytics' },
-    da_subtitle:             { ar: 'مقاييس الأداء التشغيلي لكل سائق', en: 'Operational performance metrics per driver' },
-    da_leaderboard:          { ar: 'قائمة السائقين', en: 'Driver Leaderboard' },
-    da_trips_col:            { ar: 'الرحلات', en: 'Trips' },
-    da_on_time_col:          { ar: 'الالتزام', en: 'On-Time %' },
-    da_avg_speed_col:        { ar: 'متوسط السرعة', en: 'Avg Speed' },
-    da_distance_col:         { ar: 'المسافة (كم)', en: 'Distance (km)' },
-    da_active_hrs_col:       { ar: 'ساعات العمل', en: 'Active Hrs' },
-    da_status_col:           { ar: 'الحالة', en: 'Status' },
-    da_driver_col:           { ar: 'السائق', en: 'Driver' },
-    da_on_time_chart:        { ar: 'أداء الالتزام بالمواعيد — أعلى 10 سائقين', en: 'On-Time Performance — Top 10 Drivers' },
-    da_sparkline_title:      { ar: 'عدد الرحلات اليومية (آخر 30 يوماً)', en: 'Daily Trip Count (Last 30 Days)' },
-    da_period_7d:            { ar: '7 أيام', en: '7 Days' },
-    da_period_30d:           { ar: '30 يوماً', en: '30 Days' },
-    da_no_data:              { ar: 'لا بيانات متاحة', en: 'No data available' },
-    da_loading:              { ar: 'جاري تحميل البيانات...', en: 'Loading data...' },
-    da_active_badge:         { ar: 'نشط', en: 'Active' },
-    da_inactive_badge:       { ar: 'غير نشط', en: 'Inactive' },
-    da_back_admin:           { ar: '← لوحة الإدارة', en: '← Admin Panel' },
-    da_km_h:                 { ar: 'كم/س', en: 'km/h' },
-    da_total_drivers:        { ar: 'إجمالي السائقين', en: 'Total Drivers' },
-    da_active_drivers:       { ar: 'سائقون نشطون', en: 'Active Drivers' },
-    da_total_trips:          { ar: 'إجمالي الرحلات', en: 'Total Trips' },
-    da_fleet_avg_ontime:     { ar: 'متوسط الالتزام', en: 'Fleet On-Time Avg' },
+      'passenger.welcome':    'أهلاً بك',
+      'passenger.sub':        'ابحث عن محطتك أو خطك أو شاهد أقرب الحافلات.',
+      'passenger.searchHint': 'اسم محطة أو خط (مثال: مزة، باب توما)',
+      'passenger.nearest':    'أقرب المحطات إليك',
+      'passenger.locate':     'موقعي',
+      'passenger.popular':    'الخطوط الشائعة',
+      'passenger.nearby':     'حافلات قريبة',
+      'passenger.quick':      'روابط سريعة',
+      'passenger.gtfs':       'جدول GTFS',
+      'passenger.gtfsSub':    'بيانات الخطوط القابلة للتنزيل',
+      'passenger.home':       'الرئيسية',
+      'passenger.homeSub':    'العودة للوحة العامة',
+      'passenger.tabHome':    'الرئيسية',
+      'passenger.tabNearby':  'قريب',
+      'passenger.tabRoutes':  'الخطوط',
+      'passenger.tabAccount': 'حسابي',
+      'passenger.noStops':    'لا توجد محطات قريبة ضمن ١٫٥ كم.',
+      'passenger.install':    'ثبّت التطبيق',
+      'passenger.installSub': 'للوصول السريع وأداء أفضل خارج المتصفح.',
+      'passenger.installBtn': 'تثبيت',
+
+      'driver.login':         'دخول السائق',
+      'driver.loginSub':      'أدخل بريدك وكلمة المرور، أو استخدم البصمة إن كانت مفعّلة.',
+      'driver.email':         'البريد',
+      'driver.password':      'كلمة المرور',
+      'driver.signIn':        'دخول',
+      'driver.biometric':     'الدخول ببصمة الإصبع',
+      'driver.invalid':       'بيانات الدخول غير صحيحة',
+      'driver.vehicle':       'حافلة',
+      'driver.gpsConnecting': 'جاري الاتصال…',
+      'driver.gpsConnected':  'مرتبط بالقمر',
+      'driver.gpsOff':        'بدون GPS',
+      'driver.startTrip':     '▶ بدء الرحلة',
+      'driver.endTrip':       '■ إنهاء الرحلة',
+      'driver.passengers':    'عدد الركاب',
+      'driver.speed':         'السرعة',
+      'driver.distance':      'المسافة',
+      'driver.time':          'المدة',
+      'driver.occupancy':     'الإشغال',
+      'driver.incident':      '🚨 الإبلاغ عن حادث',
+      'driver.offline':       'دون اتصال — يتم تخزين المواقع محلياً وستُرسل عند العودة',
+
+      'admin.title':          'دخول الإدارة',
+      'admin.sub':            'للوصول للوحة الإدارة، الموزّعين، والسائقين.',
+      'admin.role.admin':     'إدارة',
+      'admin.role.dispatcher':'موزّع',
+      'admin.role.driver':    'سائق',
+      'admin.email':          'البريد الإلكتروني',
+      'admin.password':       'كلمة المرور',
+      'admin.signIn':         'دخول',
+      'admin.signingIn':      '... جاري الدخول',
+      'admin.remember':       'تذكّرني لمدة ٣٠ يوماً',
+      'admin.forgot':         'نسيت كلمة المرور؟',
+      'admin.contact':        'تواجه مشكلة في الدخول؟ راسل المسؤول',
+      'admin.contactPrefix':  'تواجه مشكلة في الدخول؟',
+      'admin.contactLink':    'راسل المسؤول',
+      'admin.error':          'بيانات الدخول غير صحيحة',
+      'admin.captcha':        'يرجى إكمال التحقق من خانة الإنسان',
+      'admin.rolePicker':     'نوع الدخول',
+      'admin.pwToggle':       'إظهار/إخفاء كلمة المرور',
+
+      // ─── Admin dashboard (post-login) ──────────────────────────────────────
+      'admin.brand':          'نقل دمشق',
+      'admin.brandSub':       'لوحة الإدارة',
+      'admin.logout':         'تسجيل الخروج',
+      'admin.live':           'مباشر',
+      'admin.refresh':        'تحديث',
+      'admin.viewAll':        'عرض الكل ←',
+      'admin.langToggle':     'EN',
+
+      'admin.nav.overview':   'النظرة العامة',
+      'admin.nav.vehicles':   'الحافلات',
+      'admin.nav.users':      'المستخدمون',
+      'admin.nav.routes':     'الخطوط',
+      'admin.nav.alerts':     'التنبيهات',
+      'admin.nav.analytics':  'التحليلات',
+      'admin.nav.help':       'كيفية الاستخدام',
+
+      'admin.overview.title': 'النظرة العامة',
+      'admin.overview.sub':   'حالة الأسطول، التنبيهات، والخريطة المباشرة.',
+      'admin.kpi.active':     'الحافلات العاملة',
+      'admin.kpi.activeDelta':'+٢ منذ الأمس',
+      'admin.kpi.trips':      'إجمالي الرحلات اليوم',
+      'admin.kpi.tripsDelta': '+١٢٪',
+      'admin.kpi.occupancy':  'متوسط الإشغال',
+      'admin.kpi.alertsOpen': 'تنبيهات مفتوحة',
+      'admin.kpi.alertsUrgent':'٣ عاجلة',
+
+      'admin.map.title':      'الخريطة المباشرة',
+      'admin.map.refresh':    'يُحدَّث كل ٥ ثوانٍ',
+      'admin.alerts.title':   'التنبيهات الأخيرة',
+      'admin.alerts.none':    'لا تنبيهات جديدة.',
+
+      // ─── Vehicles page ─────────────────────────────────────────────────────
+      'admin.vehicles.title': 'الحافلات',
+      'admin.vehicles.sub':   'قائمة الأسطول كاملاً مع الخط المعيّن والسعة والحالة.',
+      'admin.vehicles.code':  'رمز الحافلة',
+      'admin.vehicles.name':  'الاسم',
+      'admin.vehicles.type':  'النوع',
+      'admin.vehicles.route': 'الخط المعيّن',
+      'admin.vehicles.capacity':'السعة',
+      'admin.vehicles.status':'الحالة',
+      'admin.vehicles.empty': 'لم يتم إضافة حافلات بعد.',
+      'admin.vehicles.status.active':'تعمل',
+      'admin.vehicles.status.idle':'متوقف',
+      'admin.vehicles.status.maintenance':'صيانة',
+      'admin.vehicles.status.decommissioned':'مُستبعَدة',
+      'admin.vehicles.status.offline':'متوقفة',
+      'admin.vehicles.status.unassigned':'دون خط',
+
+      // ─── Users page ────────────────────────────────────────────────────────
+      'admin.users.title':    'المستخدمون',
+      'admin.users.sub':      'المسؤولون، الموزّعون، والسائقون الذين لديهم حق الوصول.',
+      'admin.users.name':     'الاسم',
+      'admin.users.email':    'البريد الإلكتروني',
+      'admin.users.role':     'الصلاحية',
+      'admin.users.status':   'الحالة',
+      'admin.users.last':     'آخر دخول',
+      'admin.users.empty':    'لم يتم إضافة مستخدمين بعد.',
+      'admin.users.active':   'مفعّل',
+      'admin.users.inactive': 'موقوف',
+      'admin.users.never':    'لم يدخل بعد',
+
+      // ─── Routes page ───────────────────────────────────────────────────────
+      'admin.routes.title':   'الخطوط',
+      'admin.routes.sub':     'خطوط النقل العام في دمشق مع لون التعريف وعدد الحافلات.',
+      'admin.routes.color':   'اللون',
+      'admin.routes.short':   'رمز الخط',
+      'admin.routes.name':    'الاسم',
+      'admin.routes.stops':   'عدد المحطات',
+      'admin.routes.vehicles':'الحافلات',
+      'admin.routes.status':  'الحالة',
+      'admin.routes.empty':   'لم يتم إضافة خطوط بعد.',
+
+      // ─── Alerts page ───────────────────────────────────────────────────────
+      'admin.alertsPage.title':'التنبيهات',
+      'admin.alertsPage.sub':  'تنبيهات الأسطول مرتبة حسب الأحدث.',
+      'admin.alertsPage.when': 'الوقت',
+      'admin.alertsPage.type': 'النوع',
+      'admin.alertsPage.severity':'الخطورة',
+      'admin.alertsPage.titleCol':'العنوان',
+      'admin.alertsPage.vehicle':'الحافلة',
+      'admin.alertsPage.status':'الحالة',
+      'admin.alertsPage.open':'مفتوح',
+      'admin.alertsPage.resolved':'تمت المعالجة',
+      'admin.alertsPage.empty':'لا توجد تنبيهات حالياً.',
+      'admin.alertsPage.action':'الإجراء',
+      'admin.alertsPage.resolveBtn':'إغلاق التنبيه',
+      'admin.severity.low':   'منخفضة',
+      'admin.severity.medium':'متوسطة',
+      'admin.severity.high':  'عالية',
+      'admin.severity.critical':'حرجة',
+
+      // ─── Analytics page ────────────────────────────────────────────────────
+      'admin.analytics.title':  'أداء الشبكة',
+      'admin.analytics.sub':    'مؤشرات الرحلات، الدقّة، الإشغال، والحوادث.',
+      'admin.analytics.range24h':'آخر ٢٤ ساعة',
+      'admin.analytics.range7d':'أسبوع',
+      'admin.analytics.range30d':'شهر',
+      'admin.analytics.tripsTotal':'رحلات هذا الأسبوع',
+      'admin.analytics.onTime':  'دقّة المواعيد',
+      'admin.analytics.onTimeSub':'على الموعد ±٣ د',
+      'admin.analytics.speed':   'انتهاكات السرعة',
+      'admin.analytics.speedSub':'≥ ٧٠ كم/س داخل المدينة',
+      'admin.analytics.tripsChart':'الرحلات خلال الأسبوع',
+      'admin.analytics.occChart':'توزيع الإشغال',
+      'admin.analytics.routePerf':'أداء الخطوط',
+      'admin.analytics.topIncidents':'أكثر الحوادث شيوعاً',
+      'admin.analytics.deltaSub':'مقارنة بالأسبوع السابق',
+      'admin.analytics.thRoute': 'الخط',
+      'admin.analytics.thTrips': 'رحلات',
+      'admin.analytics.thAccuracy':'دقة',
+      'admin.analytics.thOccupancy':'إشغال',
+
+      'common.search':         'بحث',
+
+      'error.generic':        'حدث خطأ ما، حاول مجدداً.',
+      'error.network':        'تعذّر الاتصال بالخادم.',
+      'error.unauthorized':   'انتهت صلاحية الجلسة. يرجى تسجيل الدخول من جديد.',
+      'error.notFound':       'لم يُعثر على المورد.',
+      'common.retry':         'إعادة المحاولة',
+      'common.cancel':        'إلغاء',
+      'common.save':          'حفظ',
+      'common.close':         'إغلاق',
+      'common.loading':       'جاري التحميل…',
+
+      'footer.copyright':     '© ٢٠٢٦ نقل دمشق — الجمهورية العربية السورية',
+      'footer.copyrightLogin':'© ٢٠٢٦ نقل دمشق',
+      'footer.opensource':    'مشروع مفتوح المصدر تحت رخصة MIT.',
+      'footer.privacy':       'سياسة الخصوصية',
+      'footer.terms':         'الشروط',
+    },
+
+    en: {
+      'app.title':            'Damascus Transit',
+      'app.tagline':          'Syrian Arab Republic · Public Transit System',
+
+      'header.home':          'Home',
+      'header.passenger':     'Passengers',
+      'header.driver':        'Drivers',
+      'header.admin':         'Admin sign-in',
+      'header.toggleLang':    'ع',
+      'header.live':          'Live',
+
+      'hero.eyebrow':         'Syrian Arab Republic · Public Transit',
+      'hero.title':           'Real-time Damascus bus tracking',
+      'hero.sub':             'A national open-source platform connecting passengers, drivers, and dispatchers to live bus positions and accurate arrival times. Ad-free and free of charge.',
+      'hero.ctaPrimary':      'Find your route',
+      'hero.ctaSecondary':    'Open the live map',
+      'hero.liveBadge':       'Refreshed every 5 seconds',
+
+      'stat.active':          'Active vehicles',
+      'stat.activeFrom':      'of total fleet',
+      'stat.routes':          'Routes',
+      'stat.routesSub':       'across the city',
+      'stat.stops':           'Stops',
+      'stat.stopsSub':        'served in Damascus',
+      'stat.occupancy':       'Avg. occupancy',
+      'stat.occupancySub':    'as of last update',
+      'stat.fleet':           'Total fleet',
+
+      'map.title':            'Live map',
+      'map.connected':        'Connected',
+      'map.disconnected':     'Disconnected',
+      'map.legendBus':        'Bus',
+      'map.legendStop':       'Stop',
+
+      'routes.title':         'Routes',
+      'routes.viewAll':       'See all',
+      'routes.stopsCount':    'stops',
+      'routes.none':          'No routes available right now.',
+
+      'features.title':       'Why Damascus Transit?',
+      'features.live.title':  'Live tracking',
+      'features.live.body':   'Vehicle positions stream over SSE every 5 seconds. Arrival times are computed from PostGIS.',
+      'features.offline.title': 'Works offline',
+      'features.offline.body':  'A progressive web app that caches routes and stops on your device and works without a connection.',
+      'features.security.title':'Privacy & security',
+      'features.security.body': 'JWT + RBAC, bcrypt password hashing, strict CSP, and error monitoring via Sentry.',
+
+      'passenger.welcome':    'Welcome',
+      'passenger.sub':        'Find a stop, search a route, or watch nearby buses.',
+      'passenger.searchHint': 'Stop or route (e.g. Mezzeh, Bab Touma)',
+      'passenger.nearest':    'Stops near you',
+      'passenger.locate':     'My location',
+      'passenger.popular':    'Popular routes',
+      'passenger.nearby':     'Nearby buses',
+      'passenger.quick':      'Quick links',
+      'passenger.gtfs':       'GTFS feed',
+      'passenger.gtfsSub':    'Downloadable route data',
+      'passenger.home':       'Home',
+      'passenger.homeSub':    'Back to the public dashboard',
+      'passenger.tabHome':    'Home',
+      'passenger.tabNearby':  'Nearby',
+      'passenger.tabRoutes':  'Routes',
+      'passenger.tabAccount': 'Account',
+      'passenger.noStops':    'No stops within 1.5 km.',
+      'passenger.install':    'Install the app',
+      'passenger.installSub': 'For faster access outside the browser.',
+      'passenger.installBtn': 'Install',
+
+      'driver.login':         'Driver sign-in',
+      'driver.loginSub':      'Sign in with email + password, or use fingerprint if enabled.',
+      'driver.email':         'Email',
+      'driver.password':      'Password',
+      'driver.signIn':        'Sign in',
+      'driver.biometric':     'Use fingerprint',
+      'driver.invalid':       'Invalid credentials',
+      'driver.vehicle':       'Vehicle',
+      'driver.gpsConnecting': 'Connecting…',
+      'driver.gpsConnected':  'GPS connected',
+      'driver.gpsOff':        'No GPS',
+      'driver.startTrip':     '▶ Start trip',
+      'driver.endTrip':       '■ End trip',
+      'driver.passengers':    'Passengers',
+      'driver.speed':         'Speed',
+      'driver.distance':      'Distance',
+      'driver.time':          'Duration',
+      'driver.occupancy':     'Occupancy',
+      'driver.incident':      '🚨 Report incident',
+      'driver.offline':       'Offline — positions stored locally, will sync on reconnect',
+
+      'admin.title':          'Admin sign-in',
+      'admin.sub':            'For the admin, dispatcher, and driver dashboards.',
+      'admin.role.admin':     'Admin',
+      'admin.role.dispatcher':'Dispatcher',
+      'admin.role.driver':    'Driver',
+      'admin.email':          'Email address',
+      'admin.password':       'Password',
+      'admin.signIn':         'Sign in',
+      'admin.signingIn':      'Signing in…',
+      'admin.remember':       'Keep me signed in for 30 days',
+      'admin.forgot':         'Forgot password?',
+      'admin.contact':        'Trouble signing in? Email the administrator',
+      'admin.contactPrefix':  'Trouble signing in?',
+      'admin.contactLink':    'Email the administrator',
+      'admin.error':          'Invalid credentials',
+      'admin.captcha':        'Please complete the human verification',
+      'admin.rolePicker':     'Sign-in type',
+      'admin.pwToggle':       'Show/hide password',
+
+      // ─── Admin dashboard (post-login) ──────────────────────────────────────
+      'admin.brand':          'Damascus Transit',
+      'admin.brandSub':       'Admin Console',
+      'admin.logout':         'Sign out',
+      'admin.live':           'Live',
+      'admin.refresh':        'Refresh',
+      'admin.viewAll':        'View all →',
+      'admin.langToggle':     'AR',
+
+      'admin.nav.overview':   'Overview',
+      'admin.nav.vehicles':   'Vehicles',
+      'admin.nav.users':      'Users',
+      'admin.nav.routes':     'Routes',
+      'admin.nav.alerts':     'Alerts',
+      'admin.nav.analytics':  'Analytics',
+      'admin.nav.help':       'How it works',
+
+      'admin.overview.title': 'Overview',
+      'admin.overview.sub':   'Fleet status, alerts, and live map.',
+      'admin.kpi.active':     'Active vehicles',
+      'admin.kpi.activeDelta':'+2 since yesterday',
+      'admin.kpi.trips':      'Trips today',
+      'admin.kpi.tripsDelta': '+12%',
+      'admin.kpi.occupancy':  'Average occupancy',
+      'admin.kpi.alertsOpen': 'Open alerts',
+      'admin.kpi.alertsUrgent':'3 urgent',
+
+      'admin.map.title':      'Live map',
+      'admin.map.refresh':    'Refreshes every 5 seconds',
+      'admin.alerts.title':   'Recent alerts',
+      'admin.alerts.none':    'No new alerts.',
+
+      // ─── Vehicles page ─────────────────────────────────────────────────────
+      'admin.vehicles.title': 'Vehicles',
+      'admin.vehicles.sub':   'Full fleet roster with assigned route, capacity, and status.',
+      'admin.vehicles.code':  'Vehicle ID',
+      'admin.vehicles.name':  'Name',
+      'admin.vehicles.type':  'Type',
+      'admin.vehicles.route': 'Assigned route',
+      'admin.vehicles.capacity':'Capacity',
+      'admin.vehicles.status':'Status',
+      'admin.vehicles.empty': 'No vehicles registered yet.',
+      'admin.vehicles.status.active':'Active',
+      'admin.vehicles.status.idle':'Idle',
+      'admin.vehicles.status.maintenance':'Maintenance',
+      'admin.vehicles.status.decommissioned':'Decommissioned',
+      'admin.vehicles.status.offline':'Offline',
+      'admin.vehicles.status.unassigned':'No route',
+
+      // ─── Users page ────────────────────────────────────────────────────────
+      'admin.users.title':    'Users',
+      'admin.users.sub':      'Admins, dispatchers, and drivers who can sign in.',
+      'admin.users.name':     'Name',
+      'admin.users.email':    'Email',
+      'admin.users.role':     'Role',
+      'admin.users.status':   'Status',
+      'admin.users.last':     'Last seen',
+      'admin.users.empty':    'No users yet.',
+      'admin.users.active':   'Active',
+      'admin.users.inactive': 'Suspended',
+      'admin.users.never':    'Never',
+
+      // ─── Routes page ───────────────────────────────────────────────────────
+      'admin.routes.title':   'Routes',
+      'admin.routes.sub':     'Damascus transit lines with identity colour and assigned fleet.',
+      'admin.routes.color':   'Colour',
+      'admin.routes.short':   'Code',
+      'admin.routes.name':    'Name',
+      'admin.routes.stops':   'Stops',
+      'admin.routes.vehicles':'Vehicles',
+      'admin.routes.status':  'Status',
+      'admin.routes.empty':   'No routes yet.',
+
+      // ─── Alerts page ───────────────────────────────────────────────────────
+      'admin.alertsPage.title':'Alerts',
+      'admin.alertsPage.sub':  'Fleet alerts, newest first.',
+      'admin.alertsPage.when': 'When',
+      'admin.alertsPage.type': 'Type',
+      'admin.alertsPage.severity':'Severity',
+      'admin.alertsPage.titleCol':'Title',
+      'admin.alertsPage.vehicle':'Vehicle',
+      'admin.alertsPage.status':'Status',
+      'admin.alertsPage.open':'Open',
+      'admin.alertsPage.resolved':'Resolved',
+      'admin.alertsPage.empty':'No alerts at this time.',
+      'admin.alertsPage.action':'Action',
+      'admin.alertsPage.resolveBtn':'Mark resolved',
+      'admin.severity.low':   'Low',
+      'admin.severity.medium':'Medium',
+      'admin.severity.high':  'High',
+      'admin.severity.critical':'Critical',
+
+      // ─── Analytics page ────────────────────────────────────────────────────
+      'admin.analytics.title':  'Network performance',
+      'admin.analytics.sub':    'Trips, on-time accuracy, occupancy, and incidents.',
+      'admin.analytics.range24h':'Last 24h',
+      'admin.analytics.range7d':'Week',
+      'admin.analytics.range30d':'Month',
+      'admin.analytics.tripsTotal':'Trips this week',
+      'admin.analytics.onTime':  'On-time accuracy',
+      'admin.analytics.onTimeSub':'On schedule ±3 min',
+      'admin.analytics.speed':   'Speed violations',
+      'admin.analytics.speedSub':'≥ 70 km/h in city',
+      'admin.analytics.tripsChart':'Trips over the week',
+      'admin.analytics.occChart':'Occupancy distribution',
+      'admin.analytics.routePerf':'Route performance',
+      'admin.analytics.topIncidents':'Most frequent incidents',
+      'admin.analytics.deltaSub':'vs previous week',
+      'admin.analytics.thRoute': 'Route',
+      'admin.analytics.thTrips': 'Trips',
+      'admin.analytics.thAccuracy':'On-time',
+      'admin.analytics.thOccupancy':'Occupancy',
+
+      'common.search':         'Search',
+
+      'error.generic':        'Something went wrong. Please try again.',
+      'error.network':        'Could not reach the server.',
+      'error.unauthorized':   'Session expired. Please sign in again.',
+      'error.notFound':       'Resource not found.',
+      'common.retry':         'Retry',
+      'common.cancel':        'Cancel',
+      'common.save':          'Save',
+      'common.close':         'Close',
+      'common.loading':       'Loading…',
+
+      'footer.copyright':     '© 2026 Damascus Transit — Syrian Arab Republic',
+      'footer.copyrightLogin':'© 2026 Damascus Transit',
+      'footer.opensource':    'Open-source under the MIT license.',
+      'footer.privacy':       'Privacy policy',
+      'footer.terms':         'Terms of use',
+    },
   };
 
-  /* ─────────────────────────────────────────────────────────────────────
-   * ENGINE
-   * ───────────────────────────────────────────────────────────────────── */
+  // ----- Locale state ---------------------------------------------------------
+  const STORAGE_KEY = 'dt_lang';
+  let current = (function () {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved === 'ar' || saved === 'en') return saved;
+    } catch (_) {}
+    const htmlLang = (document.documentElement.lang || '').slice(0, 2).toLowerCase();
+    return htmlLang === 'en' ? 'en' : 'ar';
+  })();
 
-  let currentLang = localStorage.getItem(STORAGE_KEY) || DEFAULT_LANG;
-
-  /**
-   * Returns translated string for `key` in current language.
-   * Supports simple interpolation: t('drv_speed_warning', { speed: 70 })
-   * If key not found, returns the key itself.
-   */
-  function t(key, vars) {
-    const entry = dict[key];
-    if (!entry) return key;
-    let str = entry[currentLang] || entry[DEFAULT_LANG] || key;
-    if (vars) {
-      str = str.replace(/\{(\w+)\}/g, (_, k) => (vars[k] !== undefined ? vars[k] : '{' + k + '}'));
-    }
-    return str;
+  function t(key) {
+    const table = DICT[current] || DICT.ar;
+    return Object.prototype.hasOwnProperty.call(table, key) ? table[key] : key;
   }
 
-  /** Switch to the given language ('ar' or 'en'). */
-  function setLanguage(lang) {
+  function bind(root) {
+    root = root || document;
+    root.querySelectorAll('[data-i18n]').forEach((el) => {
+      const k = el.getAttribute('data-i18n');
+      if (k) el.textContent = t(k);
+    });
+    root.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+      const k = el.getAttribute('data-i18n-placeholder');
+      if (k) el.setAttribute('placeholder', t(k));
+    });
+    root.querySelectorAll('[data-i18n-aria-label]').forEach((el) => {
+      const k = el.getAttribute('data-i18n-aria-label');
+      if (k) el.setAttribute('aria-label', t(k));
+    });
+    root.querySelectorAll('[data-i18n-title]').forEach((el) => {
+      const k = el.getAttribute('data-i18n-title');
+      if (k) el.setAttribute('title', t(k));
+    });
+    root.querySelectorAll('[data-i18n-alt]').forEach((el) => {
+      const k = el.getAttribute('data-i18n-alt');
+      if (k) el.setAttribute('alt', t(k));
+    });
+  }
+
+  function setLang(lang) {
     if (lang !== 'ar' && lang !== 'en') return;
-    currentLang = lang;
-    localStorage.setItem(STORAGE_KEY, lang);
-    applyToDocument();
-    document.dispatchEvent(new CustomEvent('langchange', { detail: { lang: currentLang } }));
-  }
-
-  /** Toggle between Arabic and English. */
-  function toggleLanguage() {
-    setLanguage(currentLang === 'ar' ? 'en' : 'ar');
-  }
-
-  /** Returns the current language code ('ar' or 'en'). */
-  function getCurrentLang() { return currentLang; }
-
-  /**
-   * Applies translations to the DOM.
-   * Processes all elements with data-i18n, data-i18n-placeholder,
-   * data-i18n-title attributes.
-   */
-  function applyToDocument() {
-    const lang = currentLang;
-    const isRTL = lang === 'ar';
-
-    /* Document direction */
+    current = lang;
+    try { localStorage.setItem(STORAGE_KEY, lang); } catch (_) {}
     document.documentElement.lang = lang;
-    document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
+    document.documentElement.dir  = (lang === 'ar') ? 'rtl' : 'ltr';
+    bind(document);
+    document.dispatchEvent(new CustomEvent('i18n:change', { detail: { lang } }));
+  }
 
-    /* Text content */
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-      const key = el.getAttribute('data-i18n');
-      const translated = t(key);
-      if (translated !== key) el.textContent = translated;
-    });
+  function toggle() { setLang(current === 'ar' ? 'en' : 'ar'); }
 
-    /* Input placeholders */
-    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-      const key = el.getAttribute('data-i18n-placeholder');
-      const translated = t(key);
-      if (translated !== key) el.placeholder = translated;
-    });
-
-    /* Title attributes (tooltips) */
-    document.querySelectorAll('[data-i18n-title]').forEach(el => {
-      const key = el.getAttribute('data-i18n-title');
-      const translated = t(key);
-      if (translated !== key) el.title = translated;
-    });
-
-    /* Update language toggle buttons */
-    document.querySelectorAll('.dt-lang-toggle').forEach(btn => {
-      btn.textContent = t('lang_toggle');
+  function attachToggle(root) {
+    (root || document).querySelectorAll('[data-i18n-toggle]').forEach((btn) => {
+      if (btn.__i18nBound) return;
+      btn.__i18nBound = true;
+      btn.addEventListener('click', toggle);
     });
   }
 
-  /**
-   * Creates and returns a styled language toggle button.
-   * The button is given the class `dt-lang-toggle` so applyToDocument()
-   * can update its label automatically.
-   */
-  function createToggleButton(extraStyle) {
-    const btn = document.createElement('button');
-    btn.className = 'dt-lang-toggle';
-    btn.textContent = t('lang_toggle');
-    btn.style.cssText = [
-      'background:rgba(255,255,255,0.12)',
-      'color:inherit',
-      'border:1px solid rgba(255,255,255,0.25)',
-      'border-radius:6px',
-      'padding:5px 12px',
-      'font-size:12px',
-      'font-weight:600',
-      'cursor:pointer',
-      'font-family:inherit',
-      'letter-spacing:0.3px',
-      'transition:background 0.2s',
-      'white-space:nowrap',
-      extraStyle || '',
-    ].join(';');
-    btn.addEventListener('mouseover', () => { btn.style.background = 'rgba(255,255,255,0.22)'; });
-    btn.addEventListener('mouseout',  () => { btn.style.background = 'rgba(255,255,255,0.12)'; });
-    btn.addEventListener('click', toggleLanguage);
-    return btn;
+  function boot() {
+    if (document.documentElement.lang !== current) {
+      document.documentElement.lang = current;
+      document.documentElement.dir  = (current === 'ar') ? 'rtl' : 'ltr';
+    }
+    bind(document);
+    attachToggle(document);
   }
 
-  /* ── Init ── */
-  function init() {
-    applyToDocument();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-
-  /* ── Public API ── */
-  global.i18n = { t, setLanguage, toggleLanguage, getCurrentLang, applyToDocument, createToggleButton };
-  global.t = t; // shorthand
-
-}(window));
+  window.I18N = { t, setLang, toggle, bind, attachToggle, get lang() { return current; } };
+})(window, document);

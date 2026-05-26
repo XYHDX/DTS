@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0E5650">
+<title>المستخدمون — لوحة الإدارة — نقل دمشق</title>
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200;300;400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/lib/design-system.css">
+<link rel="stylesheet" href="/admin/_layout.css">
+<script src="/admin/_gate.js"></script>
+</head>
+<body data-page="users">
+
+<div class="utility-bar">
+  <div class="container">
+    <span class="gov" data-i18n="hero.eyebrow">الجمهورية العربية السورية</span>
+    <span class="right">
+      <a href="/" data-i18n="header.home">الرئيسية</a>
+      <span class="sep"></span>
+      <a href="/passenger/" data-i18n="header.passenger">للركاب</a>
+      <span class="sep"></span>
+      <a href="/driver/" data-i18n="header.driver">للسائقين</a>
+      <span class="sep"></span>
+      <a href="/admin/login.html" data-i18n="header.admin">الإدارة</a>
+    </span>
+  </div>
+</div>
+
+<div class="admin-shell">
+
+  <aside class="sidebar" aria-label="القائمة الجانبية">
+    <a href="/" class="sidebar__brand">
+      <span class="sidebar__brand-mark" aria-hidden="true">
+        <picture><source srcset="/assets/identity/sy-emblem-eagle.avif" type="image/avif"><img src="/assets/identity/sy-emblem-eagle.png" alt=""></picture>
+      </span>
+      <span class="sidebar__brand-text"><b data-i18n="admin.brand">نقل دمشق</b><small data-i18n="admin.brandSub">لوحة الإدارة</small></span>
+    </a>
+
+    <nav>
+      <a href="/admin/" data-nav="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span data-i18n="admin.nav.overview">النظرة العامة</span></a>
+      <a href="/admin/dispatch.html" data-nav="dispatch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h6l3-8 4 16 3-8h2"/></svg><span>الإرسال / Dispatch</span></a>
+      <a href="/admin/vehicles.html" data-nav="vehicles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13l1.5-7h15L21 13M4 13v6h2v-2h12v2h2v-6"/><circle cx="7" cy="16" r="1"/><circle cx="17" cy="16" r="1"/></svg><span data-i18n="admin.nav.vehicles">الحافلات</span></a>
+      <a href="/admin/users.html" data-nav="users"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="4"/><path d="M2 22v-1a7 7 0 0 1 14 0v1"/><circle cx="17" cy="6" r="3"/><path d="M22 22v-1a5 5 0 0 0-5-5"/></svg><span data-i18n="admin.nav.users">المستخدمون</span></a>
+      <a href="/admin/routes.html" data-nav="routes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v18M18 3v18M6 7h12M6 12h12M6 17h12"/></svg><span data-i18n="admin.nav.routes">الخطوط</span></a>
+      <a href="/admin/geofences.html" data-nav="geofences"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8 22 16 12 22 2 16 2 8"/></svg><span>المناطق / Geofences</span></a>
+      <a href="/admin/alerts.html" data-nav="alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 22h20L12 2Z"/><path d="M12 9v5"/><circle cx="12" cy="18" r=".5" fill="currentColor"/></svg><span data-i18n="admin.nav.alerts">التنبيهات</span></a>
+      <a href="/dashboard/analytics.html" data-nav="analytics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-7"/></svg><span data-i18n="admin.nav.analytics">التحليلات</span></a>
+      <a href="/help/" data-nav="help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg><span data-i18n="admin.nav.help">كيفية الاستخدام</span></a>
+    </nav>
+
+    <div class="sidebar__footer">
+      <div class="sidebar__user"><div class="avatar-circle" id="user-initial">؟</div><div><div class="name" id="user-name">—</div><div class="role" id="user-role">—</div></div></div>
+      <button class="sidebar__logout" id="logout-btn" data-i18n="admin.logout">تسجيل الخروج</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="pagetitle">
+        <h1 data-i18n="admin.users.title">المستخدمون</h1>
+        <p data-i18n="admin.users.sub">المسؤولون، الموزّعون، والسائقون الذين لديهم حق الوصول.</p>
+      </div>
+      <div class="cluster">
+        <button id="btn-add-user" type="button" style="padding:8px 14px;background:#0E5650;color:#fff;border:0;border-radius:8px;cursor:pointer;">+ إضافة مستخدم / Add user</button>
+        <button class="lang-toggle" id="lang-toggle" data-i18n-toggle aria-label="Toggle language">EN</button>
+      </div>
+    </div>
+
+    <section class="data-table-card">
+      <table class="data-table" aria-label="users">
+        <thead>
+          <tr>
+            <th data-i18n="admin.users.name">الاسم</th>
+            <th data-i18n="admin.users.email">البريد الإلكتروني</th>
+            <th data-i18n="admin.users.role">الصلاحية</th>
+            <th data-i18n="admin.users.status">الحالة</th>
+            <th data-i18n="admin.users.last">آخر دخول</th>
+            <th>—</th>
+          </tr>
+        </thead>
+        <tbody id="rows">
+          <tr><td colspan="6"><div class="skeleton" style="width:100%;height:1.2em"></div></td></tr>
+          <tr><td colspan="6"><div class="skeleton" style="width:100%;height:1.2em"></div></td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</div>
+
+<script src="/lib/i18n.js"></script>
+<script src="/admin/_shell.js" defer></script>
+<script>
+(function () {
+  function fmt(ts, lang) {
+    if (!ts) return null;
+    const d = new Date(ts);
+    if (isNaN(d.getTime())) return null;
+    return d.toLocaleString(lang === 'ar' ? 'ar-SY' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  let LAST = [];
+  function render(rows) {
+    const tbody = document.getElementById('rows');
+    if (!rows || rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">' +
+        (window.I18N ? window.I18N.t('admin.users.empty') : 'No users yet.') + '</div></td></tr>';
+      return;
+    }
+    const lang = (document.documentElement.lang || 'ar').slice(0,2);
+    const isAr = lang === 'ar';
+    const roleT  = (r) => window.I18N ? window.I18N.t('admin.role.' + (r || 'admin')) : (r || '—');
+    const neverT = window.I18N ? window.I18N.t('admin.users.never') : 'Never';
+    const activeT = window.I18N ? window.I18N.t('admin.users.active') : 'Active';
+    const inactiveT = window.I18N ? window.I18N.t('admin.users.inactive') : 'Suspended';
+
+    const canEdit = window.ADMIN_AUTH && window.ADMIN_AUTH.isAdmin();
+    tbody.innerHTML = rows.map(u => {
+      const name = isAr ? (u.name_ar || u.name || u.email || '—') : (u.name || u.name_ar || u.email || '—');
+      const last = fmt(u.last_seen_at, lang) || '<span class="cell-muted">' + escapeHtml(neverT) + '</span>';
+      const isActive = u.is_active !== false;
+      const actions = canEdit
+        ? '<button class="js-del" data-id="' + escapeHtml(u.id || '') + '" style="background:transparent;border:0;color:#b91c1c;cursor:pointer;font-size:13px;">' + (isAr ? 'إيقاف' : 'Disable') + '</button>'
+        : '<span class="cell-muted">—</span>';
+      return '<tr>' +
+        '<td>' + escapeHtml(name) + '</td>' +
+        '<td class="cell-mono">' + escapeHtml(u.email || '—') + '</td>' +
+        '<td>' + escapeHtml(roleT(u.role)) + '</td>' +
+        '<td><span class="status-pill ' + (isActive ? 'is-active' : 'is-offline') + '">' +
+          escapeHtml(isActive ? activeT : inactiveT) + '</span></td>' +
+        '<td class="cell-muted">' + last + '</td>' +
+        '<td>' + actions + '</td>' +
+      '</tr>';
+    }).join('');
+    tbody.querySelectorAll('.js-del').forEach(b => b.addEventListener('click', onDelete));
+  }
+  function onDelete(ev) {
+    const id = ev.currentTarget.getAttribute('data-id');
+    if (!id) return;
+    const isAr = (document.documentElement.lang || 'ar').slice(0,2) === 'ar';
+    if (!confirm(isAr ? 'تأكيد تعطيل هذا الحساب؟' : 'Disable this account?')) return;
+    window.ADMIN_AUTH.fetch('/api/admin/users/' + encodeURIComponent(id), { method: 'DELETE' })
+      .then(r => { if (!r.ok) return r.json().then(j => { throw new Error(j.detail || 'Failed'); }); load(); })
+      .catch(e => alert(e.message));
+  }
+  function openAddForm() {
+    const isAr = (document.documentElement.lang || 'ar').slice(0,2) === 'ar';
+    const myRole = (window.ADMIN_AUTH && window.ADMIN_AUTH.role) || 'admin';
+    const rolesAvailable = ['viewer','driver','dispatcher','admin','super_admin']
+      .filter(r => ({viewer:0,driver:1,dispatcher:2,admin:3,super_admin:4})[r]
+                <= ({viewer:0,driver:1,dispatcher:2,admin:3,super_admin:4})[myRole]);
+    window.ADMIN_AUTH.openForm({
+      title:    isAr ? 'إضافة مستخدم جديد' : 'Add new user',
+      subtitle: isAr ? 'لا يمكنك إنشاء مستخدم بصلاحية أعلى منك. كلمة المرور الأولى مؤقتة وسيُجبر المستخدم على تغييرها.' : 'Cannot create a user above your own role. Initial password is forced-rotated on first login.',
+      fields: [
+        { name:'email',    label:'Email', label_ar:'البريد الإلكتروني', type:'email', required:true, placeholder:'name@damascus-transit.demo' },
+        { name:'full_name',    label:'Name (English)', label_ar:'الاسم (إنجليزي)', required:true },
+        { name:'full_name_ar', label:'Name (Arabic)',  label_ar:'الاسم (عربي)' },
+        { name:'role',  label:'Role', label_ar:'الصلاحية', type:'select', required:true, value:'dispatcher',
+          options: rolesAvailable.map(r => ({ value:r, label:r.toUpperCase(), label_ar:r.toUpperCase() })) },
+        { name:'phone', label:'Phone', label_ar:'الهاتف', placeholder:'+9639...' },
+        { name:'initial_password', label:'Initial password (≥10 chars)', label_ar:'كلمة المرور الأولى (≥10)', type:'password', required:true,
+          hint: isAr ? 'سيُجبر المستخدم على تغييرها عند أول دخول.' : 'User will be forced to rotate it on first login.' },
+      ],
+      onSubmit: async function (values) {
+        const r = await window.ADMIN_AUTH.fetch('/api/admin/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(values),
+        });
+        if (!r.ok) {
+          const j = await r.json().catch(()=>({detail:'Save failed'}));
+          return { error: j.detail || 'Save failed' };
+        }
+      },
+      onAfter: load,
+    });
+  }
+
+  function load() {
+    if (!window.ADMIN_AUTH) return;
+    window.ADMIN_AUTH.fetch('/api/admin/users')
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+      .then(rows => { LAST = Array.isArray(rows) ? rows : []; render(LAST); })
+      .catch(e => {
+        if (String(e.message) !== 'unauthorized') {
+          document.getElementById('rows').innerHTML =
+            '<tr><td colspan="6"><div class="empty-state">' +
+            (window.I18N ? window.I18N.t('admin.users.empty') : (e.message || 'Error')) +
+            '</div></td></tr>';
+        }
+      });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    load();
+    const btn = document.getElementById('btn-add-user');
+    if (btn) {
+      btn.addEventListener('click', openAddForm);
+      if (!(window.ADMIN_AUTH && window.ADMIN_AUTH.isAdmin())) btn.style.display = 'none';
+    }
+  });
+  document.addEventListener('i18n:change', () => render(LAST));
+})();
+</script>
+</body>
+</html>

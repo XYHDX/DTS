@@ -75,3 +75,7 @@ coverage/
 .idea/
 .vscode/
 
+
+# H1 credential rotation — initial passwords for seeded accounts
+db/seed_passwords.local.txt
+*.bak

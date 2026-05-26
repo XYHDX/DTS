@@ -3,22 +3,28 @@
 // stale-while-revalidate for stops/routes/schedules API data,
 // and tile caching for offline map usage.
 
-const CACHE_NAME = 'damascus-transit-v2';
+// v4 — bumped after the Readex Pro / national-identity redesign so old
+// clients evict stale IBM Plex Arabic + maplibre 4.1 references from the
+// previous shell. Whenever you change URLs the SW pre-caches, bump the
+// integer suffix on all three caches below so install-time eviction kicks in.
+const CACHE_NAME = 'damascus-transit-v4';
 const APP_SHELL = [
   '/passenger/',
   '/passenger/index.html',
   '/passenger/manifest.json',
-  'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap',
-  'https://unpkg.com/maplibre-gl@4.1.2/dist/maplibre-gl.css',
-  'https://unpkg.com/maplibre-gl@4.1.2/dist/maplibre-gl.js',
+  '/lib/design-system.css',
+  '/lib/i18n.js',
 ];
 
-// Map tile pattern — cache tiles as they're fetched
-const TILE_CACHE = 'damascus-transit-tiles-v2';
-const TILE_HOSTS = ['basemaps.cartocdn.com'];
+// Map tile pattern — cache tiles as they're fetched.
+// We use OpenStreetMap tile.openstreetmap.org for the v4 map. The
+// older cartocdn host stays whitelisted so existing clients still
+// benefit from offline tiles they already cached.
+const TILE_CACHE = 'damascus-transit-tiles-v4';
+const TILE_HOSTS = ['tile.openstreetmap.org', 'basemaps.cartocdn.com'];
 
 // Static data API — stale-while-revalidate (stops/routes/schedules)
-const STATIC_DATA_CACHE = 'damascus-transit-data-v2';
+const STATIC_DATA_CACHE = 'damascus-transit-data-v4';
 const STATIC_DATA_PATTERNS = ['/api/stops', '/api/routes', '/api/schedules'];
 
 // API endpoints — network-only (live data must be fresh)

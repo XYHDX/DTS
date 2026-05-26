@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0E5650">
+<title>المناطق الجغرافية — لوحة الإدارة — نقل دمشق</title>
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200;300;400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/lib/design-system.css">
+<link rel="stylesheet" href="/admin/_layout.css">
+<script src="/admin/_gate.js"></script>
+</head>
+<body data-page="geofences">
+
+<div class="utility-bar">
+  <div class="container">
+    <span class="gov">الجمهورية العربية السورية</span>
+    <span class="right">
+      <a href="/">الرئيسية</a>
+      <span class="sep"></span>
+      <a href="/passenger/">للركاب</a>
+      <span class="sep"></span>
+      <a href="/driver/">للسائقين</a>
+      <span class="sep"></span>
+      <a href="/admin/login.html">الإدارة</a>
+    </span>
+  </div>
+</div>
+
+<div class="admin-shell">
+  <aside class="sidebar">
+    <a href="/" class="sidebar__brand">
+      <span class="sidebar__brand-mark"><picture><source srcset="/assets/identity/sy-emblem-eagle.avif" type="image/avif"><img src="/assets/identity/sy-emblem-eagle.png" alt=""></picture></span>
+      <span class="sidebar__brand-text"><b>نقل دمشق</b><small>لوحة الإدارة</small></span>
+    </a>
+    <nav>
+      <a href="/admin/" data-nav="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>النظرة العامة</span></a>
+      <a href="/admin/dispatch.html" data-nav="dispatch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h6l3-8 4 16 3-8h2"/></svg><span>الإرسال / Dispatch</span></a>
+      <a href="/admin/vehicles.html" data-nav="vehicles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13l1.5-7h15L21 13M4 13v6h2v-2h12v2h2v-6"/><circle cx="7" cy="16" r="1"/><circle cx="17" cy="16" r="1"/></svg><span>الحافلات</span></a>
+      <a href="/admin/users.html" data-nav="users"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="4"/><path d="M2 22v-1a7 7 0 0 1 14 0v1"/><circle cx="17" cy="6" r="3"/><path d="M22 22v-1a5 5 0 0 0-5-5"/></svg><span>المستخدمون</span></a>
+      <a href="/admin/routes.html" data-nav="routes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v18M18 3v18M6 7h12M6 12h12M6 17h12"/></svg><span>الخطوط</span></a>
+      <a href="/admin/geofences.html" data-nav="geofences"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8 22 16 12 22 2 16 2 8"/></svg><span>المناطق الجغرافية</span></a>
+      <a href="/admin/alerts.html" data-nav="alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 22h20L12 2Z"/><path d="M12 9v5"/><circle cx="12" cy="18" r=".5" fill="currentColor"/></svg><span>التنبيهات</span></a>
+      <a href="/dashboard/analytics.html" data-nav="analytics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-7"/></svg><span>التحليلات</span></a>
+      <a href="/help/" data-nav="help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg><span>كيفية الاستخدام</span></a>
+    </nav>
+    <div class="sidebar__footer">
+      <div class="sidebar__user"><div class="avatar-circle" id="user-initial">؟</div><div><div class="name" id="user-name">—</div><div class="role" id="user-role">—</div></div></div>
+      <button class="sidebar__logout" id="logout-btn">تسجيل الخروج</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="pagetitle">
+        <h1>المناطق الجغرافية / Geofences</h1>
+        <p>المناطق المسموح فيها بدخول المركبات + الحدّ الأقصى للمركبات (Hard cap). تجاوز السعة يولّد تنبيهاً حرجاً.</p>
+      </div>
+      <div class="cluster">
+        <button id="btn-add-geofence" type="button" style="padding:8px 14px;background:#0E5650;color:#fff;border:0;border-radius:8px;cursor:pointer;">+ منطقة جديدة / Add zone</button>
+        <button class="lang-toggle" id="lang-toggle" data-i18n-toggle aria-label="Toggle language">EN</button>
+      </div>
+    </div>
+
+    <section class="data-table-card">
+      <table class="data-table" aria-label="geofences">
+        <thead>
+          <tr>
+            <th>الاسم / Name</th>
+            <th>النوع / Type</th>
+            <th>حد السرعة (كم/س)</th>
+            <th>الحد الأقصى للمركبات / Max</th>
+            <th>الحالة</th>
+            <th>—</th>
+          </tr>
+        </thead>
+        <tbody id="rows">
+          <tr><td colspan="6"><div class="skeleton" style="width:100%;height:1.2em"></div></td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</div>
+
+<script src="/lib/i18n.js"></script>
+<script src="/admin/_shell.js" defer></script>
+<script>
+(function () {
+  function escapeHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  let LAST = [];
+
+  function render(rows) {
+    const tbody = document.getElementById('rows');
+    if (!rows || rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">لا توجد مناطق محدّدة بعد. / No geofences yet.</div></td></tr>';
+      return;
+    }
+    const isAr = (document.documentElement.lang || 'ar').slice(0,2) === 'ar';
+    const canEdit = window.ADMIN_AUTH && window.ADMIN_AUTH.isAdmin();
+    tbody.innerHTML = rows.map(g => {
+      const name = isAr ? (g.name_ar || g.name || '—') : (g.name || g.name_ar || '—');
+      const actions = canEdit
+        ? '<button class="js-del" data-id="' + escapeHtml(g.id || '') + '" style="background:transparent;border:0;color:#b91c1c;cursor:pointer;font-size:13px;">حذف</button>'
+        : '<span class="cell-muted">—</span>';
+      return '<tr>' +
+        '<td>' + escapeHtml(name) + '</td>' +
+        '<td class="cell-muted">' + escapeHtml(g.geofence_type || 'zone') + '</td>' +
+        '<td>' + (g.speed_limit_kmh != null ? g.speed_limit_kmh : '—') + '</td>' +
+        '<td>' + (g.max_vehicles != null ? g.max_vehicles : '<span class="cell-muted">∞</span>') + '</td>' +
+        '<td><span class="status-pill ' + (g.is_active ? 'is-active' : 'is-offline') + '">' + (g.is_active ? 'نشط' : 'موقوف') + '</span></td>' +
+        '<td>' + actions + '</td>' +
+      '</tr>';
+    }).join('');
+    tbody.querySelectorAll('.js-del').forEach(b => b.addEventListener('click', onDelete));
+  }
+
+  function onDelete(ev) {
+    const id = ev.currentTarget.getAttribute('data-id');
+    if (!id || !confirm('تأكيد إيقاف هذه المنطقة؟ / Deactivate this geofence?')) return;
+    window.ADMIN_AUTH.fetch('/api/admin/geofences/' + encodeURIComponent(id), { method: 'DELETE' })
+      .then(r => { if (!r.ok) return r.json().then(j => { throw new Error(j.detail || 'Failed'); }); load(); })
+      .catch(e => alert(e.message));
+  }
+
+  function openAddForm() {
+    window.ADMIN_AUTH.openForm({
+      title:    'إضافة منطقة جغرافية / Add geofence',
+      subtitle: 'الحدّ الأقصى للمركبات هو سقف صارم — أي مركبة تحاول الدخول بعد بلوغ السقف ستُمنع ويُولَّد تنبيه. / Hard cap.',
+      fields: [
+        { name:'name',    label:'Name (English)', label_ar:'الاسم (إنجليزي)', required:true, placeholder:'Old City core' },
+        { name:'name_ar', label:'Name (Arabic)',  label_ar:'الاسم (عربي)', placeholder:'مركز المدينة القديمة' },
+        { name:'geofence_type', label:'Type', label_ar:'النوع', type:'select', value:'zone',
+          options:[{value:'zone',label:'Zone',label_ar:'منطقة'},{value:'depot',label:'Depot',label_ar:'مستودع'},{value:'terminal',label:'Terminal',label_ar:'محطة طرفية'}]},
+        { name:'speed_limit_kmh', label:'Speed limit (km/h, optional)', label_ar:'حد السرعة (كم/س — اختياري)', type:'number', min:0, max:200 },
+        { name:'max_vehicles', label:'Max vehicles (hard cap, optional)', label_ar:'الحد الأقصى للمركبات', type:'number', min:0, max:10000,
+          hint:'الحدّ الأقصى للمركبات داخل هذه المنطقة. اتركه فارغاً لإلغاء الحدّ. / Leave blank for no cap.' },
+        { name:'geometry_json', label:'GeoJSON Polygon (coordinates only)', label_ar:'مضلّع GeoJSON (الإحداثيات فقط)', type:'textarea', required:true,
+          placeholder:'[[36.30,33.51],[36.31,33.51],[36.31,33.52],[36.30,33.52],[36.30,33.51]]',
+          hint:'حلقة خارجية مغلقة (lon,lat). أوّل وآخر نقطة يجب أن تتطابقا. / Closed outer ring [lon,lat] pairs.' },
+      ],
+      onSubmit: async function (values) {
+        let ring;
+        try { ring = JSON.parse(values.geometry_json); }
+        catch (_) { return { error: 'GeoJSON غير صالح / Invalid GeoJSON' }; }
+        const payload = {
+          name: values.name,
+          name_ar: values.name_ar || null,
+          geofence_type: values.geofence_type || 'zone',
+          speed_limit_kmh: values.speed_limit_kmh == null ? null : Number(values.speed_limit_kmh),
+          max_vehicles:    values.max_vehicles    == null ? null : Number(values.max_vehicles),
+          geometry: { type: 'Polygon', coordinates: [ring] },
+        };
+        const r = await window.ADMIN_AUTH.fetch('/api/admin/geofences', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!r.ok) { const j = await r.json().catch(()=>({})); return { error: j.detail || 'Save failed' }; }
+      },
+      onAfter: load,
+    });
+  }
+
+  function load() {
+    if (!window.ADMIN_AUTH) return;
+    window.ADMIN_AUTH.fetch('/api/admin/geofences')
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+      .then(rows => { LAST = Array.isArray(rows) ? rows : []; render(LAST); })
+      .catch(e => {
+        if (String(e.message) !== 'unauthorized') {
+          document.getElementById('rows').innerHTML =
+            '<tr><td colspan="6"><div class="empty-state">' + escapeHtml(e.message || 'Error') + '</div></td></tr>';
+        }
+      });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    load();
+    const btn = document.getElementById('btn-add-geofence');
+    if (btn) {
+      btn.addEventListener('click', openAddForm);
+      if (!(window.ADMIN_AUTH && window.ADMIN_AUTH.isAdmin())) btn.style.display = 'none';
+    }
+  });
+})();
+</script>
+</body>
+</html>

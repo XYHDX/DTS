@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0E5650">
+<title>تغيير كلمة المرور — نقل دمشق</title>
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200;300;400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/lib/design-system.css">
+<style>
+  .reset-shell { min-height: 100vh; display: grid; place-items: center; padding: 40px 16px; }
+  .reset-card  { width: 100%; max-width: 520px; background: #fff; border: 1px solid var(--rule); border-radius: 12px; padding: 32px; box-shadow: 0 4px 24px rgba(0,0,0,.04); }
+  .reset-card h1 { margin: 0 0 8px; font-size: 22px; }
+  .reset-card p  { color: var(--ink-2); font-size: 14px; line-height: 1.7; }
+  .reset-card .actions { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
+  .reset-card a.mail { font-family: "JetBrains Mono", monospace; font-size: 13px; color: var(--national-green-900); }
+  .field { margin-top: 14px; }
+  .field label { display:block; font-size:13px; color:var(--ink-2); margin-bottom:6px; }
+  .field input { width: 100%; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 8px; font: inherit; }
+  .err { color: #b91c1c; font-size: 13px; margin-top: 12px; min-height: 18px; }
+  .ok  { color: #047857; font-size: 13px; margin-top: 12px; min-height: 18px; }
+  .hint { color: var(--ink-3); font-size: 12px; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div class="utility-bar">
+  <div class="container">
+    <span class="gov">الجمهورية العربية السورية</span>
+    <span class="right">
+      <a href="/passenger/">للركاب</a>
+      <span class="sep"></span>
+      <a href="/driver/">للسائقين</a>
+      <span class="sep"></span>
+      <a href="/admin/login.html">الإدارة</a>
+    </span>
+  </div>
+</div>
+
+<main class="reset-shell">
+  <div class="reset-card" id="forced" hidden>
+    <h1>تغيير كلمة المرور مطلوب — Password change required</h1>
+    <p>
+      هذا الحساب لا يزال يستخدم كلمة المرور التجريبية الأولى. يجب تغييرها
+      قبل المتابعة. — This account is using its initial demo password.
+      You must change it before continuing.
+    </p>
+    <form id="form-change">
+      <div class="field">
+        <label for="cur">كلمة المرور الحالية — Current password</label>
+        <input id="cur" type="password" autocomplete="current-password" required minlength="6">
+      </div>
+      <div class="field">
+        <label for="new">كلمة المرور الجديدة — New password</label>
+        <input id="new" type="password" autocomplete="new-password" required minlength="10">
+        <div class="hint">10 خانات على الأقل. لا تستخدم كلمة مرور تستعملها في خدمة أخرى. — 10+ chars, never reuse.</div>
+      </div>
+      <div class="field">
+        <label for="new2">تأكيد كلمة المرور الجديدة — Confirm new password</label>
+        <input id="new2" type="password" autocomplete="new-password" required minlength="10">
+      </div>
+      <div class="err" id="err"></div>
+      <div class="ok"  id="ok"></div>
+      <div class="actions">
+        <button class="btn btn--primary" type="submit">تغيير — Change</button>
+        <a class="btn btn--ghost" href="/admin/login.html">إلغاء — Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="reset-card" id="default" hidden>
+    <h1>استعادة كلمة المرور</h1>
+    <p>
+      حالياً لا يدعم النظام إعادة تعيين كلمة المرور تلقائياً عبر البريد. هذا
+      مقصود — في النشر الحكومي يجب أن يكون التحكم بالحسابات يدوياً عبر
+      مسؤول النظام.
+    </p>
+    <p>
+      <b>للحصول على كلمة مرور جديدة:</b><br>
+      راسل مسؤول النظام على
+      <a class="mail" href="mailto:admin@damascus-transit.demo?subject=طلب%20استعادة%20كلمة%20المرور">admin@damascus-transit.demo</a>
+      من بريدك الإلكتروني المُسجَّل، وسيتم إنشاء كلمة مرور مؤقتة لك خلال
+      ساعات العمل.
+    </p>
+    <div class="actions">
+      <a class="btn btn--primary" href="/admin/login.html">العودة لتسجيل الدخول</a>
+      <a class="btn btn--ghost" href="/">الصفحة الرئيسية</a>
+    </div>
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  const params = new URLSearchParams(location.search);
+  const force = params.get('force') === '1';
+
+  document.getElementById(force ? 'forced' : 'default').hidden = false;
+  if (!force) return;
+
+  const form = document.getElementById('form-change');
+  form.addEventListener('submit', async function (ev) {
+    ev.preventDefault();
+    const err = document.getElementById('err');
+    const ok  = document.getElementById('ok');
+    err.textContent = ''; ok.textContent = '';
+
+    const cur  = document.getElementById('cur').value;
+    const np1  = document.getElementById('new').value;
+    const np2  = document.getElementById('new2').value;
+    if (np1 !== np2) { err.textContent = 'كلمتا المرور غير متطابقتين — passwords do not match'; return; }
+    if (np1 === cur) { err.textContent = 'كلمة المرور الجديدة يجب أن تختلف — must differ from current'; return; }
+
+    const token = localStorage.getItem('dt_token') || sessionStorage.getItem('dt_token');
+    if (!token) { location.replace('/admin/login.html'); return; }
+
+    try {
+      const r = await fetch('/api/auth/change_password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ current_password: cur, new_password: np1 }),
+      });
+      const data = await r.json();
+      if (!r.ok) { err.textContent = (data && data.detail) || 'فشل التغيير — change failed'; return; }
+      // Replace the temp token with the new full-scope token.
+      const newToken = data.token || data.access_token;
+      if (newToken) {
+        if (localStorage.getItem('dt_token')) localStorage.setItem('dt_token', newToken);
+        else                                  sessionStorage.setItem('dt_token', newToken);
+      }
+      ok.textContent = 'تم — Password changed. Redirecting…';
+      setTimeout(() => { location.href = '/admin/'; }, 800);
+    } catch (e) {
+      err.textContent = 'تعذر الاتصال بالخادم — network error';
+    }
+  });
+})();
+</script>
+</body>
+</html>

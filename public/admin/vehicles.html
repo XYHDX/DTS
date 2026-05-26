@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0E5650">
+<title>الحافلات — لوحة الإدارة — نقل دمشق</title>
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200;300;400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/lib/design-system.css">
+<link rel="stylesheet" href="/admin/_layout.css">
+<script src="/admin/_gate.js"></script>
+</head>
+<body data-page="vehicles">
+
+<!-- Universal utility bar -->
+<div class="utility-bar">
+  <div class="container">
+    <span class="gov" data-i18n="hero.eyebrow">الجمهورية العربية السورية</span>
+    <span class="right">
+      <a href="/" data-i18n="header.home">الرئيسية</a>
+      <span class="sep"></span>
+      <a href="/passenger/" data-i18n="header.passenger">للركاب</a>
+      <span class="sep"></span>
+      <a href="/driver/" data-i18n="header.driver">للسائقين</a>
+      <span class="sep"></span>
+      <a href="/admin/login.html" data-i18n="header.admin">الإدارة</a>
+    </span>
+  </div>
+</div>
+
+<div class="admin-shell">
+
+  <aside class="sidebar" aria-label="القائمة الجانبية">
+    <a href="/" class="sidebar__brand">
+      <span class="sidebar__brand-mark" aria-hidden="true">
+        <picture>
+          <source srcset="/assets/identity/sy-emblem-eagle.avif" type="image/avif">
+          <img src="/assets/identity/sy-emblem-eagle.png" alt="">
+        </picture>
+      </span>
+      <span class="sidebar__brand-text">
+        <b data-i18n="admin.brand">نقل دمشق</b>
+        <small data-i18n="admin.brandSub">لوحة الإدارة</small>
+      </span>
+    </a>
+
+    <nav aria-label="إدارة">
+      <a href="/admin/" data-nav="overview">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span data-i18n="admin.nav.overview">النظرة العامة</span>
+      </a>
+      <a href="/admin/dispatch.html" data-nav="dispatch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h6l3-8 4 16 3-8h2"/></svg><span>الإرسال / Dispatch</span></a>
+      <a href="/admin/vehicles.html" data-nav="vehicles">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13l1.5-7h15L21 13M4 13v6h2v-2h12v2h2v-6"/><circle cx="7" cy="16" r="1"/><circle cx="17" cy="16" r="1"/></svg>
+        <span data-i18n="admin.nav.vehicles">الحافلات</span>
+      </a>
+      <a href="/admin/users.html" data-nav="users">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="4"/><path d="M2 22v-1a7 7 0 0 1 14 0v1"/><circle cx="17" cy="6" r="3"/><path d="M22 22v-1a5 5 0 0 0-5-5"/></svg>
+        <span data-i18n="admin.nav.users">المستخدمون</span>
+      </a>
+      <a href="/admin/routes.html" data-nav="routes">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v18M18 3v18M6 7h12M6 12h12M6 17h12"/></svg>
+        <span data-i18n="admin.nav.routes">الخطوط</span>
+      </a>
+      <a href="/admin/geofences.html" data-nav="geofences"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8 22 16 12 22 2 16 2 8"/></svg><span>المناطق / Geofences</span></a>
+      <a href="/admin/alerts.html" data-nav="alerts">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 22h20L12 2Z"/><path d="M12 9v5"/><circle cx="12" cy="18" r=".5" fill="currentColor"/></svg>
+        <span data-i18n="admin.nav.alerts">التنبيهات</span>
+      </a>
+      <a href="/dashboard/analytics.html" data-nav="analytics">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-7"/></svg>
+        <span data-i18n="admin.nav.analytics">التحليلات</span>
+      </a>
+      <a href="/help/" data-nav="help">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+        <span data-i18n="admin.nav.help">كيفية الاستخدام</span>
+      </a>
+    </nav>
+
+    <div class="sidebar__footer">
+      <div class="sidebar__user">
+        <div class="avatar-circle" id="user-initial">؟</div>
+        <div>
+          <div class="name" id="user-name">—</div>
+          <div class="role" id="user-role">—</div>
+        </div>
+      </div>
+      <button class="sidebar__logout" id="logout-btn" data-i18n="admin.logout">تسجيل الخروج</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="pagetitle">
+        <h1 data-i18n="admin.vehicles.title">الحافلات</h1>
+        <p data-i18n="admin.vehicles.sub">قائمة الأسطول كاملاً مع الخط المعيّن والسعة والحالة.</p>
+      </div>
+      <div class="cluster">
+        <button id="btn-add-vehicle" class="btn btn--primary" type="button" style="padding:8px 14px;background:#0E5650;color:#fff;border:0;border-radius:8px;cursor:pointer;">+ إضافة مركبة / Add vehicle</button>
+        <button class="lang-toggle" id="lang-toggle" data-i18n-toggle aria-label="Toggle language">EN</button>
+        <span class="badge badge--success"><span class="live-dot" aria-hidden="true"></span><span data-i18n="admin.live"> مباشر</span></span>
+      </div>
+    </div>
+
+    <section class="data-table-card">
+      <table class="data-table" aria-label="vehicles">
+        <thead>
+          <tr>
+            <th data-i18n="admin.vehicles.code">رمز الحافلة</th>
+            <th data-i18n="admin.vehicles.name">الاسم</th>
+            <th data-i18n="admin.vehicles.type">النوع</th>
+            <th data-i18n="admin.vehicles.route">الخط المعيّن</th>
+            <th data-i18n="admin.vehicles.capacity">السعة</th>
+            <th data-i18n="admin.vehicles.status">الحالة</th>
+            <th>—</th>
+          </tr>
+        </thead>
+        <tbody id="rows">
+          <tr><td colspan="7"><div class="skeleton" style="width:100%;height:1.2em"></div></td></tr>
+          <tr><td colspan="7"><div class="skeleton" style="width:100%;height:1.2em"></div></td></tr>
+          <tr><td colspan="7"><div class="skeleton" style="width:100%;height:1.2em"></div></td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+</div>
+
+<script src="/lib/i18n.js"></script>
+<script src="/admin/_shell.js" defer></script>
+<script>
+(function () {
+  function statusLabel(s, lang) {
+    const k = 'admin.vehicles.status.' + (s || 'offline');
+    return window.I18N ? window.I18N.t(k) : (s || '—');
+  }
+  function statusClass(s) {
+    if (s === 'active')      return 'is-active';
+    if (s === 'maintenance') return 'is-warn';
+    return 'is-offline';
+  }
+
+  let LAST = [];
+  let ROUTES = [];
+  function render(rows) {
+    const tbody = document.getElementById('rows');
+    if (!rows || rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state" data-i18n="admin.vehicles.empty">' +
+        (window.I18N ? window.I18N.t('admin.vehicles.empty') : 'No vehicles registered yet.') +
+        '</div></td></tr>';
+      return;
+    }
+    const isAr = (document.documentElement.lang || 'ar').slice(0,2) === 'ar';
+    const canEdit = window.ADMIN_AUTH && window.ADMIN_AUTH.isAdmin();
+    const noRouteLabel = window.I18N ? window.I18N.t('admin.vehicles.status.unassigned') : '—';
+    tbody.innerHTML = rows.map(function (v) {
+      const route = v.route_short_name
+        ? '<span class="cell-mono">' + escapeHtml(v.route_short_name) + '</span>' +
+          (v.route_name_ar || v.route_name ? ' <span class="cell-muted">— ' + escapeHtml(isAr ? (v.route_name_ar || v.route_name) : (v.route_name || v.route_name_ar)) + '</span>' : '')
+        : '<span class="cell-muted">' + noRouteLabel + '</span>';
+      const name = isAr ? (v.name_ar || v.name || '—') : (v.name || v.name_ar || '—');
+      const actions = canEdit
+        ? '<button class="js-del" data-id="' + escapeHtml(v.id || '') + '" style="background:transparent;border:0;color:#b91c1c;cursor:pointer;font-size:13px;">' + (isAr ? 'حذف' : 'Delete') + '</button>'
+        : '<span class="cell-muted">—</span>';
+      return '<tr>' +
+        '<td class="cell-mono">' + escapeHtml(v.vehicle_id || '—') + '</td>' +
+        '<td>' + escapeHtml(name) + '</td>' +
+        '<td class="cell-muted">' + escapeHtml(v.vehicle_type || 'bus') + '</td>' +
+        '<td>' + route + '</td>' +
+        '<td>' + (v.capacity != null ? v.capacity : '—') + '</td>' +
+        '<td><span class="status-pill ' + statusClass(v.status) + '">' + escapeHtml(statusLabel(v.status)) + '</span></td>' +
+        '<td>' + actions + '</td>' +
+      '</tr>';
+    }).join('');
+    tbody.querySelectorAll('.js-del').forEach(b => b.addEventListener('click', onDelete));
+  }
+  function onDelete(ev) {
+    const id = ev.currentTarget.getAttribute('data-id');
+    if (!id) return;
+    const isAr = (document.documentElement.lang || 'ar').slice(0,2) === 'ar';
+    if (!confirm(isAr ? 'تأكيد إيقاف تشغيل المركبة؟' : 'Decommission this vehicle?')) return;
+    window.ADMIN_AUTH.fetch('/api/admin/vehicles/' + encodeURIComponent(id), { method: 'DELETE' })
+      .then(r => { if (!r.ok) return r.json().then(j => { throw new Error(j.detail || 'Delete failed'); }); load(); })
+      .catch(e => alert(e.message));
+  }
+  function openAddForm() {
+    const isAr = (document.documentElement.lang || 'ar').slice(0,2) === 'ar';
+    const routeOpts = [{ value: '', label: '—', label_ar: '—' }].concat(
+      (ROUTES || []).map(r => ({ value: r.id, label: (r.route_id || r.code) + ' — ' + (r.name || ''), label_ar: (r.route_id || r.code) + ' — ' + (r.name_ar || r.name || '') }))
+    );
+    window.ADMIN_AUTH.openForm({
+      title:    isAr ? 'إضافة مركبة جديدة' : 'Add new vehicle',
+      subtitle: isAr ? 'حافلة / ميكروباص / تكسي. تتم الرابطة مع الخط والسائق بشكل ذرّي.' : 'Bus / microbus / taxi. Route + driver linkage is atomic.',
+      fields: [
+        { name:'vehicle_id', label:'Plate / fleet ID', label_ar:'رقم اللوحة', required:true, placeholder:'B-104' },
+        { name:'name',       label:'Name (English)',  label_ar:'الاسم (إنجليزي)', required:true, placeholder:'Bus 104' },
+        { name:'name_ar',    label:'Name (Arabic)',   label_ar:'الاسم (عربي)', placeholder:'الحافلة ١٠٤' },
+        { name:'vehicle_type', label:'Type', label_ar:'النوع', type:'select', required:true, value:'bus',
+          options:[{value:'bus',label:'Bus',label_ar:'حافلة'},{value:'microbus',label:'Microbus',label_ar:'ميكروباص'},{value:'taxi',label:'Taxi',label_ar:'تكسي'}]},
+        { name:'capacity',   label:'Capacity', label_ar:'السعة', type:'number', required:true, min:1, max:200, value:40 },
+        { name:'assigned_route_id', label:'Assigned route', label_ar:'الخط المعيّن', type:'select', options: routeOpts,
+          hint: isAr ? 'يجب أن يطابق نوع المركبة نوع الخط.' : 'Vehicle type must match route type.' },
+        { name:'status',     label:'Status', label_ar:'الحالة', type:'select', value:'idle',
+          options:[{value:'idle',label:'Idle',label_ar:'متوقف'},{value:'active',label:'Active',label_ar:'نشط'},{value:'maintenance',label:'Maintenance',label_ar:'صيانة'}]},
+      ],
+      onSubmit: async function (values) {
+        if (!values.assigned_route_id) delete values.assigned_route_id;
+        const r = await window.ADMIN_AUTH.fetch('/api/admin/vehicles', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(values),
+        });
+        if (!r.ok) {
+          const j = await r.json().catch(()=>({detail:'Save failed'}));
+          return { error: j.detail || 'Save failed' };
+        }
+      },
+      onAfter: load,
+    });
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+
+  function load() {
+    if (!window.ADMIN_AUTH) return;
+    Promise.all([
+      window.ADMIN_AUTH.fetch('/api/admin/vehicles')
+        .then(r => r.ok ? r.json() : fetch('/api/vehicles').then(rr => rr.json())),
+      fetch('/api/routes').then(r => r.ok ? r.json() : []),
+    ]).then(function (parts) {
+      LAST = Array.isArray(parts[0]) ? parts[0] : [];
+      ROUTES = Array.isArray(parts[1]) ? parts[1] : [];
+      render(LAST);
+    }).catch(function (e) {
+      if (String(e.message) !== 'unauthorized') {
+        document.getElementById('rows').innerHTML =
+          '<tr><td colspan="7"><div class="empty-state">' + escapeHtml(e.message || 'Error') + '</div></td></tr>';
+      }
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    load();
+    const btn = document.getElementById('btn-add-vehicle');
+    if (btn) {
+      btn.addEventListener('click', openAddForm);
+      // Only admin/super_admin should see "Add".
+      if (!(window.ADMIN_AUTH && window.ADMIN_AUTH.isAdmin())) btn.style.display = 'none';
+    }
+  });
+  document.addEventListener('i18n:change', function () { render(LAST); });
+})();
+</script>
+</body>
+</html>

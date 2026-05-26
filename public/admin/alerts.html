@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0E5650">
+<title>التنبيهات — لوحة الإدارة — نقل دمشق</title>
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200;300;400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/lib/design-system.css">
+<link rel="stylesheet" href="/admin/_layout.css">
+<script src="/admin/_gate.js"></script>
+</head>
+<body data-page="alerts">
+
+<div class="utility-bar">
+  <div class="container">
+    <span class="gov" data-i18n="hero.eyebrow">الجمهورية العربية السورية</span>
+    <span class="right">
+      <a href="/" data-i18n="header.home">الرئيسية</a>
+      <span class="sep"></span>
+      <a href="/passenger/" data-i18n="header.passenger">للركاب</a>
+      <span class="sep"></span>
+      <a href="/driver/" data-i18n="header.driver">للسائقين</a>
+      <span class="sep"></span>
+      <a href="/admin/login.html" data-i18n="header.admin">الإدارة</a>
+    </span>
+  </div>
+</div>
+
+<div class="admin-shell">
+
+  <aside class="sidebar" aria-label="القائمة الجانبية">
+    <a href="/" class="sidebar__brand">
+      <span class="sidebar__brand-mark" aria-hidden="true">
+        <picture><source srcset="/assets/identity/sy-emblem-eagle.avif" type="image/avif"><img src="/assets/identity/sy-emblem-eagle.png" alt=""></picture>
+      </span>
+      <span class="sidebar__brand-text"><b data-i18n="admin.brand">نقل دمشق</b><small data-i18n="admin.brandSub">لوحة الإدارة</small></span>
+    </a>
+
+    <nav>
+      <a href="/admin/" data-nav="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span data-i18n="admin.nav.overview">النظرة العامة</span></a>
+      <a href="/admin/dispatch.html" data-nav="dispatch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h6l3-8 4 16 3-8h2"/></svg><span>الإرسال / Dispatch</span></a>
+      <a href="/admin/vehicles.html" data-nav="vehicles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13l1.5-7h15L21 13M4 13v6h2v-2h12v2h2v-6"/><circle cx="7" cy="16" r="1"/><circle cx="17" cy="16" r="1"/></svg><span data-i18n="admin.nav.vehicles">الحافلات</span></a>
+      <a href="/admin/users.html" data-nav="users"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="4"/><path d="M2 22v-1a7 7 0 0 1 14 0v1"/><circle cx="17" cy="6" r="3"/><path d="M22 22v-1a5 5 0 0 0-5-5"/></svg><span data-i18n="admin.nav.users">المستخدمون</span></a>
+      <a href="/admin/routes.html" data-nav="routes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v18M18 3v18M6 7h12M6 12h12M6 17h12"/></svg><span data-i18n="admin.nav.routes">الخطوط</span></a>
+      <a href="/admin/geofences.html" data-nav="geofences"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8 22 16 12 22 2 16 2 8"/></svg><span>المناطق / Geofences</span></a>
+      <a href="/admin/alerts.html" data-nav="alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 22h20L12 2Z"/><path d="M12 9v5"/><circle cx="12" cy="18" r=".5" fill="currentColor"/></svg><span data-i18n="admin.nav.alerts">التنبيهات</span></a>
+      <a href="/dashboard/analytics.html" data-nav="analytics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-7"/></svg><span data-i18n="admin.nav.analytics">التحليلات</span></a>
+      <a href="/help/" data-nav="help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg><span data-i18n="admin.nav.help">كيفية الاستخدام</span></a>
+    </nav>
+
+    <div class="sidebar__footer">
+      <div class="sidebar__user"><div class="avatar-circle" id="user-initial">؟</div><div><div class="name" id="user-name">—</div><div class="role" id="user-role">—</div></div></div>
+      <button class="sidebar__logout" id="logout-btn" data-i18n="admin.logout">تسجيل الخروج</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="pagetitle">
+        <h1 data-i18n="admin.alertsPage.title">التنبيهات</h1>
+        <p data-i18n="admin.alertsPage.sub">تنبيهات الأسطول مرتبة حسب الأحدث.</p>
+      </div>
+      <div class="cluster">
+        <button class="lang-toggle" id="lang-toggle" data-i18n-toggle aria-label="Toggle language">EN</button>
+      </div>
+    </div>
+
+    <section class="data-table-card">
+      <table class="data-table" aria-label="alerts">
+        <thead>
+          <tr>
+            <th data-i18n="admin.alertsPage.when">الوقت</th>
+            <th data-i18n="admin.alertsPage.type">النوع</th>
+            <th data-i18n="admin.alertsPage.severity">الخطورة</th>
+            <th data-i18n="admin.alertsPage.titleCol">العنوان</th>
+            <th data-i18n="admin.alertsPage.vehicle">الحافلة</th>
+            <th data-i18n="admin.alertsPage.status">الحالة</th>
+            <th data-i18n="admin.alertsPage.action">الإجراء</th>
+          </tr>
+        </thead>
+        <tbody id="rows">
+          <tr><td colspan="7"><div class="skeleton" style="width:100%;height:1.2em"></div></td></tr>
+          <tr><td colspan="7"><div class="skeleton" style="width:100%;height:1.2em"></div></td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</div>
+
+<script src="/lib/i18n.js"></script>
+<script src="/admin/_shell.js" defer></script>
+<script>
+(function () {
+  function fmt(ts, lang) {
+    if (!ts) return '—';
+    const d = new Date(ts);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleString(lang === 'ar' ? 'ar-SY' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function sevClass(s) {
+    if (s === 'critical' || s === 'high') return 'is-critical';
+    if (s === 'medium') return 'is-warn';
+    return 'is-offline';
+  }
+
+  let LAST = [];
+  function render(rows) {
+    const tbody = document.getElementById('rows');
+    if (!rows || rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">' +
+        (window.I18N ? window.I18N.t('admin.alertsPage.empty') : 'No alerts.') + '</div></td></tr>';
+      return;
+    }
+    const lang = (document.documentElement.lang || 'ar').slice(0,2);
+    const isAr = lang === 'ar';
+    const sevT = (s) => window.I18N ? window.I18N.t('admin.severity.' + (s || 'low')) : (s || '—');
+    const openT = window.I18N ? window.I18N.t('admin.alertsPage.open') : 'Open';
+    const resolvedT = window.I18N ? window.I18N.t('admin.alertsPage.resolved') : 'Resolved';
+    const resolveBtnT = window.I18N ? window.I18N.t('admin.alertsPage.resolveBtn') : 'Mark resolved';
+
+    tbody.innerHTML = rows.map(a => {
+      const title = isAr ? (a.title_ar || a.title || '—') : (a.title || a.title_ar || '—');
+      const resolved = a.is_resolved === true;
+      // Resolve button only renders for open alerts. Resolved rows show a dash
+      // so the column doesn't look broken on closed alerts.
+      const actionCell = resolved
+        ? '<td class="cell-muted">—</td>'
+        : '<td><button class="btn btn--sm btn--outline btn-resolve" data-id="' + escapeHtml(a.id) + '">' + escapeHtml(resolveBtnT) + '</button></td>';
+      return '<tr>' +
+        '<td class="cell-muted">' + escapeHtml(fmt(a.created_at, lang)) + '</td>' +
+        '<td>' + escapeHtml(a.alert_type || '—') + '</td>' +
+        '<td><span class="status-pill ' + sevClass(a.severity) + '">' + escapeHtml(sevT(a.severity)) + '</span></td>' +
+        '<td>' + escapeHtml(title) + '</td>' +
+        '<td class="cell-mono">' + escapeHtml(a.vehicle_id || '—') + '</td>' +
+        '<td><span class="status-pill ' + (resolved ? 'is-active' : 'is-warn') + '">' +
+          escapeHtml(resolved ? resolvedT : openT) + '</span></td>' +
+        actionCell +
+      '</tr>';
+    }).join('');
+
+    // Wire the resolve buttons. Each click PATCHes the alert and reloads the
+    // table. We disable the button while the request is in flight so the
+    // user can't double-resolve.
+    tbody.querySelectorAll('.btn-resolve').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        const original = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = window.I18N ? window.I18N.t('common.loading') : '…';
+        try {
+          const r = await window.ADMIN_AUTH.fetch('/api/admin/alerts/' + encodeURIComponent(id) + '/resolve', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: '{}',
+          });
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          await load();
+        } catch (e) {
+          if (String(e.message) !== 'unauthorized') {
+            btn.disabled = false;
+            btn.textContent = original;
+            alert(window.I18N ? window.I18N.t('error.generic') : 'Error');
+          }
+        }
+      });
+    });
+  }
+
+  async function load() {
+    if (!window.ADMIN_AUTH) return;
+    try {
+      const r = await window.ADMIN_AUTH.fetch('/api/admin/alerts?limit=200');
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const rows = await r.json();
+      LAST = Array.isArray(rows) ? rows : [];
+      render(LAST);
+    } catch (e) {
+      if (String(e.message) !== 'unauthorized') {
+        document.getElementById('rows').innerHTML =
+          '<tr><td colspan="7"><div class="empty-state">' + escapeHtml(e.message || 'Error') + '</div></td></tr>';
+      }
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', load);
+  document.addEventListener('i18n:change', () => render(LAST));
+})();
+</script>
+</body>
+</html>

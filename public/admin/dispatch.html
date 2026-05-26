@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0E5650">
+<title>الإرسال / Dispatch — نقل دمشق</title>
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200;300;400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/lib/design-system.css">
+<link rel="stylesheet" href="/admin/_layout.css">
+<style>
+  .dispatch-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 18px; margin-top: 18px; }
+  @media (max-width: 1100px) { .dispatch-grid { grid-template-columns: 1fr; } }
+  .pill-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .pill-row .pill { padding: 6px 12px; border: 1px solid var(--rule); border-radius: 999px; background: #fff; cursor: pointer; font-size: 13px; }
+  .pill-row .pill.is-active { background: #0E5650; color: #fff; border-color: #0E5650; }
+  .status-cell { font-family: "JetBrains Mono", monospace; font-size: 12px; padding: 2px 8px; border-radius: 999px; display: inline-block; }
+  .st-scheduled  { background: #e0f2fe; color: #0c4a6e; }
+  .st-dispatched { background: #fef3c7; color: #78350f; }
+  .st-acked      { background: #dcfce7; color: #14532d; }
+  .st-in_progress{ background: #d1fae5; color: #065f46; }
+  .st-completed  { background: #e5e7eb; color: #1f2937; }
+  .st-cancelled  { background: #fee2e2; color: #7f1d1d; }
+  .acttab { display: flex; gap: 4px; }
+  .acttab button { background: transparent; border: 0; cursor: pointer; font-size: 12px; padding: 4px 6px; border-radius: 4px; }
+  .acttab .push     { color: #0E5650; }
+  .acttab .cancel   { color: #b91c1c; }
+  .acttab button:hover { background: #f1f5f9; }
+</style>
+<script src="/admin/_gate.js"></script>
+</head>
+<body data-page="dispatch">
+
+<div class="utility-bar">
+  <div class="container">
+    <span class="gov">الجمهورية العربية السورية</span>
+    <span class="right">
+      <a href="/">الرئيسية</a><span class="sep"></span>
+      <a href="/passenger/">للركاب</a><span class="sep"></span>
+      <a href="/driver/">للسائقين</a><span class="sep"></span>
+      <a href="/admin/login.html">الإدارة</a>
+    </span>
+  </div>
+</div>
+
+<div class="admin-shell">
+  <aside class="sidebar">
+    <a href="/" class="sidebar__brand">
+      <span class="sidebar__brand-mark"><picture><source srcset="/assets/identity/sy-emblem-eagle.avif" type="image/avif"><img src="/assets/identity/sy-emblem-eagle.png" alt=""></picture></span>
+      <span class="sidebar__brand-text"><b>نقل دمشق</b><small>لوحة الإدارة</small></span>
+    </a>
+    <nav>
+      <a href="/admin/" data-nav="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>النظرة العامة</span></a>
+      <a href="/admin/dispatch.html" data-nav="dispatch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h6l3-8 4 16 3-8h2"/></svg><span>الإرسال / Dispatch</span></a>
+      <a href="/admin/vehicles.html" data-nav="vehicles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13l1.5-7h15L21 13M4 13v6h2v-2h12v2h2v-6"/><circle cx="7" cy="16" r="1"/><circle cx="17" cy="16" r="1"/></svg><span>الحافلات</span></a>
+      <a href="/admin/users.html" data-nav="users"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="4"/><path d="M2 22v-1a7 7 0 0 1 14 0v1"/><circle cx="17" cy="6" r="3"/><path d="M22 22v-1a5 5 0 0 0-5-5"/></svg><span>المستخدمون</span></a>
+      <a href="/admin/routes.html" data-nav="routes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v18M18 3v18M6 7h12M6 12h12M6 17h12"/></svg><span>الخطوط</span></a>
+      <a href="/admin/geofences.html" data-nav="geofences"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8 22 16 12 22 2 16 2 8"/></svg><span>المناطق</span></a>
+      <a href="/admin/alerts.html" data-nav="alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 22h20L12 2Z"/><path d="M12 9v5"/><circle cx="12" cy="18" r=".5" fill="currentColor"/></svg><span>التنبيهات</span></a>
+      <a href="/dashboard/analytics.html" data-nav="analytics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-7"/></svg><span>التحليلات</span></a>
+      <a href="/help/" data-nav="help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg><span>كيفية الاستخدام</span></a>
+    </nav>
+    <div class="sidebar__footer">
+      <div class="sidebar__user"><div class="avatar-circle" id="user-initial">؟</div><div><div class="name" id="user-name">—</div><div class="role" id="user-role">—</div></div></div>
+      <button class="sidebar__logout" id="logout-btn">تسجيل الخروج</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="pagetitle">
+        <h1>لوحة الإرسال / Dispatch Console</h1>
+        <p>جدوَلة الرحلات، تعيين السائقين، ومراقبة دورة حياة الرحلة من scheduled → dispatched → acked → in_progress → completed.</p>
+      </div>
+      <div class="cluster">
+        <button id="btn-schedule" type="button" style="padding:8px 14px;background:#0E5650;color:#fff;border:0;border-radius:8px;cursor:pointer;">+ جدولة رحلة / Schedule trip</button>
+        <button id="btn-refresh"  type="button" style="padding:8px 14px;background:#fff;color:#0E5650;border:1px solid #0E5650;border-radius:8px;cursor:pointer;">⟳</button>
+      </div>
+    </div>
+
+    <div class="pill-row" id="pill-row">
+      <button class="pill is-active" data-status="">الكل / All</button>
+      <button class="pill" data-status="scheduled">مجدول / Scheduled</button>
+      <button class="pill" data-status="dispatched">مُرسَل / Dispatched</button>
+      <button class="pill" data-status="acked">مُعتمَد / Acked</button>
+      <button class="pill" data-status="in_progress">جارٍ / In progress</button>
+      <button class="pill" data-status="completed">منتهي / Completed</button>
+      <button class="pill" data-status="cancelled">ملغى / Cancelled</button>
+    </div>
+
+    <!-- Track C: per-route headway gauge. Refreshes with the trips table. -->
+    <section class="data-table-card" style="margin-bottom:14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px 8px;">
+        <h3 style="margin:0;font-size:16px;color:#0E5650;">حالة التباعد على الخطوط / Route headway status</h3>
+        <span style="font-size:12px;color:#64748b;">الهدف ↔ الفعلي · target ↔ actual</span>
+      </div>
+      <div id="headway-strip" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;padding:0 18px 18px;">
+        <div style="grid-column:1/-1;color:#94a3b8;font-size:13px;">— loading —</div>
+      </div>
+    </section>
+
+    <section class="data-table-card">
+      <table class="data-table" aria-label="trips">
+        <thead>
+          <tr>
+            <th>الموعد / Scheduled</th>
+            <th>الخط / Route</th>
+            <th>السائق / Driver</th>
+            <th>المركبة / Vehicle</th>
+            <th>الحالة / Status</th>
+            <th>الإجراء / Actions</th>
+          </tr>
+        </thead>
+        <tbody id="rows">
+          <tr><td colspan="6"><div class="skeleton" style="width:100%;height:1.2em"></div></td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</div>
+
+<script src="/lib/i18n.js"></script>
+<script src="/admin/_shell.js" defer></script>
+<script>
+(function () {
+  'use strict';
+  function escapeHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function fmtTs(s) {
+    if (!s) return '<span class="cell-muted">ad-hoc</span>';
+    const d = new Date(s);
+    if (isNaN(d.getTime())) return '<span class="cell-muted">—</span>';
+    return d.toLocaleString((document.documentElement.lang || 'ar').slice(0,2) === 'ar' ? 'ar-SY' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' });
+  }
+
+  let STATE = { trips: [], filter: '', routes: [], vehicles: [], drivers: [] };
+
+  function nameById(arr, id, fields) {
+    const x = (arr || []).find(r => r.id === id);
+    if (!x) return '—';
+    for (const f of fields) if (x[f]) return x[f];
+    return '—';
+  }
+
+  function actionsHtml(t) {
+    const s = t.status;
+    const isAr = (document.documentElement.lang || 'ar').slice(0,2) === 'ar';
+    const out = [];
+    if (s === 'scheduled')  out.push(`<button class="push"   data-id="${t.id}" data-act="dispatch">${isAr ? 'إرسال' : 'Push'}</button>`);
+    if (['scheduled','dispatched','acked','in_progress'].includes(s))
+                            out.push(`<button class="cancel" data-id="${t.id}" data-act="cancel">${isAr ? 'إلغاء' : 'Cancel'}</button>`);
+    if (!out.length) return '<span class="cell-muted">—</span>';
+    return '<div class="acttab">' + out.join('') + '</div>';
+  }
+
+  function render() {
+    const tbody = document.getElementById('rows');
+    const rows = STATE.trips.filter(t => !STATE.filter || t.status === STATE.filter);
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">لا توجد رحلات بهذا الفلتر. / No trips for this filter.</div></td></tr>';
+      return;
+    }
+    const isAr = (document.documentElement.lang || 'ar').slice(0,2) === 'ar';
+    tbody.innerHTML = rows.map(t => {
+      const route = nameById(STATE.routes, t.route_id, [isAr ? 'name_ar' : 'name', 'route_id']);
+      const driver = nameById(STATE.drivers, t.driver_id, [isAr ? 'name_ar' : 'name', 'email']);
+      const vehicle = nameById(STATE.vehicles, t.vehicle_id, ['vehicle_id', 'name']);
+      return '<tr>' +
+        '<td>' + fmtTs(t.scheduled_start) + '</td>' +
+        '<td>' + escapeHtml(route) + '</td>' +
+        '<td>' + escapeHtml(driver) + '</td>' +
+        '<td class="cell-mono">' + escapeHtml(vehicle) + '</td>' +
+        '<td><span class="status-cell st-' + escapeHtml(t.status) + '">' + escapeHtml(t.status) + '</span></td>' +
+        '<td>' + actionsHtml(t) + '</td>' +
+      '</tr>';
+    }).join('');
+    tbody.querySelectorAll('button[data-act]').forEach(b => b.addEventListener('click', onAction));
+  }
+
+  async function onAction(ev) {
+    const id  = ev.currentTarget.getAttribute('data-id');
+    const act = ev.currentTarget.getAttribute('data-act');
+    let body = {};
+    if (act === 'dispatch') body = { status: 'dispatched' };
+    if (act === 'cancel')   {
+      const reason = prompt('سبب الإلغاء؟ / Reason?', '');
+      if (reason === null) return;
+      body = { status: 'cancelled', cancellation_reason: reason };
+    }
+    const r = await window.ADMIN_AUTH.fetch('/api/admin/trips/' + encodeURIComponent(id), {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    });
+    if (!r.ok) { const j = await r.json().catch(()=>({})); alert(j.detail || 'فشل / Failed'); return; }
+    load();
+  }
+
+  async function load() {
+    if (!window.ADMIN_AUTH) return;
+    try {
+      const [trips, routes, vehicles, users, headway] = await Promise.all([
+        window.ADMIN_AUTH.fetch('/api/admin/trips?limit=200').then(r => r.ok ? r.json() : []),
+        fetch('/api/routes').then(r => r.ok ? r.json() : []),
+        window.ADMIN_AUTH.fetch('/api/admin/vehicles').then(r => r.ok ? r.json() : []),
+        window.ADMIN_AUTH.fetch('/api/admin/users').then(r => r.ok ? r.json() : []),
+        window.ADMIN_AUTH.fetch('/api/admin/headway').then(r => r.ok ? r.json() : []),
+      ]);
+      STATE.trips    = Array.isArray(trips)    ? trips    : [];
+      STATE.routes   = Array.isArray(routes)   ? routes   : [];
+      STATE.vehicles = Array.isArray(vehicles) ? vehicles : [];
+      // Filter users to drivers only.
+      STATE.drivers = (Array.isArray(users) ? users : []).filter(u => u.role === 'driver');
+      renderHeadway(Array.isArray(headway) ? headway : []);
+      render();
+    } catch (e) {
+      document.getElementById('rows').innerHTML =
+        '<tr><td colspan="6"><div class="empty-state">' + escapeHtml(e.message || 'Error') + '</div></td></tr>';
+    }
+  }
+
+  function renderHeadway(rows) {
+    const host = document.getElementById('headway-strip');
+    if (!host) return;
+    if (!rows.length) {
+      host.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:13px;">' +
+        'لا يوجد خطوط مفعّلة بحالة التباعد. / No routes with headway control enabled.</div>';
+      return;
+    }
+    host.innerHTML = rows.map(r => {
+      const target = r.target_headway_min;
+      const actual = r.actual_headway_min;
+      let status = 'ok', label = 'مطابق / on target';
+      if (target == null) { status = 'na'; label = 'غير مفعّل / disabled'; }
+      else if (actual == null || r.vehicles_on_route < 2) { status = 'na'; label = 'بيانات غير كافية / insufficient data'; }
+      else if (actual < target * 0.7) { status = 'bad'; label = 'تقارب / bunching'; }
+      else if (actual > target * 1.5) { status = 'late'; label = 'فجوة كبيرة / large gap'; }
+      const color = ({ok:'#16a34a', bad:'#dc2626', late:'#d97706', na:'#94a3b8'})[status];
+      const bg    = ({ok:'#dcfce7', bad:'#fee2e2', late:'#fef3c7', na:'#f1f5f9'})[status];
+      const txt   = ({ok:'#14532d', bad:'#7f1d1d', late:'#78350f', na:'#475569'})[status];
+      return '<div style="border:1px solid ' + color + ';background:' + bg + ';border-radius:8px;padding:10px 12px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:baseline;">' +
+        '  <span style="font-family:\'JetBrains Mono\',monospace;font-weight:700;color:' + txt + ';">' + escapeHtml(r.route_code || '') + '</span>' +
+        '  <span style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:' + txt + ';">' + escapeHtml(label) + '</span>' +
+        '</div>' +
+        '<div style="margin-top:6px;font-size:14px;color:#0f172a;">' +
+          (target != null ? '<b>' + target + '</b>' + ' دقيقة <span style="color:#94a3b8">/ target</span>' : '<span style="color:#94a3b8">—</span>') +
+          (actual != null ? '<span style="margin:0 6px;color:#94a3b8;">↔</span><b>' + actual + '</b>' + ' دقيقة <span style="color:#94a3b8">/ actual</span>' : '') +
+        '</div>' +
+        '<div style="font-size:12px;color:#64748b;margin-top:4px;">' +
+          (r.vehicles_on_route != null ? r.vehicles_on_route + ' مركبة في الخدمة' : '—') +
+          (r.min_gap_m != null ? '  ·  أقرب فجوة ' + Math.round(r.min_gap_m) + 'م' : '') +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function openSchedule() {
+    const isAr = (document.documentElement.lang || 'ar').slice(0,2) === 'ar';
+    const driverOpts = [{value:'', label:'— '+ (isAr ? 'استخدم سائق المركبة' : 'use vehicle driver'), label_ar:'— استخدم سائق المركبة'}].concat(
+      STATE.drivers.map(d => ({value: d.id, label: (d.name || d.email), label_ar: (d.name_ar || d.email)})));
+    const vehicleOpts = STATE.vehicles.map(v => ({value: v.id, label: (v.vehicle_id || v.name || v.id), label_ar: (v.vehicle_id || v.name || v.id)}));
+    const routeOpts = [{value:'', label:'— '+ (isAr ? 'يُستنتج من المركبة' : 'inferred from vehicle')}].concat(
+      STATE.routes.map(r => ({value: r.id, label: (r.route_id || r.code) + ' — ' + (r.name || ''), label_ar: (r.route_id || r.code) + ' — ' + (r.name_ar || r.name || '')})));
+    // Default scheduled_start = now+15min, rounded to next 5 minutes.
+    const t = new Date(Math.ceil(Date.now()/300000)*300000 + 15*60*1000);
+    const tlocal = new Date(t.getTime() - t.getTimezoneOffset()*60000).toISOString().slice(0,16);
+    window.ADMIN_AUTH.openForm({
+      title:    isAr ? 'جدوَلة رحلة جديدة' : 'Schedule a trip',
+      subtitle: isAr ? 'الموعد، المركبة، والسائق. تعارض ٣٠د مع رحلة قائمة سيُرفض.' : '30-minute conflict against the same driver returns 409.',
+      fields: [
+        { name:'vehicle_id', label:'Vehicle', label_ar:'المركبة', type:'select', required:true, options: vehicleOpts },
+        { name:'route_id',   label:'Route (optional)', label_ar:'الخط (اختياري)', type:'select', options: routeOpts },
+        { name:'driver_id',  label:'Driver (optional override)', label_ar:'السائق (تجاوز اختياري)', type:'select', options: driverOpts },
+        { name:'scheduled_start', label:'Scheduled start (local time)', label_ar:'الموعد (توقيت محلي)', type:'datetime-local', required:true, value:tlocal },
+        { name:'planned_passengers', label:'Planned passengers', label_ar:'الركاب المخططون', type:'number', min:0, max:200 },
+        { name:'notes',      label:'Notes', label_ar:'ملاحظات', type:'textarea' },
+      ],
+      onSubmit: async function (values) {
+        // datetime-local has no timezone — treat as the user's local zone and convert to ISO.
+        if (values.scheduled_start) values.scheduled_start = new Date(values.scheduled_start).toISOString();
+        if (!values.route_id)  delete values.route_id;
+        if (!values.driver_id) delete values.driver_id;
+        if (values.planned_passengers === '' || values.planned_passengers == null) delete values.planned_passengers;
+        if (!values.notes) delete values.notes;
+        const r = await window.ADMIN_AUTH.fetch('/api/admin/trips', {
+          method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(values)
+        });
+        if (!r.ok) { const j = await r.json().catch(()=>({})); return { error: j.detail || 'فشل / Failed' }; }
+      },
+      onAfter: load,
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    load();
+    document.getElementById('btn-refresh').addEventListener('click', load);
+    document.getElementById('btn-schedule').addEventListener('click', openSchedule);
+    document.querySelectorAll('#pill-row .pill').forEach(p => {
+      p.addEventListener('click', function () {
+        document.querySelectorAll('#pill-row .pill').forEach(x => x.classList.remove('is-active'));
+        p.classList.add('is-active');
+        STATE.filter = p.dataset.status || '';
+        render();
+      });
+    });
+    // Auto-refresh every 20s
+    setInterval(load, 20000);
+  });
+  document.addEventListener('i18n:change', () => { /* render() will reflect lang next refresh */ });
+})();
+</script>
+</body>
+</html>

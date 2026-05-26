@@ -10,27 +10,27 @@ ON CONFLICT (slug) DO UPDATE SET is_active = true;
 
 -- Seed users (demo password: damascus2025 — CHANGE IN PRODUCTION)
 INSERT INTO users (email, password_hash, full_name, full_name_ar, role, phone) VALUES
-('admin@damascustransit.sy', '$2b$12$6dfwtB87aK9WOSd0sI/Ixe/X8d45kroxYrMXblEo6dwCOqu/vY8p.', 'System Admin', 'مدير النظام', 'admin', '+963000000001'),
-('dispatcher@damascustransit.sy', '$2b$12$6dfwtB87aK9WOSd0sI/Ixe/X8d45kroxYrMXblEo6dwCOqu/vY8p.', 'Operations Center', 'مركز العمليات', 'dispatcher', '+963000000002'),
+('admin@damascustransit.sy', '$2b$12$zpHjnUTrFEV8jPmwPcSQsO96e8u5s4YZbt3Sawx7rZnOyc6SlFlyq', 'System Admin', 'مدير النظام', 'admin', '+963000000001'),
+('dispatcher@damascustransit.sy', '$2b$12$A0tiqSnWDKIcp.1qPCHJ0ev3rqtszDcg0CO81tqbdYslySgWzf0XC', 'Operations Center', 'مركز العمليات', 'dispatcher', '+963000000002'),
 -- Drivers (one per active vehicle — assign via UPDATE below)
-('driver01@damascustransit.sy', '$2b$12$6dfwtB87aK9WOSd0sI/Ixe/X8d45kroxYrMXblEo6dwCOqu/vY8p.', 'Ahmad Khalil', 'أحمد خليل', 'driver', '+963110000001'),
-('driver02@damascustransit.sy', '$2b$12$6dfwtB87aK9WOSd0sI/Ixe/X8d45kroxYrMXblEo6dwCOqu/vY8p.', 'Omar Sayed', 'عمر سيد', 'driver', '+963110000002'),
-('driver03@damascustransit.sy', '$2b$12$6dfwtB87aK9WOSd0sI/Ixe/X8d45kroxYrMXblEo6dwCOqu/vY8p.', 'Hassan Nouri', 'حسن نوري', 'driver', '+963110000003'),
-('driver04@damascustransit.sy', '$2b$12$6dfwtB87aK9WOSd0sI/Ixe/X8d45kroxYrMXblEo6dwCOqu/vY8p.', 'Sami Darwish', 'سامي درويش', 'driver', '+963110000004'),
-('driver05@damascustransit.sy', '$2b$12$6dfwtB87aK9WOSd0sI/Ixe/X8d45kroxYrMXblEo6dwCOqu/vY8p.', 'Fadi Haddad', 'فادي حداد', 'driver', '+963110000005'),
-('driver06@damascustransit.sy', '$2b$12$6dfwtB87aK9WOSd0sI/Ixe/X8d45kroxYrMXblEo6dwCOqu/vY8p.', 'Khaled Mansour', 'خالد منصور', 'driver', '+963110000006'),
-('driver07@damascustransit.sy', '$2b$12$6dfwtB87aK9WOSd0sI/Ixe/X8d45kroxYrMXblEo6dwCOqu/vY8p.', 'Youssef Amin', 'يوسف أمين', 'driver', '+963110000007'),
-('driver08@damascustransit.sy', '$2b$12$6dfwtB87aK9WOSd0sI/Ixe/X8d45kroxYrMXblEo6dwCOqu/vY8p.', 'Rami Jabr', 'رامي جبر', 'driver', '+963110000008'),
-('driver09@damascustransit.sy', '$2b$12$6dfwtB87aK9WOSd0sI/Ixe/X8d45kroxYrMXblEo6dwCOqu/vY8p.', 'Nizar Shami', 'نزار شامي', 'driver', '+963110000009'),
-('driver10@damascustransit.sy', '$2b$12$6dfwtB87aK9WOSd0sI/Ixe/X8d45kroxYrMXblEo6dwCOqu/vY8p.', 'Tariq Bazzi', 'طارق بزي', 'driver', '+963110000010'),
-('driver11@damascustransit.sy', '$2b$12$6dfwtB87aK9WOSd0sI/Ixe/X8d45kroxYrMXblEo6dwCOqu/vY8p.', 'Bilal Hamdi', 'بلال حمدي', 'driver', '+963110000011'),
-('driver12@damascustransit.sy', '$2b$12$6dfwtB87aK9WOSd0sI/Ixe/X8d45kroxYrMXblEo6dwCOqu/vY8p.', 'Wael Khoury', 'وائل خوري', 'driver', '+963110000012'),
-('driver13@damascustransit.sy', '$2b$12$6dfwtB87aK9WOSd0sI/Ixe/X8d45kroxYrMXblEo6dwCOqu/vY8p.', 'Mazen Rida', 'مازن رضا', 'driver', '+963110000013'),
-('driver14@damascustransit.sy', '$2b$12$6dfwtB87aK9WOSd0sI/Ixe/X8d45kroxYrMXblEo6dwCOqu/vY8p.', 'Adel Fayad', 'عادل فياض', 'driver', '+963110000014'),
-('driver15@damascustransit.sy', '$2b$12$6dfwtB87aK9WOSd0sI/Ixe/X8d45kroxYrMXblEo6dwCOqu/vY8p.', 'Samir Qasim', 'سمير قاسم', 'driver', '+963110000015'),
-('driver16@damascustransit.sy', '$2b$12$6dfwtB87aK9WOSd0sI/Ixe/X8d45kroxYrMXblEo6dwCOqu/vY8p.', 'Jamil Sabbagh', 'جميل صباغ', 'driver', '+963110000016'),
-('driver17@damascustransit.sy', '$2b$12$6dfwtB87aK9WOSd0sI/Ixe/X8d45kroxYrMXblEo6dwCOqu/vY8p.', 'Hani Tlass', 'هاني طلاس', 'driver', '+963110000017'),
-('driver18@damascustransit.sy', '$2b$12$6dfwtB87aK9WOSd0sI/Ixe/X8d45kroxYrMXblEo6dwCOqu/vY8p.', 'Ziad Farah', 'زياد فرح', 'driver', '+963110000018')
+('driver01@damascustransit.sy', '$2b$12$wOAYnhP9Zoi4fe/MrwEeU.YP9zCzno.43s8wUaeWkA2kKztTinP2S', 'Ahmad Khalil', 'أحمد خليل', 'driver', '+963110000001'),
+('driver02@damascustransit.sy', '$2b$12$aSSuvnbGEq/CtyB.cBa0WOlEaxAGdumwp2MBXSrh5IgzVT8hncnqm', 'Omar Sayed', 'عمر سيد', 'driver', '+963110000002'),
+('driver03@damascustransit.sy', '$2b$12$jAWfW0JSyUhwxeTheWZZQ.j4PPZHMQcC1xyBjm1CEVUMTpDT9HP.2', 'Hassan Nouri', 'حسن نوري', 'driver', '+963110000003'),
+('driver04@damascustransit.sy', '$2b$12$B7bkt6xduv/LhIEEUiCzI.D6Xf0tYbcNmR9sdT9OgMkEomq0ca9Yy', 'Sami Darwish', 'سامي درويش', 'driver', '+963110000004'),
+('driver05@damascustransit.sy', '$2b$12$eWgcqIE37s5WAnkLqM/0XOzRiIRcgUXx/jP7WTNQAYu911vEU0o9K', 'Fadi Haddad', 'فادي حداد', 'driver', '+963110000005'),
+('driver06@damascustransit.sy', '$2b$12$8TVRnJQoGp4BGRrJk4cRj.LNbN4UkPCdYyGEf5395GxFIvnUmyDTu', 'Khaled Mansour', 'خالد منصور', 'driver', '+963110000006'),
+('driver07@damascustransit.sy', '$2b$12$wm3AvOz5Plvu40fIonh1POdOL.YDeWEqlJm5M9lt8dQVkPd69wNh.', 'Youssef Amin', 'يوسف أمين', 'driver', '+963110000007'),
+('driver08@damascustransit.sy', '$2b$12$T6vvfRa/azQT32Det8HICe1owZ4gn.EKHmT9/5QaG/jwocsX8x0JS', 'Rami Jabr', 'رامي جبر', 'driver', '+963110000008'),
+('driver09@damascustransit.sy', '$2b$12$0HIpgZ3XeJ9oieZ37yLf2OIp.2Fj4/hQN929IZhk7EoAT861XGzp6', 'Nizar Shami', 'نزار شامي', 'driver', '+963110000009'),
+('driver10@damascustransit.sy', '$2b$12$pOprCbDXV2c087kHzZQYMOn8vEDgcvjZvekmQfMY9T57ljVaMP30.', 'Tariq Bazzi', 'طارق بزي', 'driver', '+963110000010'),
+('driver11@damascustransit.sy', '$2b$12$8KcFtDQi1nVqmSZcfNKqoe8aEb6kd0d1QaByjquk9fHaVRj6R0ksS', 'Bilal Hamdi', 'بلال حمدي', 'driver', '+963110000011'),
+('driver12@damascustransit.sy', '$2b$12$hgplrF.z9ycyiKl2AXAiiORGPDrg5fZWOJZXrT.SjrsQkpRly7ycK', 'Wael Khoury', 'وائل خوري', 'driver', '+963110000012'),
+('driver13@damascustransit.sy', '$2b$12$6cmK2Y1icnQn5AQrd/wjS.H0jwN3j9uteKlEHZNVdoqvRX6cFLInG', 'Mazen Rida', 'مازن رضا', 'driver', '+963110000013'),
+('driver14@damascustransit.sy', '$2b$12$bqJ1O.GJjdaZM8WpJ4GJEOnt3xO6QBE2xOJUmowtTxsVclK4im4xC', 'Adel Fayad', 'عادل فياض', 'driver', '+963110000014'),
+('driver15@damascustransit.sy', '$2b$12$k.qj.Kwiir0A8pinaNqiae0P9VX/UIiggDcWFrtqKzAF/6hZkNgfq', 'Samir Qasim', 'سمير قاسم', 'driver', '+963110000015'),
+('driver16@damascustransit.sy', '$2b$12$Y7nlA3.mzpZ9Y2pGJzS40u5kQ7.augk/jbZA4v4YTuS.Qf3oiIhPe', 'Jamil Sabbagh', 'جميل صباغ', 'driver', '+963110000016'),
+('driver17@damascustransit.sy', '$2b$12$6AqWWLot96DeV.bM1Mo2xeoMHmPe3XfUhrcBgVeMRaGETPv9ZVWii', 'Hani Tlass', 'هاني طلاس', 'driver', '+963110000017'),
+('driver18@damascustransit.sy', '$2b$12$nUOZzOWexiNmk7g1hwub9u0YHNjBPPrckF1mdgloQlYQp2ByEVhzu', 'Ziad Farah', 'زياد فرح', 'driver', '+963110000018')
 ON CONFLICT (email) DO NOTHING;
 
 -- ============================================================
@@ -321,3 +321,7 @@ UPDATE vehicles SET assigned_driver_id = (SELECT id FROM users WHERE email='driv
 UPDATE vehicles SET assigned_driver_id = (SELECT id FROM users WHERE email='driver16@damascustransit.sy') WHERE vehicle_id='TAX-001';
 UPDATE vehicles SET assigned_driver_id = (SELECT id FROM users WHERE email='driver17@damascustransit.sy') WHERE vehicle_id='TAX-002';
 UPDATE vehicles SET assigned_driver_id = (SELECT id FROM users WHERE email='driver18@damascustransit.sy') WHERE vehicle_id='TAX-003';
+
+
+-- AUTO-APPENDED 2026-05-26: force every seeded account to rotate password on first login.
+UPDATE users SET must_change_password = true WHERE email IN ('admin@damascustransit.sy', 'dispatcher@damascustransit.sy', 'driver01@damascustransit.sy', 'driver02@damascustransit.sy', 'driver03@damascustransit.sy', 'driver04@damascustransit.sy', 'driver05@damascustransit.sy', 'driver06@damascustransit.sy', 'driver07@damascustransit.sy', 'driver08@damascustransit.sy', 'driver09@damascustransit.sy', 'driver10@damascustransit.sy', 'driver11@damascustransit.sy', 'driver12@damascustransit.sy', 'driver13@damascustransit.sy', 'driver14@damascustransit.sy', 'driver15@damascustransit.sy', 'driver16@damascustransit.sy', 'driver17@damascustransit.sy', 'driver18@damascustransit.sy');

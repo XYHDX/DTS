@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#002623">
+<meta name="theme-color" content="#0E5650">
 <meta name="description" content="نقل دمشق — تطبيق الركاب: أوقات الوصول الفورية، أقرب محطة، خطوط دمشق">
 <title>نقل دمشق — للركاب</title>
 
@@ -13,166 +13,399 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200;300;400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <link rel="stylesheet" href="/lib/design-system.css">
 
 <style>
   body { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
-  .topbar {
-    background: var(--brand-800);
+
+  /* Mobile hero — compact, dark teal-green with octagram pattern + eagle */
+  .pass-hero {
+    position: relative;
+    background: var(--national-green);
     color: #fff;
-    padding: var(--s-4) var(--s-4) var(--s-6);
-    padding-top: calc(var(--s-4) + env(safe-area-inset-top));
-    border-radius: 0 0 var(--r-xl) var(--r-xl);
+    padding: 20px 20px 28px;
+    padding-top: calc(20px + env(safe-area-inset-top));
+    border-radius: 0 0 18px 18px;
+    overflow: hidden;
   }
-  .topbar h1 { margin: 0 0 var(--s-3); font-size: var(--fs-xl); }
-  .search-bar {
+  .pass-hero::before {
+    content: ""; position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><g fill='none' stroke='%23C9A95B' stroke-width='1' stroke-opacity='0.35' stroke-linejoin='round' stroke-linecap='round'><polygon points='68,40 51,45 60,60 45,51 40,68 35,51 20,60 29,45 12,40 29,35 20,20 35,29 40,12 45,29 60,20 51,35'/><path d='M68,40 L80,36.5 M68,40 L80,43.5 M40,68 L36.5,80 M40,68 L43.5,80 M12,40 L0,36.5 M12,40 L0,43.5 M40,12 L36.5,0 M40,12 L43.5,0 M60,20 L72,0 M60,20 L80,8 M60,60 L80,72 M60,60 L72,80 M20,60 L8,80 M20,60 L0,72 M20,20 L0,8 M20,20 L8,0'/><polyline points='8,0 8,3.3 3.3,8 0,8'/><polyline points='80,8 76.7,8 72,3.3 72,0'/><polyline points='72,80 72,76.7 76.7,72 80,72'/><polyline points='8,80 8,76.7 3.3,72 0,72'/></g></svg>");
+    background-size: 80px 80px;
+    pointer-events: none;
+  }
+  .pass-hero > * { position: relative; z-index: 1; }
+  .pass-hero__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+  .pass-hero__brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; }
+  .pass-hero__mark {
+    width: 32px; height: 32px;
+    border-radius: 6px; background: #fff; padding: 4px;
+    display: grid; place-items: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,.18);
+  }
+  .pass-hero__mark img { width: 100%; height: 100%; object-fit: contain; }
+  .pass-hero h1 { font-family: var(--font-sans); font-size: 22px; font-weight: 700; margin: 0 0 4px; color: #fff; }
+  .pass-hero p { margin: 0 0 16px; color: rgba(255,255,255,.78); font-size: 13px; }
+  .lang-pill {
+    color: #fff; background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.22);
+    padding: 6px 12px; border-radius: var(--r-pill);
+    font-family: var(--font-mono); font-size: 12px; font-weight: 600;
+    cursor: pointer;
+  }
+  .home-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: #fff; background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.30);
+    padding: 6px 12px; border-radius: var(--r-pill);
+    font-size: 12px; font-weight: 600;
+    text-decoration: none;
+    transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+  }
+  .home-pill:hover {
+    background: var(--national-gold);
+    color: var(--national-green-950);
+    border-color: var(--national-gold);
+    text-decoration: none;
+  }
+  .home-pill svg { width: 12px; height: 12px; }
+  [dir="rtl"] .home-pill svg { transform: scaleX(-1); }
+  .pass-hero__top-right { display: flex; align-items: center; gap: 8px; }
+
+  /* Clean search panel — replaces the old green/ornate pass-hero. Sits in
+     the regular content stream of the page and matches the white-card
+     aesthetic used everywhere else. */
+  .passenger-intro {
+    margin-top: 18px;
+  }
+  .passenger-intro .intro-text {
+    margin-bottom: 14px;
+  }
+  .passenger-intro h1 {
+    font-size: clamp(20px, 3.2vw, 26px);
+    font-weight: 700;
+    margin: 0 0 4px;
+    color: var(--ink-1);
+  }
+  .passenger-intro p {
+    margin: 0;
+    color: var(--ink-2);
+    font-size: 14px;
+  }
+  .search-card {
     display: flex;
-    background: rgba(255,255,255,.12);
-    border: 1px solid rgba(255,255,255,.2);
-    border-radius: var(--r-pill);
-    padding: var(--s-1);
     align-items: center;
+    gap: 10px;
+    padding: 8px 8px 8px 14px;
+    background: #fff;
+    border: 1px solid var(--rule);
+    border-radius: var(--r-pill);
+    box-shadow: 0 2px 8px rgba(14, 86, 80, 0.04);
+    transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
   }
-  .search-bar input {
+  .search-card:focus-within {
+    border-color: var(--national-green-700);
+    box-shadow: 0 0 0 3px rgba(14, 86, 80, 0.10);
+  }
+  .search-card__icon {
+    color: var(--national-green-700);
+    display: grid; place-items: center;
+    flex-shrink: 0;
+    padding-inline-start: 6px;
+  }
+  .search-card input {
     flex: 1;
     background: transparent;
     border: 0;
-    color: #fff;
-    padding: var(--s-3) var(--s-4);
-    font-size: var(--fs-md);
+    color: var(--ink-1);
+    padding: 12px 4px;
+    font-size: 15px;
     outline: none;
+    font-family: var(--font-sans);
+    min-width: 0;
   }
-  .search-bar input::placeholder { color: rgba(255,255,255,.6); }
-  .search-bar button {
-    width: 44px; height: 44px;
-    border-radius: 50%;
-    background: var(--gold-600);
-    color: var(--brand-800);
-    display: grid; place-items: center;
+  .search-card input::placeholder {
+    color: var(--ink-3);
   }
-  .panel { margin-top: var(--s-5); padding-inline: var(--s-4); }
+  .search-card button {
+    flex-shrink: 0;
+  }
+
+  /* Autocomplete dropdown — sits beneath the search card and surfaces
+     matching stops + routes as the user types. Closed by default. */
+  .search-results {
+    list-style: none;
+    margin: 6px 0 0;
+    padding: 6px;
+    background: #fff;
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(14, 86, 80, 0.10);
+    max-height: 320px;
+    overflow-y: auto;
+  }
+  .search-results[hidden] { display: none; }
+  .search-results li {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background .12s;
+  }
+  .search-results li[aria-selected="true"],
+  .search-results li:hover {
+    background: var(--surface-soft);
+  }
+  .search-results .badge {
+    background: var(--national-green-100, rgba(14,86,80,.08));
+    color: var(--national-green-900, #0E5650);
+    font-weight: 700; font-size: 12px;
+    padding: 4px 8px; border-radius: 6px;
+    font-family: "JetBrains Mono", monospace;
+  }
+  .search-results .badge--stop {
+    background: rgba(201,169,91,.15);
+    color: #8a6a1e;
+  }
+  .search-results .lbl { font-size: 14px; color: var(--ink-1); }
+  .search-results .sub { font-size: 12px; color: var(--ink-3); }
+  .search-results .kind {
+    font-size: 11px; color: var(--ink-3);
+    text-transform: uppercase; letter-spacing: .04em;
+  }
+
+  .panel { margin-top: 22px; padding-inline: 16px; }
   .section-title {
-    margin: 0 0 var(--s-3);
-    font-size: var(--fs-md);
-    color: var(--color-text-soft);
-    font-weight: 600;
+    margin: 0 0 12px;
+    font-size: 13px; font-weight: 700;
+    letter-spacing: .04em; text-transform: uppercase;
+    color: var(--color-text-mute);
+    font-family: var(--font-sans);
   }
+  .section-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .section-row .section-title { margin: 0; }
+
   .stop-card {
     display: grid;
     grid-template-columns: auto 1fr auto;
-    gap: var(--s-3);
-    align-items: center;
-    padding: var(--s-4);
+    gap: 12px; align-items: center;
+    padding: 14px;
     border: 1px solid var(--color-border);
     background: var(--color-surface);
-    border-radius: var(--r-lg);
-    margin-bottom: var(--s-3);
+    border-radius: var(--r-md);
+    margin-bottom: 10px;
+    transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+    text-decoration: none; color: inherit;
+  }
+  .stop-card:hover, .stop-card:active {
+    border-color: var(--national-green-300);
+    box-shadow: var(--sh-sm);
+    transform: translateY(-1px);
+    text-decoration: none;
   }
   .stop-card .dist {
-    background: var(--brand-100);
-    color: var(--brand-700);
-    font-size: var(--fs-xs);
-    font-weight: 700;
-    padding: var(--s-1) var(--s-2);
-    border-radius: var(--r-pill);
+    background: var(--national-green-100);
+    color: var(--national-green-700);
+    font-size: 12px; font-weight: 700;
+    padding: 6px 10px; border-radius: var(--r-pill);
+    font-family: var(--font-mono);
+    min-width: 50px; text-align: center;
+  }
+  .stop-card .dist--gold { background: var(--national-gold-100); color: var(--national-gold-700); }
+  .stop-card__name { font-weight: 700; font-size: 14px; color: var(--color-text); }
+  .stop-card__sub  { font-size: 12px; color: var(--color-text-mute); margin-top: 2px; }
+  .eta {
+    color: var(--national-green-700);
+    font-weight: 700; font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    font-family: var(--font-mono);
   }
   .map-block {
-    margin-top: var(--s-5);
+    margin-top: 12px;
     height: 260px;
-    border-radius: var(--r-lg);
+    border-radius: var(--r-md);
     overflow: hidden;
     border: 1px solid var(--color-border);
-  }
-  .eta {
-    color: var(--brand-700);
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
   }
   .quick-actions {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: var(--s-3);
-    margin-top: var(--s-5);
+    gap: 10px;
   }
   .qa-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: var(--s-2);
-    padding: var(--s-5);
-    border-radius: var(--r-lg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px;
+    padding: 18px;
+    border-radius: var(--r-md);
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     color: var(--color-text);
     text-align: center;
+    text-decoration: none;
+    transition: border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
   }
-  .qa-btn:hover { background: var(--color-surface-2); text-decoration:none; }
+  .qa-btn:hover { background: var(--color-surface-2); border-color: var(--national-green-300); text-decoration: none; transform: translateY(-2px); }
   .qa-btn__icon {
-    width: 40px; height: 40px; border-radius: var(--r-md);
-    background: var(--brand-50); color: var(--brand-600);
+    width: 40px; height: 40px; border-radius: var(--r-sm);
+    background: var(--national-green-100); color: var(--national-green);
     display: grid; place-items: center;
+    transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
   }
+  .qa-btn:hover .qa-btn__icon { background: var(--national-gold-100); color: var(--national-gold-700); }
+  .qa-btn .ttl { font-weight: 700; font-size: 14px; }
+  .qa-btn .sub { font-size: 11px; color: var(--color-text-mute); }
+
   /* Install banner */
   .install-banner {
     display: none;
-    background: var(--brand-100);
-    color: var(--brand-700);
-    padding: var(--s-3) var(--s-4);
+    background: var(--national-green-100);
+    color: var(--national-green-800);
+    padding: 12px 16px;
     border-radius: var(--r-md);
-    margin: var(--s-4) var(--s-4) 0;
+    margin: 16px 16px 0;
     align-items: center;
-    gap: var(--s-3);
-    font-size: var(--fs-sm);
+    gap: 12px;
+    font-size: 14px;
+    border-inline-start: 4px solid var(--national-green);
   }
   .install-banner.show { display: flex; }
+  .install-banner strong { font-weight: 700; }
+  .install-banner .grow { flex: 1; }
+
+  /* Tabbar overrides for new identity */
+  .tabbar { background: var(--color-surface); border-top: 1px solid var(--color-border); }
+  .tabbar a, .tabbar button { color: var(--color-text-mute); }
+  .tabbar a.is-active, .tabbar button.is-active { color: var(--national-green); }
+  .tabbar a.is-active::before, .tabbar button.is-active::before {
+    content: ""; position: absolute; top: 0; inset-inline: 25%; height: 3px;
+    background: var(--national-gold); border-radius: 0 0 2px 2px;
+  }
+  .tabbar a, .tabbar button { position: relative; }
+
+  /* Desktop chrome — only show full masthead+nav on wider screens
+     so mobile keeps the compact pass-hero without redundant header */
+  .desk-chrome { display: none; }
+  @media (min-width: 768px) {
+    .desk-chrome { display: block; }
+    /* On desktop the pass-hero loses its rounded radius (it sits below nav) */
+    .pass-hero { border-radius: 0; padding-top: 32px; padding-bottom: 36px; }
+    .pass-hero__top { display: none; }
+    /* Larger container width for panels */
+    .panel { max-width: 1100px; margin-inline: auto; padding-inline: 24px; }
+    .panel:first-of-type { margin-top: 32px; }
+    body { padding-bottom: 0; }
+    .tabbar { display: none; }
+  }
+  /* Mobile-only — hide the standard footer chrome (we use the tabbar instead) */
+  @media (max-width: 767px) {
+    .foot { display: none; }
+  }
 </style>
 </head>
-<body>
+<body class="with-fade-in">
 
-<div id="offline-banner" class="offline-banner hidden" role="status">أنت دون اتصال — يتم عرض البيانات المخزّنة محلياً</div>
-
-<header class="topbar">
-  <div class="cluster between">
-    <h1>أهلاً 👋</h1>
-    <button id="lang-toggle" class="btn btn--sm" style="background:rgba(255,255,255,.1);color:#fff">EN</button>
+<!-- Desktop chrome — utility bar + masthead + sticky nav (hidden on mobile) -->
+<div class="desk-chrome">
+  <div class="utility-bar">
+    <div class="container">
+      <span class="gov" data-i18n="hero.eyebrow">الجمهورية العربية السورية</span>
+      <span class="right">
+        <a href="/" data-i18n="header.home">الرئيسية</a>
+        <span class="sep"></span>
+        <a href="/passenger/" data-i18n="header.passenger">للركاب</a>
+        <span class="sep"></span>
+        <a href="/driver/" data-i18n="header.driver">للسائقين</a>
+        <span class="sep"></span>
+        <a href="/admin/login.html" data-i18n="header.admin">الإدارة</a>
+        <span class="sep"></span>
+        <button id="lang-toggle" class="utility-lang" data-i18n-toggle aria-label="Toggle language" data-i18n="header.toggleLang">EN</button>
+      </span>
+    </div>
   </div>
-  <p class="muted" style="margin:0 0 var(--s-4);color:rgba(255,255,255,.7);font-size:var(--fs-sm)">ابحث عن محطتك أو خطك أو شاهد أقرب الحافلات.</p>
-  <form class="search-bar" id="search-form" role="search">
-    <input id="q" type="search" placeholder="اسم محطة أو خط (مثال: مزة، باب توما)" aria-label="بحث">
-    <button type="submit" aria-label="بحث">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
-    </button>
-  </form>
-</header>
+  <header class="masthead">
+    <div class="container">
+      <div class="masthead__emblem" aria-hidden="true">
+        <picture>
+          <source srcset="/assets/identity/sy-emblem-eagle.avif" type="image/avif">
+          <img src="/assets/identity/sy-emblem-eagle.png" alt="">
+        </picture>
+      </div>
+      <div class="masthead__text">
+        <h1>نقل دمشق · للركّاب</h1>
+        <span class="masthead__tag">خريطة حيّة · أوقات وصول · أقرب محطّة</span>
+      </div>
+      <div class="masthead__en">
+        <strong>Damascus Transit</strong>
+        Passenger app
+      </div>
+    </div>
+  </header>
+  <nav class="nav-bar" id="primary-nav" aria-label="رئيسية">
+    <div class="container">
+      <a href="/">الرئيسية</a>
+      <a href="/passenger/" class="is-active">للركاب</a>
+      <a href="/driver/">للسائقين</a>
+      <a href="/admin/login.html">دخول الإدارة</a>
+      <a href="/help/">كيفية الاستخدام</a>
+    </div>
+  </nav>
+</div>
+
+<div id="offline-banner" class="offline-banner hidden" role="status" data-i18n="driver.offline">أنت دون اتصال — يتم عرض البيانات المخزّنة محلياً</div>
+
+<!-- Search panel — clean white card matching the rest of the page chrome
+     instead of a separate green ornate hero. The home + language controls
+     now live in the top utility bar where every other page also keeps them
+     so the chrome stays consistent. -->
+<section class="panel passenger-intro">
+  <div class="container">
+    <div class="intro-text">
+      <h1 data-i18n="passenger.welcome">أهلاً بك</h1>
+      <p data-i18n="passenger.sub">ابحث عن محطتك أو خطك أو شاهد أقرب الحافلات.</p>
+    </div>
+    <form class="search-card" id="search-form" role="search" autocomplete="off">
+      <span class="search-card__icon" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
+      </span>
+      <input id="q" type="search" data-i18n-placeholder="passenger.searchHint" placeholder="اسم محطة أو خط (مثال: مزة، باب توما)" aria-label="بحث" aria-autocomplete="list" aria-controls="search-results" aria-expanded="false">
+      <button type="submit" class="btn btn--primary btn--sm" aria-label="بحث">
+        <span data-i18n="common.search">بحث</span>
+      </button>
+    </form>
+    <ul id="search-results" class="search-results" role="listbox" hidden></ul>
+  </div>
+</section>
 
 <div id="install-banner" class="install-banner" role="region" aria-label="تثبيت التطبيق">
   <strong>ثبّت التطبيق</strong>
-  <span class="muted">للوصول السريع وأداء أفضل خارج المتصفح.</span>
+  <span class="grow">للوصول السريع وأداء أفضل خارج المتصفح.</span>
   <button class="btn btn--sm" id="install-btn">تثبيت</button>
 </div>
 
 <section class="panel">
-  <div class="cluster between">
+  <div class="section-row">
     <h2 class="section-title">أقرب المحطات إليك</h2>
-    <button id="locate-btn" class="btn btn--ghost btn--sm">
+    <button id="locate-btn" class="btn btn--sm btn--ghost">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg>
       موقعي
     </button>
   </div>
   <div id="nearest-stops" aria-busy="true">
-    <div class="stop-card"><div class="skeleton" style="width:44px;height:44px;border-radius:50%"></div><div><div class="skeleton" style="width:60%;height:1em;margin-bottom:6px"></div><div class="skeleton" style="width:40%;height:.8em"></div></div></div>
-    <div class="stop-card"><div class="skeleton" style="width:44px;height:44px;border-radius:50%"></div><div><div class="skeleton" style="width:60%;height:1em;margin-bottom:6px"></div><div class="skeleton" style="width:40%;height:.8em"></div></div></div>
+    <div class="stop-card"><div class="skeleton" style="width:50px;height:24px;border-radius:999px"></div><div><div class="skeleton" style="width:60%;height:1em;margin-bottom:6px"></div><div class="skeleton" style="width:40%;height:.8em"></div></div><div class="skeleton" style="width:40px;height:1em"></div></div>
+    <div class="stop-card"><div class="skeleton" style="width:50px;height:24px;border-radius:999px"></div><div><div class="skeleton" style="width:60%;height:1em;margin-bottom:6px"></div><div class="skeleton" style="width:40%;height:.8em"></div></div><div class="skeleton" style="width:40px;height:1em"></div></div>
   </div>
 </section>
 
 <section class="panel">
   <h2 class="section-title">الخطوط الشائعة</h2>
   <div id="popular-routes">
-    <div class="stop-card"><div class="skeleton" style="width:48px;height:1.2em;border-radius:6px"></div><div class="skeleton" style="width:70%;height:1em"></div></div>
-    <div class="stop-card"><div class="skeleton" style="width:48px;height:1.2em;border-radius:6px"></div><div class="skeleton" style="width:70%;height:1em"></div></div>
+    <div class="stop-card"><div class="skeleton" style="width:48px;height:30px;border-radius:6px"></div><div class="skeleton" style="width:70%;height:1em"></div><div class="skeleton" style="width:50px;height:18px;border-radius:4px"></div></div>
+    <div class="stop-card"><div class="skeleton" style="width:48px;height:30px;border-radius:6px"></div><div class="skeleton" style="width:70%;height:1em"></div><div class="skeleton" style="width:50px;height:18px;border-radius:4px"></div></div>
   </div>
 </section>
 
@@ -188,16 +421,54 @@
   <div class="quick-actions">
     <a href="/api/gtfs" class="qa-btn">
       <div class="qa-btn__icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h10"/></svg></div>
-      <div class="font-bold">جدول GTFS</div>
-      <div class="text-xs muted">بيانات الخطوط القابلة للتنزيل</div>
+      <div class="ttl">جدول GTFS</div>
+      <div class="sub">بيانات الخطوط</div>
     </a>
     <a href="/" class="qa-btn">
       <div class="qa-btn__icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12 12 3l9 9"/><path d="M5 10v10h14V10"/></svg></div>
-      <div class="font-bold">الرئيسية</div>
-      <div class="text-xs muted">العودة للوحة العامة</div>
+      <div class="ttl">الرئيسية</div>
+      <div class="sub">اللوحة العامة</div>
     </a>
   </div>
 </section>
+
+<!-- Desktop footer chrome (hidden on mobile by media query) -->
+<footer class="foot" style="margin-top: 56px">
+  <div class="container">
+    <div>
+      <h6>نقل دمشق</h6>
+      <p class="lede">منصة وطنية مفتوحة المصدر تربط الركاب والسائقين والمشرفين بمواقع الحافلات وأوقات الوصول لحظياً.</p>
+      <div class="social-row">
+        <a href="https://github.com/XYHDX/DTS" target="_blank" rel="noopener" aria-label="GitHub">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.6 5.6.6 11.9c0 5 3.3 9.3 7.8 10.8.6.1.8-.2.8-.5v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.4-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.2 1.2.9-.3 1.9-.4 2.9-.4s2 .1 2.9.4c2.2-1.5 3.2-1.2 3.2-1.2.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.1 0 4.5-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.3v3.4c0 .3.2.7.8.5 4.5-1.5 7.8-5.8 7.8-10.8C23.4 5.6 18.3.5 12 .5Z"/></svg>
+        </a>
+      </div>
+    </div>
+    <div>
+      <h6>المنصة</h6>
+      <a href="/">الرئيسية</a>
+      <a href="/passenger/">للركاب</a>
+      <a href="/driver/">للسائقين</a>
+      <a href="/admin/login.html">الإدارة</a>
+    </div>
+    <div>
+      <h6>المساعدة</h6>
+      <a href="/help/#passengers">دليل الركّاب</a>
+      <a href="/help/#gps">ربط الـGPS</a>
+      <a href="/help/#troubleshooting">حلّ المشاكل</a>
+    </div>
+    <div>
+      <h6>المرجع</h6>
+      <a href="https://github.com/XYHDX/DTS" target="_blank" rel="noopener">GitHub</a>
+      <a href="/api/gtfs">GTFS</a>
+      <a href="/api/health">Health</a>
+    </div>
+    <div class="copy">
+      <span>© ٢٠٢٦ نقل دمشق · رخصة MIT</span>
+      <span>v4.0</span>
+    </div>
+  </div>
+</footer>
 
 <nav class="tabbar" style="--tabbar-cols:4" aria-label="تنقل سفلي">
   <a href="/passenger/" class="is-active" aria-current="page">
@@ -233,7 +504,7 @@ async function getJson(path) {
   } catch (e) { console.warn(path, e); return null; }
 }
 
-// ----- Offline detection -----
+// Offline detection
 function setOnline(online) {
   const banner = $('#offline-banner');
   if (online) banner.classList.add('hidden');
@@ -243,49 +514,67 @@ window.addEventListener('online',  () => setOnline(true));
 window.addEventListener('offline', () => setOnline(false));
 setOnline(navigator.onLine);
 
-// ----- Nearest stops -----
+// Nearest stops
+// HTML-escape any string we render into innerHTML. This is the only way
+// to be safe against XSS when interpolating fields that originate in the
+// database (stop names, route names, etc.).
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 async function loadNearest(lat, lon) {
   const wrap = $('#nearest-stops');
   wrap.setAttribute('aria-busy', 'true');
   const stops = await getJson(`/api/stops/nearest?lat=${lat}&lon=${lon}&radius_m=1500`);
   wrap.setAttribute('aria-busy', 'false');
   if (!stops || !stops.length) {
-    wrap.innerHTML = '<div class="stop-card muted">لا توجد محطات قريبة ضمن ١.٥ كم.</div>';
+    wrap.innerHTML = '<div class="stop-card" style="display:block;text-align:center;color:var(--color-text-mute)">لا توجد محطات قريبة ضمن ١.٥ كم.</div>';
     return;
   }
-  wrap.innerHTML = stops.slice(0, 6).map(s => `
-    <div class="stop-card">
-      <span class="dist">${arDigit(Math.round(s.distance_m ?? 0))} م</span>
-      <div>
-        <div class="font-bold">${s.name_ar || s.name || 'محطة'}</div>
-        <div class="text-xs muted">${s.route_code || s.routes?.join('، ') || ''}</div>
-      </div>
-      <span class="eta">${s.eta_min != null ? '~ '+arDigit(s.eta_min)+' د' : ''}</span>
-    </div>
-  `).join('');
+  wrap.innerHTML = stops.slice(0, 6).map(s => {
+    const name = esc(s.name_ar || s.name || 'محطة');
+    const sub  = esc(s.route_code || (Array.isArray(s.routes) ? s.routes.join('، ') : '') || '');
+    const eta  = s.eta_min != null ? '~ ' + esc(arDigit(s.eta_min)) + ' د' : '';
+    return `
+      <div class="stop-card">
+        <span class="dist">${esc(arDigit(Math.round(s.distance_m ?? 0)))} م</span>
+        <div>
+          <div class="stop-card__name">${name}</div>
+          <div class="stop-card__sub">${sub}</div>
+        </div>
+        <span class="eta">${eta}</span>
+      </div>`;
+  }).join('');
 }
 
-// ----- Popular routes -----
+// Popular routes
 async function loadPopularRoutes() {
   const routes = await getJson('/api/routes');
   const wrap = $('#popular-routes');
   if (!routes || !routes.length) {
-    wrap.innerHTML = '<div class="stop-card muted">لا توجد خطوط متاحة.</div>';
+    wrap.innerHTML = '<div class="stop-card" style="display:block;text-align:center;color:var(--color-text-mute)">لا توجد خطوط متاحة.</div>';
     return;
   }
-  wrap.innerHTML = routes.slice(0, 6).map(r => `
-    <a class="stop-card" style="text-decoration:none" href="/passenger/?route=${encodeURIComponent(r.id)}">
-      <span class="dist" style="background:var(--gold-100);color:var(--gold-700)">${r.code || r.short_name || (r.id+'').slice(0,3)}</span>
-      <div>
-        <div class="font-bold" style="color:var(--color-text)">${r.name_ar || r.name || 'خط'}</div>
-        <div class="text-xs muted">${r.from || ''} ↔ ${r.to || r.name_en || ''}</div>
-      </div>
-      <span class="badge badge--brand">${arDigit(r.stops_count || 0)} محطة</span>
-    </a>
-  `).join('');
+  wrap.innerHTML = routes.slice(0, 6).map(r => {
+    const code = esc(r.code || r.short_name || (r.id + '').slice(0, 3));
+    const name = esc(r.name_ar || r.name || 'خط');
+    const sub  = esc((r.from || '') + ' ↔ ' + (r.to || r.name_en || ''));
+    const stopsCount = esc(arDigit(r.stops_count || 0));
+    const safeId = encodeURIComponent(r.id);
+    return `
+      <a class="stop-card" href="/passenger/?route=${safeId}">
+        <span class="dist dist--gold">${code}</span>
+        <div>
+          <div class="stop-card__name">${name}</div>
+          <div class="stop-card__sub">${sub}</div>
+        </div>
+        <span class="badge badge--brand">${stopsCount} محطة</span>
+      </a>`;
+  }).join('');
 }
 
-// ----- Map -----
+// Map
 let map;
 function initMap(center=[36.291, 33.513]) {
   map = new maplibregl.Map({
@@ -300,7 +589,7 @@ function initMap(center=[36.291, 33.513]) {
   map.on('load', () => {
     map.addSource('vehicles', { type:'geojson', data: {type:'FeatureCollection',features:[]} });
     map.addLayer({ id:'vehicles', type:'circle', source:'vehicles',
-      paint: { 'circle-radius':6, 'circle-color':'#00876f', 'circle-stroke-width':2, 'circle-stroke-color':'#fff' } });
+      paint: { 'circle-radius':6, 'circle-color':'#1F7068', 'circle-stroke-width':2, 'circle-stroke-color':'#fff' } });
   });
 }
 function openStream() {
@@ -317,7 +606,7 @@ function openStream() {
   });
 }
 
-// ----- Geolocation -----
+// Geolocation
 $('#locate-btn').addEventListener('click', () => requestLocation());
 function requestLocation() {
   if (!navigator.geolocation) return;
@@ -327,20 +616,14 @@ function requestLocation() {
       loadNearest(lat, lon);
       if (map) map.flyTo({ center:[lon, lat], zoom:14 });
     },
-    () => loadNearest(33.513, 36.291),  // fallback: Damascus center
+    () => loadNearest(33.513, 36.291),
     { enableHighAccuracy:false, timeout:6000, maximumAge:60000 }
   );
 }
 
-// ----- Language toggle -----
-$('#lang-toggle').addEventListener('click', () => {
-  const html = document.documentElement;
-  const next = html.lang === 'ar' ? 'en' : 'ar';
-  html.lang = next; html.dir = next === 'ar' ? 'rtl' : 'ltr';
-  $('#lang-toggle').textContent = next === 'ar' ? 'EN' : 'AR';
-});
+document.addEventListener('i18n:change', () => { loadPopularRoutes(); });
 
-// ----- PWA install -----
+// PWA install
 let deferred;
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
@@ -355,17 +638,177 @@ $('#install-btn').addEventListener('click', async () => {
   $('#install-banner').classList.remove('show');
 });
 
-// ----- Boot -----
+// Sticky-nav scroll shadow (desktop only — but harmless on mobile)
+const stickyNav = document.getElementById('primary-nav');
+window.addEventListener('scroll', () => {
+  if (stickyNav) stickyNav.classList.toggle('is-scrolled', window.scrollY > 8);
+}, { passive: true });
+
+// ─── Search autocomplete ──────────────────────────────────────────────────
+// Loads stops + routes once on first focus, then filters them client-side
+// as the user types. Submitting picks the highlighted item if any, otherwise
+// passes the query to /passenger/?q= so a future server-side search route can
+// pick it up. Keyboard nav with Arrow/Enter/Escape.
+const search = {
+  form: document.getElementById('search-form'),
+  input: document.getElementById('q'),
+  list: document.getElementById('search-results'),
+  data: null,           // {stops:[...], routes:[...]} once loaded
+  loading: null,        // in-flight Promise
+  highlighted: -1,
+};
+
+async function ensureSearchData() {
+  if (search.data) return search.data;
+  if (search.loading) return search.loading;
+  search.loading = (async () => {
+    const [stops, routes] = await Promise.all([
+      getJson('/api/stops').catch(() => []),
+      getJson('/api/routes').catch(() => []),
+    ]);
+    search.data = {
+      stops: Array.isArray(stops) ? stops : [],
+      routes: Array.isArray(routes) ? routes : [],
+    };
+    return search.data;
+  })();
+  return search.loading;
+}
+
+function searchScore(item, q) {
+  // Lowercase + Arabic-aware substring match. Returns 0 = no match,
+  // otherwise smaller numbers = better matches (prefix > word > substring).
+  const haystacks = [item.name, item.name_ar, item.code, item.short_name, item.stop_id, item.route_id]
+    .filter(Boolean).map(s => String(s).toLowerCase());
+  const ql = q.toLowerCase();
+  let best = 0;
+  for (const h of haystacks) {
+    if (h.startsWith(ql)) return 1;                // prefix — top tier
+    if (h.includes(' ' + ql) || h.includes('-' + ql)) best = best || 2;
+    else if (h.includes(ql)) best = best || 3;
+  }
+  return best;
+}
+
+function renderResults(q) {
+  const data = search.data || { stops: [], routes: [] };
+  const items = [];
+  if (q.trim()) {
+    for (const s of data.stops) {
+      const score = searchScore(s, q);
+      if (score) items.push({ kind: 'stop', score, item: s });
+    }
+    for (const r of data.routes) {
+      const score = searchScore(r, q);
+      if (score) items.push({ kind: 'route', score, item: r });
+    }
+    items.sort((a, b) => a.score - b.score);
+  }
+  const lang = (document.documentElement.lang || 'ar').slice(0,2);
+  const isAr = lang === 'ar';
+  const kindStop  = isAr ? 'محطة' : 'Stop';
+  const kindRoute = isAr ? 'خط'    : 'Route';
+
+  const top = items.slice(0, 8);
+  if (top.length === 0) {
+    search.list.hidden = true;
+    search.input.setAttribute('aria-expanded', 'false');
+    return;
+  }
+  search.list.innerHTML = top.map((row, i) => {
+    const it = row.item;
+    if (row.kind === 'stop') {
+      const name = esc(isAr ? (it.name_ar || it.name) : (it.name || it.name_ar));
+      const code = esc(it.stop_id || '');
+      return `<li role="option" data-kind="stop" data-id="${esc(it.id)}" data-name="${name}" aria-selected="${i===search.highlighted}">
+        <span class="badge badge--stop">${esc(kindStop)}</span>
+        <span><span class="lbl">${name}</span><span class="sub">${code}</span></span>
+        <span class="kind">${esc(kindStop)}</span>
+      </li>`;
+    }
+    const name = esc(isAr ? (it.name_ar || it.name) : (it.name || it.name_ar));
+    const code = esc(it.code || it.short_name || it.route_id || '');
+    return `<li role="option" data-kind="route" data-id="${esc(it.id)}" aria-selected="${i===search.highlighted}">
+      <span class="badge">${code}</span>
+      <span><span class="lbl">${name}</span></span>
+      <span class="kind">${esc(kindRoute)}</span>
+    </li>`;
+  }).join('');
+  search.list.hidden = false;
+  search.input.setAttribute('aria-expanded', 'true');
+
+  // Click handlers
+  search.list.querySelectorAll('li').forEach((li) => {
+    li.addEventListener('mousedown', (e) => {
+      e.preventDefault();          // keep input focused
+      selectResult(li);
+    });
+  });
+}
+
+function selectResult(li) {
+  const kind = li.dataset.kind;
+  const id = li.dataset.id;
+  if (kind === 'route') {
+    location.href = '/passenger/?route=' + encodeURIComponent(id);
+  } else {
+    // Stops don't have a dedicated detail page yet — drop a query string and
+    // scroll to the map so subsequent screens can pick it up.
+    location.href = '/passenger/?stop=' + encodeURIComponent(id);
+  }
+}
+
+if (search.input) {
+  let t = null;
+  search.input.addEventListener('input', (e) => {
+    const q = e.target.value;
+    clearTimeout(t);
+    t = setTimeout(async () => {
+      await ensureSearchData();
+      search.highlighted = -1;
+      renderResults(q);
+    }, 80);  // de-bounce — short, since filtering is local
+  });
+  search.input.addEventListener('focus', () => ensureSearchData());
+  search.input.addEventListener('keydown', (e) => {
+    const items = search.list.querySelectorAll('li');
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      search.highlighted = Math.min(items.length - 1, search.highlighted + 1);
+      items.forEach((li, i) => li.setAttribute('aria-selected', i === search.highlighted));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      search.highlighted = Math.max(0, search.highlighted - 1);
+      items.forEach((li, i) => li.setAttribute('aria-selected', i === search.highlighted));
+    } else if (e.key === 'Enter') {
+      if (search.highlighted >= 0 && items[search.highlighted]) {
+        e.preventDefault();
+        selectResult(items[search.highlighted]);
+      }
+    } else if (e.key === 'Escape') {
+      search.list.hidden = true;
+      search.input.setAttribute('aria-expanded', 'false');
+    }
+  });
+  document.addEventListener('click', (e) => {
+    if (!search.form.contains(e.target)) {
+      search.list.hidden = true;
+      search.input.setAttribute('aria-expanded', 'false');
+    }
+  });
+}
+
+// Boot
 window.addEventListener('DOMContentLoaded', () => {
   initMap();
   loadPopularRoutes();
   requestLocation();
   setTimeout(openStream, 800);
-  // Register service worker
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/passenger/service-worker.js').catch(()=>{});
   }
 });
 </script>
+<script src="/lib/i18n.js" defer></script>
 </body>
 </html>
