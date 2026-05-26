@@ -1,0 +1,65 @@
+feat: v5.0 hardening + Track A trip dispatch + visible-bug fixes
+
+See FIXES_APPLIED.md for the full per-defect ledger.
+
+H1-H10 hardening pass (2026-05-26):
+- H1: rotated shared damascus2025 hash; 35 unique bcrypt hashes across
+      every seed file (db/supabase_bootstrap.sql, db/demo_accounts.sql,
+      db/seed.sql). must_change_password=true on every seeded account.
+- H2: super_admin role + strict per-operator isolation on every admin
+      endpoint via _scope_to_operator(); JWT now carries operator_id,
+      scope, jti.
+- H3: vehicle CRUD (POST/PATCH/DELETE), status enum fixed
+      (active|idle|maintenance|decommissioned), vehicle_type vs route
+      route_type cross-check, plate uniqueness, driver-already-assigned
+      check.
+- H4: routes & stops CRUD with GeoJSON validation (LineString for
+      routes, Point inside Syria bbox for stops).
+- H5: users CRUD with role-rank guard — admin cannot create a
+      super_admin; modifications scoped to operator.
+- H6: geofence CRUD + hard-cap on max_vehicles enforced in
+      /api/driver/position; capacity breach emits critical alert and
+      returns 409.
+- H7: POST /api/admin/vehicles/register — atomic vehicle + route +
+      driver + zone linking with rollback on partial failure.
+- H8: trip-end ownership check, alert-resolve operator scope,
+      passenger-count actually persists, login precedence bug fixed,
+      JWT_SECRET 32-char minimum, audit_log on every admin mutation,
+      driver-no-vehicle now 400 instead of silent 200.
+- H9: Add/Edit forms on every admin page, new geofences page, forced
+      password rotation flow in reset.html, _gate.js eliminates the
+      flash-of-empty-admin-shell.
+- H10: 47 endpoints total; full verification snapshot in
+       FIXES_APPLIED.md.
+
+Track A — Trip dispatch & operator console:
+- A.1: POST/GET/PATCH/DELETE /api/admin/trips with full lifecycle
+       (scheduled -> dispatched -> acked -> in_progress -> completed |
+       cancelled); 30-minute driver conflict check via
+       trip_conflicts_for_driver RPC; tenant RLS policies.
+- A.2: new /admin/dispatch.html — Dispatcher Console with status filter
+       pills, Schedule modal, Push/Cancel actions, 20s auto-refresh.
+       Sidebar nav link to "Dispatch" on every admin page.
+- A.3: /api/driver/me + /api/driver/me/next_trip + POST
+       /api/driver/trip/{id}/ack; driver app banner with Acknowledge
+       button; Start Trip now promotes a queued trip instead of always
+       creating ad-hoc.
+- A.4: full verification snapshot + endpoint-role permission matrix.
+
+Visible-bug fixes from prod probe (was v4.1):
+- /api/routes stops_count now hydrated from route_stops join.
+- i18n keys added for idle / decommissioned status pills (Arabic +
+  English).
+- footer v4.0 -> v5.0 on the public homepage.
+- _gate.js eliminates the flash-of-empty-admin-shell bug.
+- replaced hardcoded fake KPI deltas (+2 since yesterday, +12%, 3
+  urgent) with computed values; critical_alerts added to
+  /api/admin/analytics/overview.
+
+Migrations added:
+  011_rotate_demo_credentials.sql
+  012_geofence_capacity_and_links.sql
+  013_trip_dispatch.sql
+
+To deploy: redeploy api/index.py + public/ to Vercel, then run
+migrations 011, 012, 013 against Supabase in order.

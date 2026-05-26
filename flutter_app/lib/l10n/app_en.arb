@@ -1,0 +1,53 @@
+{
+  "@@locale": "en",
+  "@@last_modified": "2026-05-24T12:30:00Z",
+
+  "appTitle": "Damascus Transit",
+  "@appTitle": { "description": "App display name" },
+
+  "tabHome": "Home",
+  "tabNearby": "Nearby",
+  "tabRoutes": "Routes",
+  "tabAccount": "Account",
+
+  "passengerWelcome": "Welcome",
+  "passengerSearchHint": "Mezzeh, Bab Touma, Route 12 …",
+  "passengerNearestStops": "Nearest stops",
+  "passengerPopularRoutes": "Popular routes",
+  "passengerLiveMap": "Live map",
+  "passengerStopsCount": "{count} stops",
+  "@passengerStopsCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "loginTitle": "Sign in",
+  "loginSubtitle": "Use your email and password.",
+  "loginEmail": "Email",
+  "loginPassword": "Password",
+  "loginInvalid": "Invalid credentials",
+  "loginButton": "Sign in",
+  "loginBiometric": "Sign in with fingerprint",
+
+  "driverRoute": "Current route",
+  "driverStartTrip": "▶ Start trip",
+  "driverEndTrip": "■ End trip",
+  "driverPassengers": "Passengers",
+  "driverSpeed": "Speed",
+  "driverDistance": "Distance",
+  "driverDuration": "Duration",
+  "driverOccupancy": "Occupancy",
+  "driverIncident": "🚨 Report incident",
+
+  "errorGeneric": "Something went wrong",
+  "errorOffline": "You are offline — showing cached data",
+  "errorRetry": "Retry",
+
+  "settingsTitle": "Settings",
+  "settingsLanguage": "Language",
+  "settingsTheme": "Theme",
+  "settingsSignOut": "Sign out",
+
+  "unitsKm": "km",
+  "unitsMin": "min",
+  "unitsKph": "km/h"
+}
