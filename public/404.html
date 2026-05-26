@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#002623">
+    <title>404 — الصفحة غير موجودة | SyriaTransit</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --green-dark: #002623;
+            --green-mid:  #054239;
+            --green-light:#428177;
+            --golden:     #edebe0;
+            --golden-mid: #b9a779;
+            --charcoal:   #161616;
+            --text-muted: #888;
+        }
+
+        html, body {
+            height: 100%;
+            background: var(--charcoal);
+            color: var(--golden);
+            font-family: 'Noto Naskh Arabic','Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 24px;
+            text-align: center;
+            gap: 0;
+        }
+
+        .bus-icon {
+            font-size: 72px;
+            margin-bottom: 24px;
+            animation: bus-sway 3s ease-in-out infinite;
+        }
+
+        @keyframes bus-sway {
+            0%, 100% { transform: rotate(-2deg); }
+            50%       { transform: rotate(2deg); }
+        }
+
+        .code {
+            font-size: clamp(72px, 20vw, 120px);
+            font-weight: 700;
+            color: var(--green-light);
+            line-height: 1;
+            letter-spacing: -2px;
+            margin-bottom: 16px;
+        }
+
+        .title-ar {
+            font-size: clamp(20px, 5vw, 26px);
+            font-weight: 700;
+            color: var(--golden);
+            margin-bottom: 6px;
+        }
+
+        .title-en {
+            font-size: clamp(14px, 3vw, 17px);
+            font-weight: 400;
+            color: var(--golden-mid);
+            margin-bottom: 32px;
+        }
+
+        .desc-ar {
+            font-size: 15px;
+            color: var(--text-muted);
+            max-width: 380px;
+            line-height: 1.7;
+            margin-bottom: 6px;
+        }
+
+        .desc-en {
+            font-size: 13px;
+            color: #555;
+            max-width: 380px;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background .15s, transform .1s;
+        }
+
+        .btn:active { transform: scale(.97); }
+
+        .btn-primary {
+            background: var(--green-light);
+            color: #fff;
+        }
+
+        .btn-primary:hover { background: #54a59a; }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--golden-mid);
+            border: 1px solid #3a3a3a;
+        }
+
+        .btn-secondary:hover { background: #1a1a1a; }
+
+        .brand {
+            margin-top: 48px;
+            font-size: 12px;
+            color: #3a3a3a;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="bus-icon">🦅</div>
+    <div class="code">404</div>
+    <div class="title-ar">هذه الصفحة غير موجودة</div>
+    <div class="title-en">Page not found</div>
+    <p class="desc-ar">
+        الصفحة التي تبحث عنها ربما نُقلت أو حُذفت أو أن الرابط غير صحيح.
+    </p>
+    <p class="desc-en">
+        The page you're looking for may have been moved, deleted, or the link is incorrect.
+    </p>
+    <div class="btn-group">
+        <a href="/" class="btn btn-primary">🏠 العودة للرئيسية &nbsp;|&nbsp; Home</a>
+        <a href="/passenger/" class="btn btn-secondary">🗺️ خريطة المواصلات</a>
+    </div>
+    <div class="brand">SyriaTransit &mdash; منصة النقل الذكي لدمشق</div>
+</body>
+</html>

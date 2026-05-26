@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dark-mode overrides — keep brand colours consistent -->
+<resources>
+    <color name="colorPrimary">#002623</color>
+    <color name="colorPrimaryDark">#001a18</color>
+    <color name="colorAccent">#b9a779</color>
+    <color name="colorStatusBar">#002623</color>
+</resources>

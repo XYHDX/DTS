@@ -1,0 +1,17 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": ["REPLACE_ME_WITH_APPLE_TEAM_ID.sy.gov.damascus.transit"],
+        "components": [
+          { "/": "/routes/*", "comment": "Open a transit route in the app" },
+          { "/": "/stops/*",  "comment": "Open a single stop in the app" }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["REPLACE_ME_WITH_APPLE_TEAM_ID.sy.gov.damascus.transit"]
+  }
+}

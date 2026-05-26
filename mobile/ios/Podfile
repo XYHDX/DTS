@@ -1,0 +1,32 @@
+require_relative '../node_modules/@capacitor/ios/scripts/pods_helpers'
+
+platform :ios, '14.0'
+use_frameworks!
+
+# workaround for https://github.com/CocoaPods/CocoaPods/issues/8073
+inhibit_all_warnings!
+
+def capacitor_pods
+  pod 'Capacitor',           :path => '../node_modules/@capacitor/ios'
+  pod 'CapacitorCordova',    :path => '../node_modules/@capacitor/ios'
+
+  # Official Capacitor plugins
+  pod 'CapacitorApp',                  :path => '../node_modules/@capacitor/app'
+  pod 'CapacitorCamera',               :path => '../node_modules/@capacitor/camera'
+  pod 'CapacitorGeolocation',          :path => '../node_modules/@capacitor/geolocation'
+  pod 'CapacitorHaptics',              :path => '../node_modules/@capacitor/haptics'
+  pod 'CapacitorKeyboard',             :path => '../node_modules/@capacitor/keyboard'
+  pod 'CapacitorPushNotifications',    :path => '../node_modules/@capacitor/push-notifications'
+  pod 'CapacitorSplashScreen',         :path => '../node_modules/@capacitor/splash-screen'
+  pod 'CapacitorStatusBar',            :path => '../node_modules/@capacitor/status-bar'
+
+  # Background geolocation
+  pod 'CapacitorBackgroundGeolocation', :path => '../node_modules/@capawesome-team/capacitor-background-geolocation'
+
+  # Biometric auth
+  pod 'CapacitorBiometricAuth',         :path => '../node_modules/capacitor-biometric-auth'
+end
+
+target 'App' do
+  capacitor_pods
+end

@@ -1,0 +1,122 @@
+name: Monthly regression report
+
+# Step 99 — first of each month at 08:00 UTC. Composes a single report from
+# the recent Lighthouse run, the Playwright a11y findings, and the k6 SSE
+# load profile. Opens (or updates) a GitHub issue with the summary so the
+# team can review during the monthly health review.
+
+on:
+  schedule:
+    - cron: "0 8 1 * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+
+      - name: Install audit tools
+        run: |
+          npm install -g @lhci/cli@0.14.x http-server
+
+      - name: Start static server
+        run: |
+          npx http-server public -p 8080 --silent &
+          for i in {1..20}; do
+            if curl -fsS http://localhost:8080/ >/dev/null; then break; fi
+            sleep 0.5
+          done
+
+      - name: Run Lighthouse
+        id: lh
+        continue-on-error: true
+        run: |
+          lhci autorun \
+            --collect.url=http://localhost:8080/ \
+            --collect.url=http://localhost:8080/passenger/ \
+            --collect.url=http://localhost:8080/driver/ \
+            --collect.numberOfRuns=1 \
+            --upload.target=temporary-public-storage \
+            > lh.txt 2>&1 || true
+          head -c 8000 lh.txt > lh_short.txt
+
+      - name: Install Playwright
+        run: |
+          cd tests && npm init -y >/dev/null
+          npm install --save-dev @playwright/test @axe-core/playwright
+          npx playwright install --with-deps chromium
+
+      - name: Run Playwright + axe
+        continue-on-error: true
+        env:
+          BASE_URL: http://localhost:8080
+        run: |
+          npx playwright test tests/passenger_flow.spec.js tests/driver_flow.spec.js \
+                              --reporter=line \
+                              > pw.txt 2>&1 || true
+          head -c 8000 pw.txt > pw_short.txt
+
+      - name: Install k6
+        continue-on-error: true
+        run: |
+          curl -sSL https://github.com/grafana/k6/releases/download/v0.52.0/k6-v0.52.0-linux-amd64.tar.gz | tar xz
+          sudo mv k6-v0.52.0-linux-amd64/k6 /usr/local/bin/k6
+
+      - name: Run k6 smoke profile
+        if: env.BASE_URL != ''
+        continue-on-error: true
+        env:
+          BASE_URL: ${{ secrets.PRODUCTION_URL }}
+        run: |
+          k6 run -e BASE_URL=$BASE_URL -e PROFILE=smoke tests/load_sse.js > k6.txt 2>&1 || true
+          head -c 6000 k6.txt > k6_short.txt
+
+      - name: Compose markdown report
+        run: |
+          {
+            echo "## DamascusTransit · Monthly regression report — $(date -u +%Y-%m-%d)"
+            echo
+            echo "### Lighthouse"
+            echo '```'
+            cat lh_short.txt 2>/dev/null || echo "(no output)"
+            echo '```'
+            echo
+            echo "### Playwright + axe-core"
+            echo '```'
+            cat pw_short.txt 2>/dev/null || echo "(no output)"
+            echo '```'
+            echo
+            echo "### k6 SSE smoke"
+            echo '```'
+            cat k6_short.txt 2>/dev/null || echo "(skipped — PRODUCTION_URL secret not set)"
+            echo '```'
+          } > report.md
+          cat report.md
+
+      - name: Open / update tracking issue
+        uses: peter-evans/create-or-update-issue@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: "Monthly regression report — automated"
+          body-file: report.md
+          labels: "kind/test,roadmap-100"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: regression-report
+          path: |
+            report.md
+            lh_short.txt
+            pw_short.txt
+            k6_short.txt
+          retention-days: 90

@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Damascus Transit System - Interactive Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.0.0/dist/maplibre-gl.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.0.0/dist/maplibre-gl.css" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green-primary:#428177;--green-dark:#054239;--green-darker:#002623;
+  --gold:#b9a779;--gold-light:#edebe0;--gold-dark:#988561;
+  --umber:#6b1f2a;--umber-dark:#4a151e;
+  --charcoal:#3d3a3b;--bg:#0f1117;
+  --text:#e8e8e8;--text-muted:#9ca3af;
+  --card-bg:rgba(30,33,42,0.85);--border:rgba(255,255,255,0.08);
+}
+html,body{width:100%;height:100%;font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+
+/* Header */
+.header{position:fixed;top:0;left:0;right:0;height:64px;background:rgba(15,17,23,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:1000}
+.header-brand{display:flex;align-items:center;gap:12px}
+.brand-mark{width:36px;height:36px;background:linear-gradient(135deg,var(--green-primary),var(--green-dark));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;color:white;font-weight:700}
+.brand-text{font-size:18px;font-weight:700;color:white;letter-spacing:0.5px}
+.brand-badge{background:var(--green-primary);color:white;padding:3px 10px;border-radius:10px;font-size:10px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase}
+.header-stats{display:flex;gap:24px;align-items:center}
+.h-stat{display:flex;flex-direction:column;align-items:center;gap:1px}
+.h-stat-val{font-size:20px;font-weight:700;color:var(--gold)}
+.h-stat-lbl{font-size:10px;color:var(--text-muted);letter-spacing:0.5px}
+.header-controls{display:flex;align-items:center;gap:12px}
+.ctrl-btn{background:var(--card-bg);border:1px solid var(--border);color:var(--text);padding:6px 14px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:500;transition:all 0.2s}
+.ctrl-btn:hover{border-color:var(--green-primary);color:var(--green-primary)}
+.ctrl-btn.active{background:var(--green-primary);border-color:var(--green-primary);color:white}
+.live-dot{width:8px;height:8px;background:#10b981;border-radius:50%;animation:pulse 2s infinite;margin-left:6px;display:inline-block}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(16,185,129,0.4)}50%{opacity:0.7;box-shadow:0 0 0 6px rgba(16,185,129,0)}}
+
+/* Map */
+#map{position:absolute;top:64px;left:0;right:0;bottom:0;z-index:1}
+
+/* Stats Overlay - Bottom Left */
+.stats-overlay{position:fixed;bottom:20px;left:20px;z-index:500;display:flex;flex-direction:column;gap:10px;width:280px}
+.stat-card{background:var(--card-bg);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:14px;transition:transform 0.2s}
+.stat-card:hover{transform:translateX(4px)}
+.stat-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.stat-icon.vehicles{background:rgba(66,129,119,0.2)}
+.stat-icon.routes{background:rgba(185,167,121,0.2)}
+.stat-icon.passengers{background:rgba(107,31,42,0.2)}
+.stat-icon.ontime{background:rgba(16,185,129,0.2)}
+.stat-info{flex:1}
+.stat-number{font-size:22px;font-weight:700;color:white;line-height:1}
+.stat-name{font-size:11px;color:var(--text-muted);margin-top:2px}
+
+/* Route Legend - Top Right */
+.route-legend{position:fixed;top:80px;right:16px;z-index:500;background:var(--card-bg);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:12px;padding:14px;width:240px;max-height:calc(100vh - 160px);overflow-y:auto}
+.legend-title{font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px}
+.legend-item{display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer;transition:opacity 0.2s}
+.legend-item:hover{opacity:0.8}
+.legend-color{width:24px;height:4px;border-radius:2px;flex-shrink:0}
+.legend-name{font-size:12px;color:var(--text);flex:1}
+.legend-type{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600}
+.legend-type.bus{background:rgba(66,129,119,0.2);color:var(--green-primary)}
+.legend-type.microbus{background:rgba(185,167,121,0.2);color:var(--gold)}
+
+/* Vehicle Info Panel */
+.vehicle-panel{position:fixed;bottom:20px;right:16px;z-index:500;background:var(--card-bg);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:12px;padding:16px;width:260px;display:none}
+.vehicle-panel.visible{display:block;animation:slideIn 0.3s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.vp-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.vp-title{font-size:15px;font-weight:700;color:var(--gold)}
+.vp-close{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:18px;padding:2px}
+.vp-row{display:flex;justify-content:space-between;padding:5px 0;font-size:12px;border-bottom:1px solid var(--border)}
+.vp-row:last-child{border-bottom:none}
+.vp-label{color:var(--text-muted)}
+.vp-value{color:var(--text);font-weight:500}
+
+/* Speed Control */
+.speed-control{position:fixed;top:80px;left:16px;z-index:500;background:var(--card-bg);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px}
+.speed-label{font-size:11px;color:var(--text-muted)}
+.speed-btns{display:flex;gap:4px}
+.speed-btn{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:600;transition:all 0.2s}
+.speed-btn.active{background:var(--green-primary);border-color:var(--green-primary);color:white}
+.speed-btn:hover{border-color:var(--green-primary)}
+
+/* Presentation Mode Banner */
+.demo-banner{position:fixed;top:64px;left:0;right:0;z-index:900;background:linear-gradient(90deg,var(--green-dark),var(--green-primary),var(--green-dark));padding:6px 0;text-align:center;font-size:12px;color:white;font-weight:500;letter-spacing:0.5px;display:none}
+.demo-banner.visible{display:block}
+
+/* MapLibre overrides */
+.maplibregl-popup-content{background:var(--card-bg)!important;border:1px solid var(--border)!important;border-radius:10px!important;padding:12px!important;color:var(--text)!important;font-family:'IBM Plex Sans Arabic',sans-serif!important;backdrop-filter:blur(16px)}
+.maplibregl-popup-close-button{color:var(--text-muted)!important;font-size:16px!important}
+.maplibregl-popup-tip{border-top-color:rgba(30,33,42,0.85)!important}
+.maplibregl-ctrl-attrib{font-size:10px!important;background:rgba(15,17,23,0.7)!important;color:var(--text-muted)!important}
+.maplibregl-ctrl-attrib a{color:var(--text-muted)!important}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:3px}
+
+@media(max-width:768px){
+  .stats-overlay{bottom:12px;left:12px;width:200px}
+  .stat-card{padding:10px 12px}
+  .stat-number{font-size:18px}
+  .route-legend{display:none}
+  .speed-control{top:auto;bottom:12px;left:auto;right:12px}
+  .header-stats{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-brand">
+    <div class="brand-mark">DT</div>
+    <span class="brand-text">Damascus Transit</span>
+    <span class="brand-badge"><span class="live-dot"></span> LIVE DEMO</span>
+  </div>
+  <div class="header-stats">
+    <div class="h-stat"><span class="h-stat-val" id="hstat-vehicles">18</span><span class="h-stat-lbl">Active Vehicles</span></div>
+    <div class="h-stat"><span class="h-stat-val" id="hstat-routes">8</span><span class="h-stat-lbl">Routes</span></div>
+    <div class="h-stat"><span class="h-stat-val" id="hstat-passengers">12,847</span><span class="h-stat-lbl">Passengers Today</span></div>
+    <div class="h-stat"><span class="h-stat-val" id="hstat-ontime">94%</span><span class="h-stat-lbl">On-Time</span></div>
+  </div>
+  <div class="header-controls">
+    <button class="ctrl-btn" id="btn-lang" onclick="toggleLang()">EN / AR</button>
+    <button class="ctrl-btn" id="btn-routes" onclick="toggleRoutes()">Routes</button>
+    <button class="ctrl-btn" id="btn-stops" onclick="toggleStops()">Stops</button>
+  </div>
+</header>
+
+<!-- Map -->
+<div id="map"></div>
+
+<!-- Speed Control -->
+<div class="speed-control">
+  <span class="speed-label">Speed:</span>
+  <div class="speed-btns">
+    <button class="speed-btn" data-speed="1" onclick="setSpeed(1)">1x</button>
+    <button class="speed-btn active" data-speed="3" onclick="setSpeed(3)">3x</button>
+    <button class="speed-btn" data-speed="10" onclick="setSpeed(10)">10x</button>
+    <button class="speed-btn" data-speed="30" onclick="setSpeed(30)">30x</button>
+  </div>
+</div>
+
+<!-- Stats Overlay -->
+<div class="stats-overlay">
+  <div class="stat-card"><div class="stat-icon vehicles">&#x1F68C;</div><div class="stat-info"><div class="stat-number" id="stat-active">18</div><div class="stat-name" data-ar="مركبات نشطة" data-en="Active Vehicles">Active Vehicles</div></div></div>
+  <div class="stat-card"><div class="stat-icon routes">&#x1F6E4;</div><div class="stat-info"><div class="stat-number" id="stat-routes">8</div><div class="stat-name" data-ar="خطوط سير" data-en="Routes Served">Routes Served</div></div></div>
+  <div class="stat-card"><div class="stat-icon passengers">&#x1F465;</div><div class="stat-info"><div class="stat-number" id="stat-passengers">12,847</div><div class="stat-name" data-ar="ركاب اليوم" data-en="Passengers Today">Passengers Today</div></div></div>
+  <div class="stat-card"><div class="stat-icon ontime">&#x2705;</div><div class="stat-info"><div class="stat-number" id="stat-ontime">94.2%</div><div class="stat-name" data-ar="الالتزام بالمواعيد" data-en="On-Time Performance">On-Time Performance</div></div></div>
+</div>
+
+<!-- Route Legend -->
+<div class="route-legend" id="route-legend">
+  <div class="legend-title" data-ar="خطوط السير" data-en="Routes">Routes</div>
+  <div id="legend-items"></div>
+</div>
+
+<!-- Vehicle Info Panel -->
+<div class="vehicle-panel" id="vehicle-panel">
+  <div class="vp-header">
+    <span class="vp-title" id="vp-title"></span>
+    <button class="vp-close" onclick="closeVehiclePanel()">&times;</button>
+  </div>
+  <div id="vp-details"></div>
+</div>
+
+<script>
+// ====================================================================
+// EMBEDDED DAMASCUS TRANSIT DATA (from seed.sql)
+// ====================================================================
+
+const STOPS = [
+  {id:'S001',name:'Marjeh Square',name_ar:'ساحة المرجة',lat:33.5105,lon:36.3025,shelter:true},
+  {id:'S002',name:'Hamidiyeh Souq',name_ar:'سوق الحميدية',lat:33.5115,lon:36.3065,shelter:true},
+  {id:'S003',name:'Umayyad Square',name_ar:'ساحة الأمويين',lat:33.5130,lon:36.2920,shelter:true},
+  {id:'S004',name:'Baramkeh',name_ar:'البرامكة',lat:33.5060,lon:36.2940,shelter:true},
+  {id:'S005',name:'Mezzeh Highway',name_ar:'أوتوستراد المزة',lat:33.5050,lon:36.2600,shelter:true},
+  {id:'S006',name:'Mezzeh 86',name_ar:'مزة 86',lat:33.5010,lon:36.2450,shelter:false},
+  {id:'S007',name:'Kafar Souseh',name_ar:'كفرسوسة',lat:33.5020,lon:36.2750,shelter:true},
+  {id:'S008',name:'Malki',name_ar:'المالكي',lat:33.5170,lon:36.2800,shelter:false},
+  {id:'S009',name:'Abu Rummaneh',name_ar:'أبو رمانة',lat:33.5160,lon:36.2850,shelter:true},
+  {id:'S010',name:'Muhajirin',name_ar:'المهاجرين',lat:33.5210,lon:36.2880,shelter:false},
+  {id:'S011',name:'Saroujah',name_ar:'الصالحية',lat:33.5180,lon:36.3050,shelter:true},
+  {id:'S012',name:'Jisr al-Abyad',name_ar:'جسر الأبيض',lat:33.5200,lon:36.3080,shelter:false},
+  {id:'S013',name:'Abbasiyyin Square',name_ar:'ساحة العباسيين',lat:33.5175,lon:36.3200,shelter:true},
+  {id:'S014',name:'Jobar',name_ar:'جوبر',lat:33.5220,lon:36.3350,shelter:false},
+  {id:'S015',name:'Qaboun',name_ar:'القابون',lat:33.5350,lon:36.3400,shelter:false},
+  {id:'S016',name:'Barzeh',name_ar:'برزة',lat:33.5450,lon:36.3180,shelter:true},
+  {id:'S017',name:'Tishreen Park',name_ar:'حديقة تشرين',lat:33.5250,lon:36.3100,shelter:true},
+  {id:'S018',name:'Damascus University',name_ar:'جامعة دمشق',lat:33.5130,lon:36.2880,shelter:true},
+  {id:'S019',name:'Rawda',name_ar:'الروضة',lat:33.5140,lon:36.2960,shelter:false},
+  {id:'S020',name:"Sha'lan",name_ar:'الشعلان',lat:33.5155,lon:36.2900,shelter:true},
+  {id:'S021',name:'Mazraa',name_ar:'المزرعة',lat:33.5030,lon:36.2830,shelter:false},
+  {id:'S022',name:'Western Bus Station',name_ar:'المحطة الغربية',lat:33.5000,lon:36.2350,shelter:true},
+  {id:'S023',name:'Daraya Junction',name_ar:'مفرق داريا',lat:33.4950,lon:36.2400,shelter:false},
+  {id:'S024',name:'Moadamiyeh',name_ar:'المعضمية',lat:33.4800,lon:36.2200,shelter:true},
+  {id:'S025',name:'Harasta',name_ar:'حرستا',lat:33.5500,lon:36.3550,shelter:true},
+  {id:'S026',name:'Douma Entrance',name_ar:'مدخل دوما',lat:33.5600,lon:36.3800,shelter:true},
+  {id:'S027',name:'Jaramana',name_ar:'جرمانا',lat:33.4900,lon:36.3300,shelter:true},
+  {id:'S028',name:'Sayyidah Zaynab',name_ar:'السيدة زينب',lat:33.4500,lon:36.3400,shelter:true},
+  {id:'S029',name:'Airport Road',name_ar:'طريق المطار',lat:33.4700,lon:36.3500,shelter:false},
+  {id:'S030',name:"Dwel'a",name_ar:'الدويلعة',lat:33.4850,lon:36.3250,shelter:false},
+  {id:'S031',name:'Midan',name_ar:'الميدان',lat:33.4950,lon:36.3000,shelter:true},
+  {id:'S032',name:'Zahira',name_ar:'الظاهرة',lat:33.4970,lon:36.2970,shelter:false},
+  {id:'S033',name:'Bab Touma',name_ar:'باب توما',lat:33.5130,lon:36.3150,shelter:true},
+  {id:'S034',name:'Bab Sharqi',name_ar:'باب شرقي',lat:33.5120,lon:36.3200,shelter:true},
+  {id:'S035',name:'Old City Center',name_ar:'وسط المدينة القديمة',lat:33.5110,lon:36.3100,shelter:true},
+  {id:'S036',name:'Kassaa',name_ar:'القصاع',lat:33.5160,lon:36.3180,shelter:false},
+  {id:'S037',name:'Tijara Center',name_ar:'مركز التجارة',lat:33.5100,lon:36.2950,shelter:true},
+  {id:'S038',name:'Mezze Autostrad West',name_ar:'المزة أوتوستراد غرب',lat:33.5030,lon:36.2500,shelter:false},
+  {id:'S039',name:'Dummar',name_ar:'دمر',lat:33.5150,lon:36.2300,shelter:true},
+  {id:'S040',name:'Qudsaya Entrance',name_ar:'مدخل قدسيا',lat:33.5200,lon:36.2150,shelter:false},
+  {id:'S041',name:'Rabweh',name_ar:'الربوة',lat:33.5180,lon:36.2700,shelter:true},
+  {id:'S042',name:'Muhajireen Heights',name_ar:'أعالي المهاجرين',lat:33.5250,lon:36.2860,shelter:false}
+];
+
+const STOP_MAP = {};
+STOPS.forEach(s => STOP_MAP[s.id] = s);
+
+const ROUTES = [
+  {id:'R001',name:'Marjeh - Mezzeh Highway',name_ar:'المرجة - أوتوستراد المزة',type:'bus',color:'#428177',distance:8.5,fare:2000,
+   stops:['S001','S037','S004','S007','S038','S005','S006']},
+  {id:'R002',name:'Baramkeh - Barzeh',name_ar:'البرامكة - برزة',type:'bus',color:'#054239',distance:12,fare:2500,
+   stops:['S004','S003','S011','S017','S013','S016','S025']},
+  {id:'R003',name:'Umayyad - Qaboun',name_ar:'الأمويين - القابون',type:'bus',color:'#1a6b5c',distance:10.5,fare:2000,
+   stops:['S003','S019','S011','S013','S014','S015','S025']},
+  {id:'R004',name:'Old City - Jaramana',name_ar:'المدينة القديمة - جرمانا',type:'microbus',color:'#b9a779',distance:9,fare:3000,
+   stops:['S035','S034','S033','S036','S030','S027','S028']},
+  {id:'R005',name:'Marjeh - Sayyidah Zaynab',name_ar:'المرجة - السيدة زينب',type:'bus',color:'#988561',distance:18,fare:3500,
+   stops:['S001','S031','S032','S030','S027','S029','S028']},
+  {id:'R006',name:'Muhajirin - Kafar Souseh',name_ar:'المهاجرين - كفرسوسة',type:'microbus',color:'#6b1f2a',distance:6.5,fare:2500,
+   stops:['S010','S009','S008','S020','S018','S021','S007']},
+  {id:'R007',name:'Abbasiyyin - Harasta',name_ar:'العباسيين - حرستا',type:'bus',color:'#4a151e',distance:8,fare:2000,
+   stops:['S013','S014','S015','S016','S025','S026']},
+  {id:'R008',name:'Mezzeh - Dummar',name_ar:'المزة - دمر',type:'microbus',color:'#3d3a3b',distance:11,fare:3000,
+   stops:['S005','S038','S041','S039','S040','S022']}
+];
+
+const VEHICLES = [
+  {id:'BUS-001',name_ar:'باص دمشق 001',type:'bus',capacity:45,route:'R001'},
+  {id:'BUS-002',name_ar:'باص دمشق 002',type:'bus',capacity:45,route:'R001'},
+  {id:'BUS-003',name_ar:'باص دمشق 003',type:'bus',capacity:45,route:'R002'},
+  {id:'BUS-004',name_ar:'باص دمشق 004',type:'bus',capacity:45,route:'R002'},
+  {id:'BUS-005',name_ar:'باص دمشق 005',type:'bus',capacity:45,route:'R003'},
+  {id:'BUS-006',name_ar:'باص دمشق 006',type:'bus',capacity:45,route:'R003'},
+  {id:'BUS-007',name_ar:'باص دمشق 007',type:'bus',capacity:45,route:'R005'},
+  {id:'BUS-008',name_ar:'باص دمشق 008',type:'bus',capacity:45,route:'R005'},
+  {id:'BUS-009',name_ar:'باص دمشق 009',type:'bus',capacity:45,route:'R007'},
+  {id:'MIC-001',name_ar:'ميكروباص 001',type:'microbus',capacity:14,route:'R004'},
+  {id:'MIC-002',name_ar:'ميكروباص 002',type:'microbus',capacity:14,route:'R004'},
+  {id:'MIC-003',name_ar:'ميكروباص 003',type:'microbus',capacity:14,route:'R006'},
+  {id:'MIC-004',name_ar:'ميكروباص 004',type:'microbus',capacity:14,route:'R006'},
+  {id:'MIC-005',name_ar:'ميكروباص 005',type:'microbus',capacity:14,route:'R008'},
+  {id:'MIC-006',name_ar:'ميكروباص 006',type:'microbus',capacity:14,route:'R008'},
+  {id:'TAX-001',name_ar:'تاكسي 001',type:'taxi',capacity:4,route:null},
+  {id:'TAX-002',name_ar:'تاكسي 002',type:'taxi',capacity:4,route:null},
+  {id:'TAX-003',name_ar:'تاكسي 003',type:'taxi',capacity:4,route:null}
+];
+
+// Taxi free-roaming waypoints (central Damascus)
+const TAXI_ZONES = [
+  {lat:33.5105,lon:36.3025},{lat:33.5130,lon:36.2920},{lat:33.5060,lon:36.2940},
+  {lat:33.5110,lon:36.3100},{lat:33.5175,lon:36.3200},{lat:33.5155,lon:36.2900},
+  {lat:33.5020,lon:36.2750},{lat:33.5050,lon:36.2600},{lat:33.4950,lon:36.3000},
+  {lat:33.5130,lon:36.2880},{lat:33.5170,lon:36.2800},{lat:33.5180,lon:36.3050}
+];
+
+// ====================================================================
+// STATE
+// ====================================================================
+let map, simTime = 0, speedMultiplier = 3, lang = 'en';
+let showRoutes = true, showStopMarkers = true;
+const vehicleMarkers = new Map();
+const stopMarkerEls = new Map();
+const routeLayers = [];
+let selectedVehicle = null;
+let passengerCount = 12847;
+
+// ====================================================================
+// MAP INITIALIZATION
+// ====================================================================
+function initMap() {
+  map = new maplibregl.Map({
+    container: 'map',
+    style: {
+      version: 8,
+      sources: {
+        'carto-dark': {
+          type: 'raster',
+          tiles: ['https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'],
+          tileSize: 256,
+          attribution: '&copy; CartoDB &copy; OSM'
+        }
+      },
+      layers: [{id: 'carto-dark', type: 'raster', source: 'carto-dark'}]
+    },
+    center: [36.295, 33.512],
+    zoom: 12.5,
+    pitch: 0,
+    bearing: 0,
+    attributionControl: true,
+    dragRotate: false
+  });
+
+  map.on('load', () => {
+    drawRouteLines();
+    drawStopMarkers();
+    initVehicles();
+    startSimulation();
+    buildRouteLegend();
+  });
+
+  map.addControl(new maplibregl.NavigationControl({showCompass:false}), 'bottom-right');
+}
+
+// ====================================================================
+// ROUTE LINES
+// ====================================================================
+function drawRouteLines() {
+  ROUTES.forEach(route => {
+    const coords = route.stops.map(sid => {
+      const s = STOP_MAP[sid];
+      return [s.lon, s.lat];
+    });
+
+    const sourceId = `route-${route.id}`;
+    const layerId = `route-line-${route.id}`;
+
+    map.addSource(sourceId, {
+      type: 'geojson',
+      data: {
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: coords }
+      }
+    });
+
+    // Outer glow
+    map.addLayer({
+      id: `${layerId}-glow`,
+      type: 'line',
+      source: sourceId,
+      layout: { 'line-join': 'round', 'line-cap': 'round' },
+      paint: {
+        'line-color': route.color,
+        'line-width': 8,
+        'line-opacity': 0.15,
+        'line-blur': 4
+      }
+    });
+
+    // Main line
+    map.addLayer({
+      id: layerId,
+      type: 'line',
+      source: sourceId,
+      layout: { 'line-join': 'round', 'line-cap': 'round' },
+      paint: {
+        'line-color': route.color,
+        'line-width': 3,
+        'line-opacity': 0.7,
+        'line-dasharray': route.type === 'microbus' ? [4, 3] : [1]
+      }
+    });
+
+    routeLayers.push(`${layerId}-glow`, layerId);
+  });
+}
+
+// ====================================================================
+// STOP MARKERS
+// ====================================================================
+function drawStopMarkers() {
+  STOPS.forEach(stop => {
+    const el = document.createElement('div');
+    el.style.cssText = 'width:10px;height:10px;background:rgba(185,167,121,0.7);border:1.5px solid rgba(255,255,255,0.5);border-radius:50%;cursor:pointer;transition:transform 0.2s';
+    el.addEventListener('mouseenter', () => el.style.transform = 'scale(1.8)');
+    el.addEventListener('mouseleave', () => el.style.transform = 'scale(1)');
+
+    const popup = new maplibregl.Popup({offset: 12, closeButton: false})
+      .setHTML(`<div style="font-family:'IBM Plex Sans Arabic',sans-serif;padding:4px"><strong style="color:#b9a779">${stop.name_ar}</strong><br><span style="font-size:11px;color:#9ca3af">${stop.name}</span>${stop.shelter ? '<br><span style="font-size:10px;color:#10b981">&#x1F3D7; Shelter</span>' : ''}</div>`);
+
+    const marker = new maplibregl.Marker({element: el, anchor: 'center'})
+      .setLngLat([stop.lon, stop.lat])
+      .setPopup(popup)
+      .addTo(map);
+
+    stopMarkerEls.set(stop.id, marker);
+  });
+}
+
+// ====================================================================
+// VEHICLE SIMULATION
+// ====================================================================
+function initVehicles() {
+  VEHICLES.forEach((v, idx) => {
+    // Stagger phase so vehicles are spread along routes
+    v.phase = (idx * 0.13) % 1;
+    v.occupancy = 20 + Math.random() * 60;
+    v.speed = 0;
+    v.heading = 0;
+    v.lat = 0;
+    v.lon = 0;
+
+    // Taxi: random target point
+    if (!v.route) {
+      v.taxiTarget = Math.floor(Math.random() * TAXI_ZONES.length);
+      v.taxiProgress = Math.random();
+      v.taxiFrom = Math.floor(Math.random() * TAXI_ZONES.length);
+    }
+
+    createVehicleMarker(v);
+  });
+}
+
+function createVehicleMarker(v) {
+  const el = document.createElement('div');
+  const size = v.type === 'bus' ? 32 : v.type === 'microbus' ? 28 : 24;
+  el.style.cssText = `width:${size}px;height:${size}px;cursor:pointer;transition:transform 0.1s`;
+
+  const colors = {bus:'#428177',microbus:'#b9a779',taxi:'#d4a84b'};
+  const icons = {bus:'\u{1F68C}',microbus:'\u{1F690}',taxi:'\u{1F695}'};
+  const color = encodeURIComponent(colors[v.type]);
+  const icon = icons[v.type];
+
+  el.style.backgroundImage = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="${color}" opacity="0.9"/><text x="50" y="58" font-size="46" text-anchor="middle" dominant-baseline="middle">${icon}</text></svg>')`;
+  el.style.backgroundSize = 'contain';
+
+  el.addEventListener('click', () => showVehicleInfo(v));
+
+  const marker = new maplibregl.Marker({element: el, anchor: 'center'})
+    .setLngLat([36.295, 33.512])
+    .addTo(map);
+
+  vehicleMarkers.set(v.id, {marker, el});
+}
+
+function simulateStep(dt) {
+  simTime += dt * speedMultiplier;
+
+  VEHICLES.forEach(v => {
+    if (v.route) {
+      simulateRoutedVehicle(v);
+    } else {
+      simulateTaxi(v);
+    }
+
+    // Update marker position
+    const entry = vehicleMarkers.get(v.id);
+    if (entry) {
+      entry.marker.setLngLat([v.lon, v.lat]);
+      entry.el.style.transform = `rotate(${v.heading}deg)`;
+    }
+  });
+
+  // Update passenger count slowly
+  passengerCount += Math.floor(Math.random() * 3 * speedMultiplier);
+  if (passengerCount > 99999) passengerCount = 12000 + Math.floor(Math.random() * 5000);
+  document.getElementById('stat-passengers').textContent = passengerCount.toLocaleString();
+  document.getElementById('hstat-passengers').textContent = passengerCount.toLocaleString();
+
+  // Update on-time (slight fluctuation)
+  const ontime = 92 + Math.random() * 5;
+  document.getElementById('stat-ontime').textContent = ontime.toFixed(1) + '%';
+  document.getElementById('hstat-ontime').textContent = Math.round(ontime) + '%';
+
+  // Update selected vehicle panel
+  if (selectedVehicle) updateVehiclePanel(selectedVehicle);
+}
+
+function simulateRoutedVehicle(v) {
+  const route = ROUTES.find(r => r.id === v.route);
+  if (!route) return;
+
+  const stops = route.stops.map(sid => STOP_MAP[sid]);
+  const totalSegments = stops.length - 1;
+  if (totalSegments < 1) return;
+
+  // Cycle: 30 minutes real-time per round trip, scaled by speedMultiplier
+  const cycleDuration = 1800; // seconds for one round trip
+  const t = (simTime / cycleDuration + v.phase) % 2; // 0-1 forward, 1-2 reverse
+  const progress = t <= 1 ? t : 2 - t;
+
+  // Find which segment we're on
+  const segFloat = progress * totalSegments;
+  const segIdx = Math.min(Math.floor(segFloat), totalSegments - 1);
+  const segProgress = segFloat - segIdx;
+
+  const from = stops[segIdx];
+  const to = stops[Math.min(segIdx + 1, stops.length - 1)];
+
+  // Interpolate position
+  v.lat = from.lat + (to.lat - from.lat) * segProgress;
+  v.lon = from.lon + (to.lon - from.lon) * segProgress;
+
+  // Add slight GPS noise
+  v.lat += (Math.random() - 0.5) * 0.0002;
+  v.lon += (Math.random() - 0.5) * 0.0002;
+
+  // Calculate heading
+  const dlat = to.lat - from.lat;
+  const dlon = to.lon - from.lon;
+  v.heading = (Math.atan2(dlon, dlat) * 180 / Math.PI + 360) % 360;
+
+  // Speed based on type
+  const baseSpeed = v.type === 'bus' ? 30 : 25;
+  v.speed = baseSpeed + (Math.random() - 0.5) * 10;
+
+  // Near stops, slow down
+  if (segProgress < 0.05 || segProgress > 0.95) {
+    v.speed *= 0.3;
+  }
+
+  // Occupancy drifts
+  v.occupancy += (Math.random() - 0.5) * 2;
+  v.occupancy = Math.max(10, Math.min(95, v.occupancy));
+}
+
+function simulateTaxi(v) {
+  const from = TAXI_ZONES[v.taxiFrom];
+  const to = TAXI_ZONES[v.taxiTarget];
+
+  v.taxiProgress += 0.0003 * speedMultiplier;
+
+  if (v.taxiProgress >= 1) {
+    v.taxiFrom = v.taxiTarget;
+    v.taxiTarget = Math.floor(Math.random() * TAXI_ZONES.length);
+    v.taxiProgress = 0;
+  }
+
+  const p = v.taxiProgress;
+  v.lat = from.lat + (to.lat - from.lat) * p + (Math.random() - 0.5) * 0.0003;
+  v.lon = from.lon + (to.lon - from.lon) * p + (Math.random() - 0.5) * 0.0003;
+
+  const dlat = to.lat - from.lat;
+  const dlon = to.lon - from.lon;
+  v.heading = (Math.atan2(dlon, dlat) * 180 / Math.PI + 360) % 360;
+  v.speed = 35 + (Math.random() - 0.5) * 15;
+  v.occupancy = Math.floor(Math.random() * 4) + 1;
+}
+
+function startSimulation() {
+  let lastTime = performance.now();
+  function frame(now) {
+    const dt = (now - lastTime) / 1000;
+    lastTime = now;
+    simulateStep(dt);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+// ====================================================================
+// VEHICLE INFO PANEL
+// ====================================================================
+function showVehicleInfo(v) {
+  selectedVehicle = v;
+  const panel = document.getElementById('vehicle-panel');
+  panel.classList.add('visible');
+  updateVehiclePanel(v);
+
+  // Fly to vehicle
+  map.flyTo({center: [v.lon, v.lat], zoom: 14, duration: 800});
+}
+
+function updateVehiclePanel(v) {
+  const route = ROUTES.find(r => r.id === v.route);
+  document.getElementById('vp-title').textContent = v.id + ' - ' + v.name_ar;
+  const details = document.getElementById('vp-details');
+  details.innerHTML = `
+    <div class="vp-row"><span class="vp-label">${lang==='ar'?'النوع':'Type'}</span><span class="vp-value">${v.type}</span></div>
+    <div class="vp-row"><span class="vp-label">${lang==='ar'?'الخط':'Route'}</span><span class="vp-value">${route ? route['name' + (lang==='ar'?'_ar':'')] : (lang==='ar'?'حر':'Free-roaming')}</span></div>
+    <div class="vp-row"><span class="vp-label">${lang==='ar'?'السرعة':'Speed'}</span><span class="vp-value">${v.speed.toFixed(1)} km/h</span></div>
+    <div class="vp-row"><span class="vp-label">${lang==='ar'?'الإشغال':'Occupancy'}</span><span class="vp-value">${Math.round(v.occupancy)}%</span></div>
+    <div class="vp-row"><span class="vp-label">${lang==='ar'?'السعة':'Capacity'}</span><span class="vp-value">${v.capacity}</span></div>
+    <div class="vp-row"><span class="vp-label">${lang==='ar'?'الموقع':'Position'}</span><span class="vp-value">${v.lat.toFixed(4)}, ${v.lon.toFixed(4)}</span></div>
+    <div class="vp-row"><span class="vp-label">${lang==='ar'?'الاتجاه':'Heading'}</span><span class="vp-value">${Math.round(v.heading)}&deg;</span></div>
+  `;
+}
+
+function closeVehiclePanel() {
+  document.getElementById('vehicle-panel').classList.remove('visible');
+  selectedVehicle = null;
+}
+
+// ====================================================================
+// ROUTE LEGEND
+// ====================================================================
+function buildRouteLegend() {
+  const container = document.getElementById('legend-items');
+  container.innerHTML = '';
+  ROUTES.forEach(route => {
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    item.innerHTML = `
+      <div class="legend-color" style="background:${route.color}"></div>
+      <span class="legend-name">${lang === 'ar' ? route.name_ar : route.name}</span>
+      <span class="legend-type ${route.type}">${route.type}</span>
+    `;
+    item.addEventListener('click', () => {
+      // Fly to route center
+      const stops = route.stops.map(sid => STOP_MAP[sid]);
+      const cLat = stops.reduce((s,st) => s+st.lat, 0) / stops.length;
+      const cLon = stops.reduce((s,st) => s+st.lon, 0) / stops.length;
+      map.flyTo({center: [cLon, cLat], zoom: 13, duration: 800});
+    });
+    container.appendChild(item);
+  });
+}
+
+// ====================================================================
+// CONTROLS
+// ====================================================================
+function setSpeed(s) {
+  speedMultiplier = s;
+  document.querySelectorAll('.speed-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.speed) === s);
+  });
+}
+
+function toggleLang() {
+  lang = lang === 'en' ? 'ar' : 'en';
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.documentElement.lang = lang;
+
+  // Update all translatable elements
+  document.querySelectorAll('[data-ar]').forEach(el => {
+    el.textContent = el.getAttribute(`data-${lang}`);
+  });
+
+  buildRouteLegend();
+  if (selectedVehicle) updateVehiclePanel(selectedVehicle);
+}
+
+function toggleRoutes() {
+  showRoutes = !showRoutes;
+  routeLayers.forEach(layerId => {
+    if (map.getLayer(layerId)) {
+      map.setLayoutProperty(layerId, 'visibility', showRoutes ? 'visible' : 'none');
+    }
+  });
+  document.getElementById('btn-routes').classList.toggle('active', showRoutes);
+}
+
+function toggleStops() {
+  showStopMarkers = !showStopMarkers;
+  stopMarkerEls.forEach(marker => {
+    marker.getElement().style.display = showStopMarkers ? 'block' : 'none';
+  });
+  document.getElementById('btn-stops').classList.toggle('active', showStopMarkers);
+}
+
+// ====================================================================
+// INIT
+// ====================================================================
+window.addEventListener('load', () => {
+  initMap();
+  // Set initial button states
+  document.getElementById('btn-routes').classList.add('active');
+  document.getElementById('btn-stops').classList.add('active');
+});
+</script>
+</body>
+</html>

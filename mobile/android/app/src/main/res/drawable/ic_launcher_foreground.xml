@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Adaptive icon foreground layer (API 26+).
+    Uses the same bus silhouette in brand gold (#b9a779) on transparent background.
+    Replace with a proper branded SVG before release.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#b9a779"
+        android:pathData="M27,64c0,1.98 0.88,3.75 2.25,4.99V72c0,1.24 1.01,2.25 2.25,2.25h2.25c1.24,0 2.25,-1.01 2.25,-2.25v-2.25h18v2.25c0,1.24 1.01,2.25 2.25,2.25h2.25c1.24,0 2.25,-1.01 2.25,-2.25v-2.01c1.37,-1.24 2.25,-3.01 2.25,-4.99V40.5c0,-7.88 -8.06,-9 -18,-9s-18,1.12 -18,9V64zM34.88,67.5c-1.87,0 -3.38,-1.51 -3.38,-3.38S33,60.75 34.88,60.75 38.25,62.26 38.25,64.13 36.74,67.5 34.88,67.5zM73.13,67.5c-1.87,0 -3.38,-1.51 -3.38,-3.38s1.51,-3.38 3.38,-3.38S76.5,62.26 76.5,64.13 74.99,67.5 73.13,67.5zM76.5,58.5h-27V47.25h27V58.5z" />
+</vector>

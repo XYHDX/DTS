@@ -1,0 +1,11 @@
+# Gitleaks ignore file — intentional test-only mock JWT values
+# These are fake credentials used only in test fixtures; no real secrets.
+
+# Commit 0370857 — tests/conftest.py lines 15-16 (SUPABASE_KEY and SUPABASE_SERVICE_KEY)
+# Added fake JWT-format strings for mock Supabase config in test setup.
+0370857786178f2eab7c44c451361820ba2d86a0:tests/conftest.py:jwt:15
+0370857786178f2eab7c44c451361820ba2d86a0:tests/conftest.py:jwt:16
+
+# Commit e7f731c — tests/stub_server.py line 29 (STUB_JWT_SECRET)
+# Load-test stub server uses a non-real signing key for local JWT generation only.
+e7f731c7cde90535719efffe62132a07ed00057e:tests/stub_server.py:generic-api-key:29

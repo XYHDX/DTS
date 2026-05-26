@@ -1,0 +1,103 @@
+name: Sentry weekly digest
+
+# Step 98 — every Monday at 06:00 UTC, query Sentry for the week's top issues
+# and post a digest into the team's Slack / email channel.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install httpx
+
+      - name: Compose digest
+        id: compose
+        env:
+          SENTRY_API_TOKEN: ${{ secrets.SENTRY_API_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: |
+          python - <<'PY'
+          import os, json, datetime as dt
+          import httpx
+
+          tok = os.environ.get('SENTRY_API_TOKEN', '')
+          org = os.environ.get('SENTRY_ORG', '')
+          proj = os.environ.get('SENTRY_PROJECT', '')
+          if not (tok and org and proj):
+              print('Sentry creds missing — skipping digest.'); exit(0)
+
+          since = (dt.datetime.utcnow() - dt.timedelta(days=7)).strftime('%Y-%m-%d')
+          url = f'https://sentry.io/api/0/projects/{org}/{proj}/issues/'
+          headers = {'Authorization': f'Bearer {tok}'}
+          params = {'statsPeriod': '7d', 'sort': 'freq', 'limit': 10,
+                    'query': 'is:unresolved'}
+          r = httpx.get(url, headers=headers, params=params, timeout=20)
+          r.raise_for_status()
+          issues = r.json() or []
+
+          lines = [f"DamascusTransit — Sentry digest week of {since}",
+                   f"Top {len(issues)} unresolved issues by frequency:",
+                   ""]
+          for i, x in enumerate(issues, 1):
+              title = x.get('title', '?')[:100]
+              count = x.get('count', '?')
+              users = x.get('userCount', '?')
+              perma = x.get('permalink', '')
+              lines.append(f"{i}. {title}\n   {count} events · {users} users · {perma}")
+          digest = "\n".join(lines)
+          print(digest)
+          with open('digest.txt', 'w') as f:
+              f.write(digest)
+          PY
+
+      - name: Upload digest as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentry-digest
+          path: digest.txt
+          retention-days: 30
+
+      - name: Post to Slack
+        if: env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          if [[ -s digest.txt ]]; then
+            BODY=$(cat digest.txt | python3 -c "import sys, json; print(json.dumps({'text': sys.stdin.read()}))")
+            curl -fsS -X POST -H 'Content-Type: application/json' -d "$BODY" "$SLACK_WEBHOOK_URL"
+          fi
+
+      - name: Email digest via Resend
+        if: env.RESEND_API_KEY != ''
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
+          DIGEST_RECIPIENTS: ${{ secrets.ALERT_EMAIL_RECIPIENTS }}
+        run: |
+          if [[ -s digest.txt && -n "$DIGEST_RECIPIENTS" ]]; then
+            python - <<'PY'
+          import os, json, httpx
+          body = open('digest.txt').read()
+          payload = {
+            'from': os.environ['RESEND_FROM_EMAIL'],
+            'to':   [a.strip() for a in os.environ['DIGEST_RECIPIENTS'].split(',') if a.strip()],
+            'subject': 'DamascusTransit · Sentry weekly digest',
+            'text': body,
+          }
+          r = httpx.post('https://api.resend.com/emails',
+                         headers={'Authorization': f"Bearer {os.environ['RESEND_API_KEY']}"},
+                         json=payload, timeout=15)
+          r.raise_for_status()
+          print('Email sent.')
+          PY
+          fi

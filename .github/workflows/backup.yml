@@ -1,0 +1,201 @@
+name: Disaster Recovery — Automated DB Backup
+
+on:
+  schedule:
+    # Daily at 01:00 UTC (off-peak for Damascus timezone)
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Reason for manual backup"
+        required: false
+        default: "Manual trigger"
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  backup-supabase:
+    name: Backup Supabase Database
+    runs-on: ubuntu-latest
+    env:
+      BACKUP_DIR: backup-${{ github.run_id }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install httpx
+
+      - name: Run database export
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          BACKUP_DIR: ${{ env.BACKUP_DIR }}
+        run: |
+          mkdir -p "$BACKUP_DIR"
+          python scripts/backup-db.py --output-dir "$BACKUP_DIR"
+
+      - name: Compress backup
+        run: |
+          tar -czf "damascus-transit-backup-$(date -u +%Y-%m-%d).tar.gz" "$BACKUP_DIR/"
+          sha256sum "damascus-transit-backup-$(date -u +%Y-%m-%d).tar.gz" > "damascus-transit-backup-$(date -u +%Y-%m-%d).sha256"
+
+      - name: Upload backup artifact (7-day retention)
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_id }}-${{ github.run_number }}
+          path: |
+            damascus-transit-backup-*.tar.gz
+            damascus-transit-backup-*.sha256
+          retention-days: 7
+
+      - name: Create monthly release backup
+        if: github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # On the 1st of each month, pin a release for 90-day retention
+          DAY=$(date -u +%d)
+          if [ "$DAY" = "01" ]; then
+            TAG="backup-$(date -u +%Y-%m)"
+            gh release create "$TAG" \
+              --title "Monthly DB Backup $(date -u +%Y-%m)" \
+              --notes "Automated monthly Supabase backup. Retained for 90 days." \
+              --prerelease \
+              "damascus-transit-backup-$(date -u +%Y-%m-%d).tar.gz" \
+              "damascus-transit-backup-$(date -u +%Y-%m-%d).sha256" \
+            || echo "Release may already exist, skipping"
+          fi
+
+      - name: Verify backup integrity
+        run: |
+          BACKUP_FILE="damascus-transit-backup-$(date -u +%Y-%m-%d).tar.gz"
+          sha256sum --check "damascus-transit-backup-$(date -u +%Y-%m-%d).sha256"
+          echo "Backup size: $(du -sh $BACKUP_FILE | cut -f1)"
+          tar -tzf "$BACKUP_FILE" | head -20
+          echo "Backup verification passed"
+
+  verify-backup:
+    name: Verify backup row counts (step 84)
+    runs-on: ubuntu-latest
+    needs: backup-supabase
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install httpx
+
+      - name: Query live row counts
+        id: counts
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          python - <<'PY'
+          import asyncio, os, json
+          import httpx
+          BASE = os.environ['SUPABASE_URL'].rstrip('/')
+          KEY  = os.environ['SUPABASE_SERVICE_KEY']
+          TABLES = ['operators', 'users', 'routes', 'stops', 'vehicles', 'trips', 'alerts']
+          async def main():
+              headers = {
+                  'apikey': KEY,
+                  'Authorization': f'Bearer {KEY}',
+                  'Prefer': 'count=exact',
+                  'Accept': 'application/json',
+              }
+              out = {}
+              async with httpx.AsyncClient(timeout=15.0) as c:
+                  for t in TABLES:
+                      r = await c.head(f'{BASE}/rest/v1/{t}', headers=headers)
+                      out[t] = int(r.headers.get('content-range', '*/0').split('/')[-1])
+              with open('counts_today.json', 'w') as f:
+                  json.dump(out, f, indent=2)
+              print(json.dumps(out, indent=2))
+          asyncio.run(main())
+          PY
+
+      - name: Diff against previous baseline
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Pull the previous run's counts artifact, fall back to current as baseline.
+          PREV="counts_prev.json"
+          gh run download \
+              --name "row-counts-baseline" \
+              --dir . 2>/dev/null || cp counts_today.json "$PREV"
+
+          python - <<'PY'
+          import json, sys
+          today = json.load(open('counts_today.json'))
+          prev  = json.load(open('counts_prev.json'))
+          THRESHOLD = 0.20  # 20% drop is the alarm
+          bad = []
+          for t, n in today.items():
+              p = prev.get(t, n)
+              if p > 50 and n < p * (1 - THRESHOLD):
+                  bad.append((t, p, n))
+                  print(f'!! {t}: was {p}, now {n} ({(p-n)/p:.0%} drop)')
+              else:
+                  print(f'   {t}: {p} → {n}')
+          if bad:
+              print('\nFAIL: row count(s) dropped more than 20%.')
+              sys.exit(1)
+          print('\nOK: row counts within tolerance.')
+          PY
+
+      - name: Publish counts as next baseline
+        uses: actions/upload-artifact@v4
+        with:
+          name: row-counts-baseline
+          path: counts_today.json
+          retention-days: 30
+
+  backup-vercel-config:
+    name: Backup Vercel Deployment Config
+    runs-on: ubuntu-latest
+    needs: backup-supabase
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      - name: Export Vercel environment variables list
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          # Export env var names (not values) for auditing
+          vercel env ls --token "$VERCEL_TOKEN" --yes 2>/dev/null \
+            | tee vercel-env-manifest-$(date -u +%Y-%m-%d).txt \
+            || echo "Vercel CLI env listing not available in this format"
+
+          # Capture current deployment info
+          vercel ls --token "$VERCEL_TOKEN" --yes 2>/dev/null \
+            | head -20 \
+            | tee vercel-deployments-$(date -u +%Y-%m-%d).txt \
+            || echo "Vercel CLI deployments listing"
+
+      - name: Upload Vercel config artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vercel-config-${{ github.run_id }}
+          path: |
+            vercel-env-manifest-*.txt
+            vercel-deployments-*.txt
+            vercel.json
+          retention-days: 30

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleDevelopmentRegion</key><string>ar</string>
+  <key>CFBundleDisplayName</key><string>نقل دمشق</string>
+  <key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>
+  <key>CFBundleIdentifier</key><string>sy.gov.damascus.transit</string>
+  <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+  <key>CFBundleName</key><string>DamascusTransit</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleShortVersionString</key><string>1.0.0</string>
+  <key>CFBundleSignature</key><string>????</string>
+  <key>CFBundleVersion</key><string>1</string>
+  <key>LSRequiresIPhoneOS</key><true/>
+  <key>UILaunchStoryboardName</key><string>LaunchScreen</string>
+  <key>UIMainStoryboardFile</key><string>Main</string>
+  <key>UISupportedInterfaceOrientations</key>
+  <array>
+    <string>UIInterfaceOrientationPortrait</string>
+  </array>
+  <key>UISupportedInterfaceOrientations~ipad</key>
+  <array>
+    <string>UIInterfaceOrientationPortrait</string>
+    <string>UIInterfaceOrientationPortraitUpsideDown</string>
+  </array>
+  <key>UIViewControllerBasedStatusBarAppearance</key><false/>
+  <key>UIStatusBarStyle</key><string>UIStatusBarStyleLightContent</string>
+  <key>CADisableMinimumFrameDurationOnPhone</key><true/>
+
+  <!-- RTL -->
+  <key>CFBundleLocalizations</key>
+  <array>
+    <string>ar</string>
+    <string>en</string>
+  </array>
+
+  <!-- Location -->
+  <key>NSLocationWhenInUseUsageDescription</key>
+  <string>نستخدم موقعك لإظهار أقرب الحافلات والمحطات إليك.</string>
+  <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+  <string>يستخدم تطبيق السائق GPS أثناء الرحلة لإرسال موقع الحافلة للركاب.</string>
+  <key>NSLocationAlwaysUsageDescription</key>
+  <string>يستخدم تطبيق السائق GPS أثناء الرحلة لإرسال موقع الحافلة للركاب.</string>
+  <key>UIBackgroundModes</key>
+  <array>
+    <string>location</string>
+    <string>fetch</string>
+    <string>remote-notification</string>
+  </array>
+
+  <!-- Biometrics -->
+  <key>NSFaceIDUsageDescription</key>
+  <string>نستخدم Face ID لتأكيد دخول السائق.</string>
+
+  <!-- Camera (incident photos) -->
+  <key>NSCameraUsageDescription</key>
+  <string>تستخدم الكاميرا للإبلاغ عن الحوادث مع صور توضيحية.</string>
+
+  <key>ITSAppUsesNonExemptEncryption</key><false/>
+
+  <!-- Step 30: deep links -->
+  <key>CFBundleURLTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleURLName</key>
+      <string>sy.gov.damascus.transit</string>
+      <key>CFBundleURLSchemes</key>
+      <array>
+        <string>damascustransit</string>
+      </array>
+    </dict>
+  </array>
+  <!-- Universal links: requires apple-app-site-association at the domain. -->
+  <key>com.apple.developer.associated-domains</key>
+  <array>
+    <string>applinks:damascustransit.sy</string>
+  </array>
+</dict>
+</plist>
