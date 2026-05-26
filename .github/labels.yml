@@ -1,0 +1,98 @@
+# Step 97 — repository label taxonomy.
+#
+# Apply this with `npx github-label-sync --access-token $GH_TOKEN --labels .github/labels.yml actuatorsos/SyrianTransitSystem`
+# or with the github-label-sync GitHub App. Re-applying is idempotent.
+#
+# Three axes: kind, area, priority. Plus a small handful of contributor signals.
+
+- name: good first issue
+  color: 7057ff
+  description: Self-contained, well-scoped work suitable for a first PR.
+- name: help wanted
+  color: 008672
+  description: Owner welcomes outside contribution on this.
+- name: needs design
+  color: d4c5f9
+  description: Awaiting UX direction before implementation can start.
+
+# ── kind ─────────────────────────────────────────────────────────────────
+- name: kind/feature
+  color: 1d76db
+  description: New user-visible capability.
+- name: kind/bug
+  color: d73a4a
+  description: Something is broken.
+- name: kind/security
+  color: ee0701
+  description: Vulnerability or hardening work.
+- name: kind/perf
+  color: fbca04
+  description: Performance, latency, or efficiency improvement.
+- name: kind/docs
+  color: 0e8a16
+  description: Documentation only.
+- name: kind/test
+  color: c2e0c6
+  description: Test coverage or test infra.
+- name: kind/refactor
+  color: bfd4f2
+  description: No behaviour change.
+- name: kind/chore
+  color: bfdadc
+  description: Repo maintenance.
+
+# ── area ─────────────────────────────────────────────────────────────────
+- name: area/backend
+  color: 5319e7
+  description: FastAPI + Supabase + PostgREST.
+- name: area/web
+  color: 1d76db
+  description: public/ HTML+CSS+JS apps.
+- name: area/flutter
+  color: 02569B
+  description: flutter_app/ Dart codebase.
+- name: area/capacitor
+  color: 119EFF
+  description: mobile/ Capacitor wrapper.
+- name: area/ci
+  color: 0052cc
+  description: GitHub Actions, pre-commit, automation.
+- name: area/db
+  color: 6e5494
+  description: Schema, migrations, PostGIS.
+- name: area/design
+  color: f9a826
+  description: Design system, illustrations, Claude visual language.
+- name: area/ops
+  color: 444444
+  description: Deployment, monitoring, runbooks.
+
+# ── priority ─────────────────────────────────────────────────────────────
+- name: p0
+  color: b60205
+  description: Drop everything. SEV-1.
+- name: p1
+  color: d93f0b
+  description: This sprint.
+- name: p2
+  color: fbca04
+  description: Next sprint.
+- name: p3
+  color: 0e8a16
+  description: Backlog, no SLA.
+
+# ── status ───────────────────────────────────────────────────────────────
+- name: status/blocked
+  color: e99695
+  description: Waiting on an external party or another issue.
+- name: status/in-review
+  color: bfdadc
+  description: PR open, awaiting review.
+
+# ── roadmap pointer ──────────────────────────────────────────────────────
+- name: roadmap-100
+  color: c5def5
+  description: Implements a step from ROADMAP_100.md.
+- name: v2.0
+  color: fef2c0
+  description: Reserved for the Flutter v2.0 migration milestone.

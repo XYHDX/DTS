@@ -1,0 +1,77 @@
+# Environment
+.env
+.env.local
+.env.production
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Node
+node_modules/
+
+# Vercel
+.vercel/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Nested repositories / local working copies
+damascus-transit-platform/
+
+# Test cache artifacts
+pytest-cache-files-*/
+.pytest_cache/
+.coverage
+htmlcov/
+.vercel
+
+# Flutter
+flutter_app/.dart_tool/
+flutter_app/.flutter-plugins
+flutter_app/.flutter-plugins-dependencies
+flutter_app/.packages
+flutter_app/build/
+flutter_app/.idea/
+flutter_app/*.iml
+flutter_app/android/.gradle/
+flutter_app/android/app/google-services.json
+flutter_app/ios/Pods/
+flutter_app/ios/Runner/GoogleService-Info.plist
+flutter_app/ios/Flutter/Flutter.framework
+flutter_app/ios/Flutter/Flutter.podspec
+flutter_app/lib/**/*.g.dart
+flutter_app/lib/**/*.freezed.dart
+
+# Generated protobuf
+api/proto/*_pb2.py
+flutter_app/lib/core/proto/*.pb.dart
+firmware/sim900a-reference/proto/*.pb.cc
+firmware/sim900a-reference/proto/*.pb.h
+
+# Build artefacts
+mobile/android/app/build/
+mobile/android/.gradle/
+mobile/ios/App/Pods/
+mobile/ios/App/App.xcworkspace/xcuserdata/
+
+# Screen mockup renders
+source/mobile/store-assets/*.png
+
+# Test outputs
+test-results/
+playwright-report/
+coverage/
+
+# Editor
+.idea/
+.vscode/
+

@@ -1,0 +1,30 @@
+# Node
+node_modules/
+
+# Capacitor native projects (generated — track only config and custom source)
+# Note: if you want to track the full android/ and ios/ scaffold, remove these lines.
+# For CI/CD it is common to run `npx cap sync` as part of the build pipeline.
+
+# Secrets — NEVER commit
+android/app/google-services.json
+ios/App/App/GoogleService-Info.plist
+android/app/release/
+
+# Android build artifacts
+android/.gradle/
+android/app/build/
+android/build/
+*.apk
+*.aab
+
+# iOS build artifacts
+ios/App/Pods/
+ios/App/App.xcworkspace/
+ios/.build/
+*.ipa
+*.xcarchive
+DerivedData/
+
+# Android keystore (NEVER commit)
+*.jks
+*.keystore

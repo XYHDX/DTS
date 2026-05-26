@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0E5650">
+<title>لوحة الإدارة — نقل دمشق</title>
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200;300;400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<link rel="stylesheet" href="/lib/design-system.css">
+
+<style>
+  .admin-shell {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    min-height: 100vh;
+  }
+  .sidebar {
+    background: var(--brand-800);
+    color: rgba(255,255,255,.85);
+    padding: var(--s-5) var(--s-3);
+    border-inline-end: 1px solid var(--brand-900);
+    display: flex; flex-direction: column;
+  }
+  .sidebar__brand {
+    display:flex; align-items:center; gap: var(--s-3);
+    color:#fff; font-weight:700; padding: 0 var(--s-3) var(--s-5);
+    border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+  .sidebar__brand-mark {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--brand-500), var(--gold-600));
+    display: grid; place-items: center; color:#fff; font-weight:800;
+  }
+  .sidebar nav {
+    margin-top: var(--s-4);
+    display: flex; flex-direction: column; gap: var(--s-1);
+  }
+  .sidebar nav a {
+    display: flex; align-items: center; gap: var(--s-3);
+    padding: var(--s-3); border-radius: var(--r-md);
+    color: rgba(255,255,255,.7);
+    font-weight: 500;
+    transition: background var(--t-fast);
+  }
+  .sidebar nav a:hover { background: rgba(255,255,255,.06); color: #fff; text-decoration:none; }
+  .sidebar nav a.is-active { background: rgba(255,255,255,.12); color: #fff; }
+  .sidebar nav svg { width: 18px; height: 18px; }
+  .sidebar__footer {
+    margin-top: auto;
+    padding-top: var(--s-4);
+    border-top: 1px solid rgba(255,255,255,.08);
+  }
+  .sidebar__user {
+    display: flex; align-items: center; gap: var(--s-3);
+    padding: var(--s-3); color: rgba(255,255,255,.85);
+    font-size: var(--fs-sm);
+  }
+  .sidebar__user .avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--brand-500);
+    display: grid; place-items: center; color: #fff; font-weight: 700;
+  }
+
+  .main { padding: var(--s-5) var(--s-6) var(--s-8); }
+  .topbar {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: var(--s-5);
+  }
+  .pagetitle h1 { margin: 0; font-size: var(--fs-2xl); }
+  .pagetitle p { margin: 0; color: var(--color-text-mute); }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-4); margin-bottom: var(--s-5); }
+  .kpi {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-lg);
+    padding: var(--s-4);
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi::after {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: -20px;
+    width: 80px;
+    background: linear-gradient(135deg, transparent, var(--brand-100));
+    opacity: .4;
+  }
+  .kpi__label { color: var(--color-text-mute); font-size: var(--fs-xs); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .kpi__value { font-size: var(--fs-3xl); font-weight: 700; line-height: 1; margin: var(--s-2) 0; font-variant-numeric: tabular-nums; }
+  .kpi__delta { font-size: var(--fs-sm); font-weight: 600; }
+  .kpi__delta.up { color: var(--success); }
+  .kpi__delta.down { color: var(--danger); }
+
+  .grid-2col { display: grid; grid-template-columns: 1.5fr 1fr; gap: var(--s-5); }
+  .panel {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+  }
+  .panel__header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: var(--s-4) var(--s-5);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .panel__header h2 { margin: 0; font-size: var(--fs-md); font-weight: 700; }
+  .panel__body { padding: var(--s-4) var(--s-5); }
+  #map { height: 460px; }
+
+  .alert-row {
+    display: grid; grid-template-columns: auto 1fr auto; gap: var(--s-3);
+    align-items: center; padding: var(--s-3) 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .alert-row:last-child { border-bottom: 0; }
+  .alert-row__icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: var(--color-surface-2);
+    display: grid; place-items: center;
+  }
+  .alert-row__icon.warn { background: #fbeed5; color: #7a4c0d; }
+  .alert-row__icon.danger { background: #fbe1de; color: #7c241c; }
+
+  @media (max-width: 1024px) {
+    .admin-shell { grid-template-columns: 1fr; }
+    .sidebar { position: sticky; top: 0; z-index: 30; }
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .grid-2col { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="admin-shell">
+
+  <aside class="sidebar" aria-label="القائمة الجانبية">
+    <a href="/" class="sidebar__brand">
+      <span class="sidebar__brand-mark">DT</span>
+      <span>نقل دمشق</span>
+    </a>
+
+    <nav aria-label="إدارة">
+      <a href="/admin/" class="is-active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        النظرة العامة
+      </a>
+      <a href="/admin/vehicles.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13l1.5-7h15L21 13M4 13v6h2v-2h12v2h2v-6"/><circle cx="7" cy="16" r="1"/><circle cx="17" cy="16" r="1"/></svg>
+        الحافلات
+      </a>
+      <a href="/admin/users.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="4"/><path d="M2 22v-1a7 7 0 0 1 14 0v1"/><circle cx="17" cy="6" r="3"/><path d="M22 22v-1a5 5 0 0 0-5-5"/></svg>
+        المستخدمون
+      </a>
+      <a href="/admin/routes.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v18M18 3v18M6 7h12M6 12h12M6 17h12"/></svg>
+        الخطوط
+      </a>
+      <a href="/admin/alerts.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 22h20L12 2Z"/><path d="M12 9v5"/><circle cx="12" cy="18" r=".5" fill="currentColor"/></svg>
+        التنبيهات
+      </a>
+      <a href="/dashboard/analytics.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-7"/></svg>
+        التحليلات
+      </a>
+    </nav>
+
+    <div class="sidebar__footer">
+      <div class="sidebar__user">
+        <div class="avatar" id="user-initial">؟</div>
+        <div>
+          <div id="user-name">المسؤول</div>
+          <div style="color:rgba(255,255,255,.5);font-size:var(--fs-xs)" id="user-role">—</div>
+        </div>
+      </div>
+      <button class="btn btn--ghost btn--sm" id="logout-btn" style="width:100%;background:rgba(255,255,255,.05);color:#fff;border-color:rgba(255,255,255,.12)">خروج</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="pagetitle">
+        <h1>النظرة العامة</h1>
+        <p>حالة الأسطول، التنبيهات، والخريطة المباشرة.</p>
+      </div>
+      <div class="cluster">
+        <span class="badge badge--success"><span class="live-dot"></span> مباشر</span>
+        <button class="btn btn--ghost btn--sm" id="refresh-btn">تحديث</button>
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="kpi__label">الحافلات العاملة</div>
+        <div class="kpi__value" id="kpi-active">—</div>
+        <div class="kpi__delta up" id="kpi-active-delta">+٢ منذ الأمس</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi__label">إجمالي الرحلات اليوم</div>
+        <div class="kpi__value" id="kpi-trips">—</div>
+        <div class="kpi__delta up" id="kpi-trips-delta">+١٢٪</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi__label">متوسط الإشغال</div>
+        <div class="kpi__value" id="kpi-occ">—</div>
+        <div class="kpi__delta" id="kpi-occ-delta">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi__label">تنبيهات مفتوحة</div>
+        <div class="kpi__value" id="kpi-alerts">—</div>
+        <div class="kpi__delta down" id="kpi-alerts-delta">٣ عاجلة</div>
+      </div>
+    </div>
+
+    <div class="grid-2col">
+      <section class="panel">
+        <div class="panel__header">
+          <h2>الخريطة المباشرة</h2>
+          <span class="badge badge--brand">يُحدَّث كل ٥ ثوانٍ</span>
+        </div>
+        <div id="map"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel__header">
+          <h2>التنبيهات الأخيرة</h2>
+          <a href="/admin/alerts.html" class="text-sm">عرض الكل ←</a>
+        </div>
+        <div class="panel__body" id="alerts-list" aria-busy="true">
+          <div class="alert-row">
+            <div class="alert-row__icon"><div class="skeleton" style="width:20px;height:20px"></div></div>
+            <div><div class="skeleton" style="width:60%;height:1em;margin-bottom:6px"></div><div class="skeleton" style="width:40%;height:.8em"></div></div>
+            <span></span>
+          </div>
+          <div class="alert-row">
+            <div class="alert-row__icon"><div class="skeleton" style="width:20px;height:20px"></div></div>
+            <div><div class="skeleton" style="width:60%;height:1em;margin-bottom:6px"></div><div class="skeleton" style="width:40%;height:.8em"></div></div>
+            <span></span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script>
+'use strict';
+const $ = (s,r=document) => r.querySelector(s);
+const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:8000' : '';
+const arDigit = (n) => (n==null || isNaN(n)) ? '—' : Number(n).toLocaleString('ar-EG',{maximumFractionDigits:0});
+
+// ----- Auth guard -----
+const token = localStorage.getItem('dt_token') || sessionStorage.getItem('dt_token');
+const user = JSON.parse(localStorage.getItem('dt_user') || sessionStorage.getItem('dt_user') || 'null');
+if (!token) { location.href = '/admin/login.html'; }
+if (user) {
+  $('#user-name').textContent = user.name || user.email || 'المسؤول';
+  $('#user-role').textContent = user.role || '—';
+  $('#user-initial').textContent = (user.name || user.email || '?').slice(0,1).toUpperCase();
+}
+$('#logout-btn').addEventListener('click', () => {
+  localStorage.removeItem('dt_token'); localStorage.removeItem('dt_user');
+  sessionStorage.removeItem('dt_token'); sessionStorage.removeItem('dt_user');
+  location.href = '/admin/login.html';
+});
+
+async function api(path) {
+  try {
+    const r = await fetch(API_BASE + path, { headers: { 'Authorization':'Bearer '+token, 'Accept':'application/json' }});
+    if (r.status === 401) { location.href = '/admin/login.html'; return null; }
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    return await r.json();
+  } catch (e) { console.warn(path, e); return null; }
+}
+
+// ----- KPIs -----
+async function loadKpis() {
+  const stats = await api('/api/stats');
+  const overview = await api('/api/admin/analytics/overview') || {};
+  if (stats) {
+    $('#kpi-active').textContent = arDigit(stats.active_vehicles);
+    $('#kpi-occ').textContent = stats.avg_occupancy != null ? Math.round(stats.avg_occupancy) + '٪' : '—';
+  }
+  $('#kpi-trips').textContent = arDigit(overview.trips_today);
+  $('#kpi-alerts').textContent = arDigit(overview.open_alerts);
+}
+
+// ----- Alerts -----
+async function loadAlerts() {
+  const alerts = await api('/api/admin/alerts?limit=5');
+  const list = $('#alerts-list');
+  list.setAttribute('aria-busy', 'false');
+  if (!alerts || !alerts.length) {
+    list.innerHTML = '<div class="muted center">لا تنبيهات جديدة.</div>';
+    return;
+  }
+  list.innerHTML = alerts.map(a => {
+    const sev = a.severity === 'critical' ? 'danger' : a.severity === 'high' ? 'danger' : 'warn';
+    return `
+      <div class="alert-row">
+        <div class="alert-row__icon ${sev}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.7 3h16.96a2 2 0 0 0 1.7-3L13.7 3.86a2 2 0 0 0-3.4 0Z"/></svg>
+        </div>
+        <div>
+          <div class="font-bold">${a.title || a.type || 'تنبيه'}</div>
+          <div class="text-xs muted">${a.vehicle_code || ''} · ${a.created_at ? new Date(a.created_at).toLocaleTimeString('ar-EG') : ''}</div>
+        </div>
+        <span class="badge badge--${sev}">${a.severity || 'low'}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+// ----- Map -----
+let map;
+function initMap() {
+  map = new maplibregl.Map({
+    container: 'map',
+    style: { version: 8,
+      sources: { osm: { type:'raster', tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'], tileSize:256, attribution:'© OpenStreetMap' } },
+      layers: [{ id:'osm', type:'raster', source:'osm' }] },
+    center: [36.291, 33.513],
+    zoom: 12,
+  });
+  map.addControl(new maplibregl.NavigationControl({showCompass:false}), 'top-left');
+  map.on('load', () => {
+    map.addSource('vehicles', { type:'geojson', data:{type:'FeatureCollection',features:[]} });
+    map.addLayer({ id:'vehicles', type:'circle', source:'vehicles',
+      paint: { 'circle-radius':7, 'circle-color':'#00876f', 'circle-stroke-width':2, 'circle-stroke-color':'#fff' }});
+  });
+}
+
+function openStream() {
+  let es; try { es = new EventSource(API_BASE + '/api/stream'); } catch(_) { return; }
+  es.addEventListener('vehicles', (ev) => {
+    let data; try { data = JSON.parse(ev.data); } catch(_) { return; }
+    const list = data.positions || data.vehicles || data || [];
+    const features = list.map(v => ({
+      type:'Feature',
+      geometry:{ type:'Point', coordinates:[v.lon ?? v.longitude, v.lat ?? v.latitude] },
+      properties:{ id: v.vehicle_id || v.id }
+    })).filter(f => f.geometry.coordinates.every(Number.isFinite));
+    if (map?.getSource && map.getSource('vehicles')) map.getSource('vehicles').setData({type:'FeatureCollection',features});
+  });
+}
+
+$('#refresh-btn').addEventListener('click', () => { loadKpis(); loadAlerts(); });
+
+window.addEventListener('DOMContentLoaded', () => {
+  initMap();
+  loadKpis();
+  loadAlerts();
+  setTimeout(openStream, 800);
+  setInterval(loadKpis, 30000);
+});
+</script>
+</body>
+</html>

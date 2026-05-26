@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Adaptive splash screen background.
+    The icon layer is defined as @drawable/ic_launcher_foreground.
+    Background is the brand dark-green (#002623).
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <color android:color="@color/colorPrimary" />
+    </item>
+    <item
+        android:gravity="center"
+        android:width="200dp"
+        android:height="200dp">
+        <bitmap
+            android:src="@mipmap/ic_launcher"
+            android:gravity="center" />
+    </item>
+</layer-list>

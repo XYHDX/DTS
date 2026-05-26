@@ -1,0 +1,638 @@
+/* ============================================================
+ * DamascusTransit — Syrian National Identity design system
+ * Refreshed 25 May 2026, inspired by the post-2024 Syrian visual
+ * identity (independence flag): green, white, black, with red stars.
+ *
+ * Reference site: https://mofaex.gov.sy/en  (Ministry of Foreign Affairs)
+ *
+ * Palette anchors:
+ *   --national-green : the band at the top of the flag
+ *   --national-red   : the colour of the three stars
+ *   ink-on-paper rest is black on white for maximum gravitas.
+ * Typography:
+ *   Latin headlines: a stately serif (EB Garamond / Cormorant)
+ *   Arabic everything: IBM Plex Sans Arabic, semibold for emphasis.
+ * Class names preserved — every existing page picks up the new tokens
+ * without any markup change.
+ * ============================================================ */
+
+:root {
+  /* ---- National palette — refined per the July 2025 Syrian Identity Team brief.
+     Dark teal-green PRIMARY (modernised flag green, more refined and distinguished).
+     Light gold SECONDARY (land, heritage, enduring elegance).
+     Three red stars retained as the symbol of the people. ---- */
+  --national-green-950: #061F1B;
+  --national-green-900: #0A302A;
+  --national-green-800: #0E443B;
+  --national-green-700: #115148;
+  --national-green:     #0E5650;   /* primary dark teal-green */
+  --national-green-500: #1F7068;
+  --national-green-400: #4A9189;
+  --national-green-300: #82B5AF;
+  --national-green-200: #BAD6D2;
+  --national-green-100: #DCEAE7;
+  --national-green-50:  #EDF4F2;
+
+  /* ---- Gold — the second pillar of the new identity ---- */
+  --national-gold-900: #5E461A;
+  --national-gold-800: #7A5D26;
+  --national-gold-700: #9C7A3A;
+  --national-gold:     #C9A95B;   /* canonical light gold */
+  --national-gold-500: #D6B975;
+  --national-gold-400: #E2CB93;
+  --national-gold-300: #ECDCB5;
+  --national-gold-200: #F2E7CC;
+  --national-gold-100: #F8F1DE;
+  --national-gold-50:  #FCF8EE;
+
+  --national-red-900: #6e0712;
+  --national-red-700: #9b121e;
+  --national-red:     #CE1126;     /* the three stars */
+  --national-red-500: #de2738;
+  --national-red-100: #fbe1e4;
+
+  --ink-black:    #0B0B0B;
+  --ink-paper:    #FFFFFF;
+
+  /* Aliases kept so the rest of the codebase doesn't churn */
+  --brand-900: var(--national-green-900);
+  --brand-800: var(--national-green-800);
+  --brand-700: var(--national-green-700);
+  --brand-600: var(--national-green);
+  --brand-500: var(--national-green-500);
+  --brand-400: var(--national-green-400);
+  --brand-300: var(--national-green-300);
+  --brand-200: var(--national-green-200);
+  --brand-100: var(--national-green-100);
+  --brand-50:  var(--national-green-50);
+
+  /* Gold replaces the old placeholder gold/coral so legacy classes stay consistent */
+  --gold-700: var(--national-gold-700);
+  --gold-600: var(--national-gold);
+  --gold-500: var(--national-gold-500);
+  --gold-100: var(--national-gold-100);
+
+  /* ---- Semantic ---- */
+  --color-bg:        #FAFAF7;       /* warm paper — government-document feel */
+  --color-surface:   #FFFFFF;
+  --color-surface-2: #F0F2EE;
+  --color-border:    #D9DDD5;
+  --color-text:      var(--ink-black);
+  --color-text-soft: #3C3C3C;
+  --color-text-mute: #6A6A6A;
+  --color-link:      var(--national-green);
+
+  --success: var(--national-green);
+  --warning: #B5651D;
+  --danger:  var(--national-red);
+  --info:    #1F4E79;
+
+  /* ---- Type — chosen from the Behance reference of free Arabic typefaces
+   *      curated by Alaa Shalayel. Readex Pro (TypeTogether) is the most
+   *      refined Arabic + Latin pair on Google Fonts: variable weights
+   *      200–700, exceptional legibility at every size, designed for both
+   *      UI and editorial use. Source Serif 4 stays available for any
+   *      Latin display surface where a serif voice is wanted. */
+  --font-serif: 'Source Serif 4', Charter, 'Iowan Old Style', Georgia,
+                'Times New Roman', serif;
+  --font-sans:  'Readex Pro', 'IBM Plex Sans Arabic', 'Tajawal', 'Cairo',
+                system-ui, -apple-system, BlinkMacSystemFont,
+                'Segoe UI', Roboto, sans-serif;
+  --font-mono:  'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --fs-xs: 0.8125rem;
+  --fs-sm: 0.9375rem;
+  --fs-md: 1.0625rem;
+  --fs-lg: 1.25rem;
+  --fs-xl: 1.5rem;
+  --fs-2xl: 2rem;
+  --fs-3xl: 2.625rem;
+  --fs-4xl: 3.5rem;
+  --lh-tight: 1.2;
+  --lh-base:  1.6;
+  --lh-loose: 1.78;
+  --tracking-tight: -0.01em;
+
+  /* ---- Spacing ---- */
+  --s-1: 0.25rem;  --s-2: 0.5rem;  --s-3: 0.75rem;  --s-4: 1rem;
+  --s-5: 1.5rem;   --s-6: 2rem;    --s-8: 2.75rem;  --s-10: 3.5rem;
+  --s-12: 4.5rem;  --s-16: 6rem;
+
+  /* ---- Radius — disciplined, government-document feel ---- */
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 10px;
+  --r-xl: 16px;
+  --r-pill: 999px;
+
+  /* ---- Shadow — formal, not playful ---- */
+  --sh-sm:  0 1px 2px rgba(0, 0, 0, .05);
+  --sh-md:  0 4px 14px rgba(0, 0, 0, .08);
+  --sh-lg:  0 14px 40px rgba(0, 0, 0, .12);
+  --sh-focus: 0 0 0 3px rgba(0, 108, 53, .28);
+
+  /* ---- Motion ---- */
+  --t-fast: 120ms;
+  --t-base: 200ms;
+  --t-slow: 360ms;
+  --ease:   cubic-bezier(.2, .6, .25, 1);
+
+  /* ---- Layout ---- */
+  --container:        1180px;
+  --container-narrow: 720px;
+  --header-h: 76px;
+  --tap-min:  44px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg:        #0E120F;
+    --color-surface:   #161B17;
+    --color-surface-2: #1F2521;
+    --color-border:    #2A312C;
+    --color-text:      #EDEFEC;
+    --color-text-soft: #C5C9C5;
+    --color-text-mute: #8B928D;
+    --sh-sm:  0 1px 2px rgba(0,0,0,.35);
+    --sh-md:  0 6px 18px rgba(0,0,0,.45);
+    --sh-lg:  0 14px 38px rgba(0,0,0,.55);
+  }
+}
+[data-theme="dark"] {
+  --color-bg:        #0E120F;
+  --color-surface:   #161B17;
+  --color-surface-2: #1F2521;
+  --color-border:    #2A312C;
+  --color-text:      #EDEFEC;
+  --color-text-soft: #C5C9C5;
+  --color-text-mute: #8B928D;
+}
+[data-theme="light"] {
+  --color-bg:        #FAFAF7;
+  --color-surface:   #FFFFFF;
+  --color-surface-2: #F0F2EE;
+  --color-border:    #D9DDD5;
+  --color-text:      var(--ink-black);
+  --color-text-soft: #3C3C3C;
+  --color-text-mute: #6A6A6A;
+}
+
+/* ---- Reset ---- */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--fs-md);
+  line-height: var(--lh-base);
+  color: var(--color-text);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+img, svg { max-width: 100%; display: block; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; border: 0; background: transparent; }
+a { color: var(--color-link); text-decoration: none; transition: color var(--t-fast); }
+a:hover { color: var(--national-green-700); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+
+h1, h2, h3, h4, .display {
+  font-family: var(--font-serif);
+  letter-spacing: var(--tracking-tight);
+  font-weight: 500;
+  line-height: var(--lh-tight);
+  color: var(--color-text);
+}
+/* Arabic should not use Latin serif — looks broken */
+[dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3, [dir="rtl"] h4, [dir="rtl"] .display {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+/* ---- Focus ring ---- */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--sh-focus);
+  border-radius: var(--r-sm);
+}
+
+/* ---- RTL ---- */
+[dir="rtl"] { font-family: 'IBM Plex Sans Arabic', var(--font-sans); }
+
+/* ---- Layout primitives ---- */
+.container        { width: 100%; max-width: var(--container); margin-inline: auto; padding-inline: var(--s-5); }
+.container-narrow { width: 100%; max-width: var(--container-narrow); margin-inline: auto; padding-inline: var(--s-5); }
+.stack > * + *    { margin-block-start: var(--s-4); }
+.cluster          { display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: center; }
+.grid             { display: grid; gap: var(--s-4); }
+.grid-2           { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.grid-3           { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+
+/* ---- Government-style flag accent strip (used at top of every page) ---- */
+.flag-strip {
+  display: flex;
+  width: 100%;
+  height: 5px;
+}
+.flag-strip__green { flex: 1; background: var(--national-green); }
+.flag-strip__white { flex: 1; background: #FFF; }
+.flag-strip__black { flex: 1; background: var(--ink-black); position: relative; }
+.flag-strip__black::after {
+  content: "★ ★ ★";
+  position: absolute;
+  inset: 0;
+  color: var(--national-red);
+  font-size: 10px;
+  letter-spacing: 6px;
+  display: grid;
+  place-items: center;
+  background: #FFF;
+  flex: 1;
+}
+
+/* ---- Decorative Syrian geometric pattern — apply as a background layer.
+ *      Eight-pointed star + four-petal motif drawn as SVG, repeated.
+ *      Use sparingly: hero backgrounds, footer crowns, document watermarks. */
+.pattern-bg {
+  background-color: var(--color-surface);
+  background-image: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'>\
+<g fill='none' stroke='%23C9A95B' stroke-width='0.8' stroke-opacity='0.35'>\
+<polygon points='32,4 36,28 60,32 36,36 32,60 28,36 4,32 28,28'/>\
+<polygon points='32,12 34,30 52,32 34,34 32,52 30,34 12,32 30,30'/>\
+<circle cx='32' cy='32' r='4'/>\
+</g>\
+</svg>");
+  background-size: 64px 64px;
+  background-repeat: repeat;
+}
+.pattern-bg--gold-on-green {
+  background-color: var(--national-green);
+  background-image: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'>\
+<g fill='none' stroke='%23C9A95B' stroke-width='0.8' stroke-opacity='0.55'>\
+<polygon points='32,4 36,28 60,32 36,36 32,60 28,36 4,32 28,28'/>\
+<polygon points='32,12 34,30 52,32 34,34 32,52 30,34 12,32 30,30'/>\
+<circle cx='32' cy='32' r='4'/>\
+</g>\
+</svg>");
+  background-size: 64px 64px;
+  background-repeat: repeat;
+}
+
+/* ---- National emblem — a compact mark used in cards and watermarks.
+ *      Gold eight-pointed star inside a teal circle, three red stars above. */
+.emblem {
+  display: inline-grid;
+  place-items: center;
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: var(--national-green);
+  color: var(--national-gold);
+  font-size: 26px;
+  position: relative;
+}
+.emblem::before {
+  content: "❋";          /* eight-pointed glyph — placeholder for the eagle */
+  line-height: 1;
+}
+.emblem::after {
+  content: "★ ★ ★";
+  position: absolute;
+  top: -14px; inset-inline: 0;
+  text-align: center;
+  color: var(--national-red);
+  font-size: 9px;
+  letter-spacing: 3px;
+}
+
+/* ---- App header ---- */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  min-height: var(--header-h);
+  display: flex;
+  align-items: center;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+  padding-inline: var(--s-5);
+  box-shadow: var(--sh-sm);
+}
+.app-header__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  font-weight: 700;
+  font-size: var(--fs-lg);
+  color: var(--color-text);
+}
+.app-header__brand-mark {
+  width: 40px; height: 40px;
+  border-radius: var(--r-sm);
+  background: var(--national-green);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  position: relative;
+  overflow: hidden;
+}
+.app-header__brand-mark::after {
+  /* Subtle three-star motif on hover for the official feel */
+  content: "★";
+  position: absolute;
+  bottom: -2px;
+  inset-inline-end: 3px;
+  color: var(--national-red);
+  font-size: 9px;
+  opacity: .9;
+}
+.app-header__spacer { flex: 1; }
+.app-header__nav    { display: flex; gap: var(--s-1); align-items: center; }
+.app-header__nav a {
+  color: var(--color-text-soft);
+  padding: var(--s-2) var(--s-4);
+  border-radius: var(--r-sm);
+  font-weight: 500;
+  font-size: var(--fs-sm);
+  transition: background var(--t-fast), color var(--t-fast);
+  position: relative;
+}
+.app-header__nav a:hover { color: var(--national-green); text-decoration: none; }
+.app-header__nav a.is-active {
+  color: var(--national-green);
+  font-weight: 600;
+}
+.app-header__nav a.is-active::after {
+  content: "";
+  position: absolute;
+  inset-inline: 12px;
+  bottom: -10px;
+  height: 3px;
+  background: var(--national-green);
+}
+
+/* ---- Card ---- */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-md);
+  padding: var(--s-5);
+  transition: border-color var(--t-base), box-shadow var(--t-base), transform var(--t-base);
+}
+.card--hover:hover {
+  border-color: var(--national-green-300);
+  box-shadow: var(--sh-md);
+}
+.card__title { margin: 0 0 var(--s-2); font-size: var(--fs-lg); font-weight: 600; color: var(--color-text); }
+.card__meta  { color: var(--color-text-mute); font-size: var(--fs-sm); }
+
+/* ---- Buttons ---- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: var(--tap-min);
+  padding: var(--s-3) var(--s-5);
+  border-radius: var(--r-sm);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  background: var(--national-green);
+  color: #fff;
+  border: 1px solid var(--national-green);
+  transition: background var(--t-fast), border-color var(--t-fast), transform var(--t-fast), box-shadow var(--t-fast);
+  text-decoration: none;
+  letter-spacing: 0.01em;
+}
+.btn:hover { background: var(--national-green-700); border-color: var(--national-green-700); text-decoration: none; box-shadow: var(--sh-sm); }
+.btn:active { transform: translateY(1px); }
+.btn--ghost {
+  background: transparent;
+  color: var(--national-green);
+  border: 1px solid var(--national-green);
+}
+.btn--ghost:hover { background: var(--national-green-100); color: var(--national-green-800); }
+.btn--gold {
+  background: var(--ink-black);
+  border-color: var(--ink-black);
+  color: #fff;
+}
+.btn--gold:hover { background: #1f1f1f; border-color: #1f1f1f; }
+.btn--danger { background: var(--national-red); border-color: var(--national-red); }
+.btn--danger:hover { background: var(--national-red-700); border-color: var(--national-red-700); }
+.btn--block { width: 100%; }
+.btn--lg { font-size: var(--fs-md); padding: var(--s-4) var(--s-6); min-height: 52px; }
+.btn--sm { font-size: var(--fs-xs); padding: var(--s-2) var(--s-3); min-height: 36px; }
+.btn:disabled, .btn[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
+
+/* ---- Inputs ---- */
+.field { display: flex; flex-direction: column; gap: var(--s-2); }
+.field__label {
+  font-size: var(--fs-xs);
+  color: var(--color-text-soft);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.input, .select, .textarea {
+  appearance: none;
+  width: 100%;
+  min-height: var(--tap-min);
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--fs-md);
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+.input:focus, .select:focus, .textarea:focus {
+  border-color: var(--national-green);
+  box-shadow: var(--sh-focus);
+  outline: none;
+}
+.input[aria-invalid="true"] { border-color: var(--national-red); }
+.field__hint  { font-size: var(--fs-xs); color: var(--color-text-mute); }
+.field__error { font-size: var(--fs-xs); color: var(--national-red); }
+
+/* ---- Badge ---- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  padding: 2px var(--s-3);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  border-radius: var(--r-sm);
+  background: var(--color-surface-2);
+  color: var(--color-text-soft);
+  white-space: nowrap;
+  border: 1px solid var(--color-border);
+}
+.badge--success { background: var(--national-green-100); color: var(--national-green-800); border-color: var(--national-green-300); }
+.badge--warn    { background: #F4E8D9; color: #6A4413; border-color: #DBC59B; }
+.badge--danger  { background: var(--national-red-100); color: var(--national-red-900); border-color: #EBB5BA; }
+.badge--info    { background: #DEE8F3; color: #1F4E79; border-color: #BDCDE3; }
+.badge--brand   { background: var(--national-green-100); color: var(--national-green-800); border-color: var(--national-green-300); }
+.badge--star    { background: #FFF; color: var(--national-red); border-color: var(--national-red); font-weight: 700; }
+
+/* ---- Stats ---- */
+.stat {
+  display: flex; flex-direction: column; gap: var(--s-2);
+  padding: var(--s-5);
+  border-radius: var(--r-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-top: 3px solid var(--national-green);
+}
+.stat__label {
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-mute);
+  font-weight: 700;
+}
+.stat__value {
+  font-family: var(--font-serif);
+  font-size: var(--fs-3xl);
+  font-weight: 500;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+  letter-spacing: var(--tracking-tight);
+}
+[dir="rtl"] .stat__value { font-family: var(--font-sans); font-weight: 700; }
+.stat__sub { font-size: var(--fs-sm); color: var(--color-text-soft); }
+
+/* ---- Live dot ---- */
+.live-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--national-green);
+  box-shadow: 0 0 0 0 rgba(0,108,53,.55);
+  animation: pulse 2.2s infinite;
+  display: inline-block;
+}
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(0,108,53,.5); }
+  70%  { box-shadow: 0 0 0 8px rgba(0,108,53,0); }
+  100% { box-shadow: 0 0 0 0 rgba(0,108,53,0); }
+}
+
+/* ---- Skeleton ---- */
+.skeleton {
+  background: linear-gradient(90deg, var(--color-surface-2) 25%, var(--color-border) 37%, var(--color-surface-2) 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease infinite;
+  border-radius: var(--r-sm);
+}
+@keyframes shimmer { 0% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+/* ---- Bottom nav (mobile PWA) ---- */
+.tabbar {
+  position: fixed;
+  bottom: 0;
+  inset-inline: 0;
+  height: 64px;
+  display: grid;
+  grid-template-columns: repeat(var(--tabbar-cols, 4), 1fr);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 30;
+}
+.tabbar a, .tabbar button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: var(--color-text-mute);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  min-height: 44px;
+}
+.tabbar a.is-active, .tabbar button.is-active { color: var(--national-green); }
+.tabbar svg { width: 22px; height: 22px; }
+
+/* ---- Toast ---- */
+.toast {
+  position: fixed;
+  inset-inline: var(--s-4);
+  bottom: 80px;
+  background: var(--ink-black);
+  color: #fff;
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-sm);
+  box-shadow: var(--sh-lg);
+  z-index: 100;
+  animation: slideUp var(--t-slow) var(--ease);
+  font-size: var(--fs-sm);
+}
+@keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.offline-banner {
+  background: var(--warning);
+  color: #fff;
+  padding: var(--s-2) var(--s-4);
+  text-align: center;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.map { width: 100%; height: 100%; border-radius: var(--r-md); overflow: hidden; background: var(--color-surface-2); }
+
+.eyebrow {
+  display: inline-block;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--national-green);
+  margin-bottom: var(--s-3);
+}
+
+.prose {
+  font-size: var(--fs-md);
+  line-height: var(--lh-loose);
+  color: var(--color-text);
+  max-width: 65ch;
+}
+.prose h2 { margin-top: var(--s-8); font-size: var(--fs-2xl); }
+.prose h3 { margin-top: var(--s-6); font-size: var(--fs-lg); font-weight: 600; }
+.prose p  { margin: var(--s-4) 0; }
+
+/* ---- Utilities ---- */
+.muted { color: var(--color-text-mute); }
+.soft  { color: var(--color-text-soft); }
+.center { text-align: center; }
+.hidden { display: none !important; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.mt-0 { margin-top: 0 !important; }    .mt-4 { margin-top: var(--s-4); }
+.mt-6 { margin-top: var(--s-6); }       .mt-8 { margin-top: var(--s-8); }
+.mb-0 { margin-bottom: 0 !important; }  .mb-4 { margin-bottom: var(--s-4); }
+.flex { display: flex; }   .flex-1 { flex: 1; }
+.gap-2 { gap: var(--s-2); } .gap-3 { gap: var(--s-3); } .gap-4 { gap: var(--s-4); }
+.items-center { align-items: center; }
+.between { justify-content: space-between; }
+.text-lg { font-size: var(--fs-lg); }
+.text-sm { font-size: var(--fs-sm); }
+.text-xs { font-size: var(--fs-xs); }
+.font-bold { font-weight: 700; }
+
+/* ---- Star bullet — used on hero stats, branding marks ---- */
+.star { color: var(--national-red); font-style: normal; }
+
+@media (max-width: 640px) {
+  .container { padding-inline: var(--s-4); }
+  .hide-mobile { display: none !important; }
+}
+@media (min-width: 641px) { .show-mobile { display: none !important; } }
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}

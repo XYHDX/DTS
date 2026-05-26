@@ -1,0 +1,14 @@
+title = "Gitleaks Configuration for Damascus Transit System"
+
+# Global allowlist — paths and commits that contain only mock/test secrets
+[allowlist]
+description = "Test fixtures and historical commits with mock secrets"
+paths = [
+    '''tests/conftest\.py''',
+    '''tests/test_happy_paths\.py''',
+    '''tests/stub_server\.py''',
+    '''.github/workflows/ci\.yml''',
+]
+commits = [
+    "0370857786178f2eab7c44c451361820ba2d86a0",
+]

@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0E5650">
+<title>نقل دمشق — للسائقين</title>
+
+<link rel="manifest" href="/driver/manifest.json">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200;300;400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/lib/design-system.css">
+
+<style>
+  body { background: var(--color-bg); padding-bottom: 0; }
+  .driver-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .driver-bar {
+    background: var(--brand-800);
+    color: #fff;
+    padding: calc(env(safe-area-inset-top) + var(--s-4)) var(--s-4) var(--s-4);
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: var(--s-3);
+    align-items: center;
+  }
+  .driver-bar h1 { margin: 0; font-size: var(--fs-md); font-weight: 600; }
+  .driver-bar .vehicle-id { font-weight: 700; font-size: var(--fs-lg); }
+  .gps-pill {
+    display: inline-flex; align-items: center; gap: var(--s-2);
+    background: rgba(255,255,255,.1); color:#fff;
+    padding: var(--s-1) var(--s-3); border-radius: var(--r-pill);
+    font-size: var(--fs-xs); font-weight: 600;
+  }
+  .gps-pill .live-dot { background: var(--success); }
+  .gps-pill.is-off .live-dot { background: var(--danger); animation: none; }
+
+  .login-pane, .trip-pane {
+    flex: 1;
+    padding: var(--s-5) var(--s-4) var(--s-8);
+  }
+  .login-pane { display: grid; place-content: center; max-width: 420px; margin: 0 auto; }
+  .login-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    padding: var(--s-6);
+    border-radius: var(--r-lg);
+    box-shadow: var(--sh-md);
+    width: 100%;
+  }
+  .biometric-btn {
+    display: flex; align-items: center; justify-content: center; gap: var(--s-2);
+    width: 100%;
+    background: var(--color-surface-2);
+    color: var(--brand-700);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    padding: var(--s-3);
+    font-weight: 600;
+    margin-bottom: var(--s-3);
+  }
+
+  /* Trip controls */
+  .trip-header {
+    background: linear-gradient(180deg, var(--brand-800), var(--brand-700));
+    color: #fff;
+    padding: var(--s-4);
+    border-radius: var(--r-lg);
+    margin-bottom: var(--s-4);
+  }
+  .trip-header .route-name { font-size: var(--fs-xl); font-weight: 700; margin: var(--s-1) 0; }
+  .trip-header .next-stop { color: rgba(255,255,255,.8); font-size: var(--fs-sm); }
+
+  .big-button {
+    display: grid; place-items: center;
+    width: 100%; min-height: 72px;
+    border-radius: var(--r-lg);
+    font-size: var(--fs-xl);
+    font-weight: 700;
+    box-shadow: var(--sh-md);
+  }
+  .big-button--start { background: var(--brand-500); color: #fff; }
+  .big-button--end   { background: var(--danger);    color: #fff; }
+  .big-button:active { transform: translateY(1px); }
+
+  .counter {
+    display: grid;
+    grid-template-columns: 64px 1fr 64px;
+    align-items: center;
+    gap: var(--s-3);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-lg);
+    padding: var(--s-3);
+    margin-block: var(--s-4);
+  }
+  .counter button {
+    width: 64px; height: 64px; border-radius: var(--r-md);
+    background: var(--brand-50);
+    color: var(--brand-700);
+    font-size: 2rem; font-weight: 700;
+  }
+  .counter button:active { background: var(--brand-100); }
+  .counter__value {
+    text-align: center;
+    font-size: 3rem; font-weight: 700;
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .counter__label {
+    display: block;
+    text-align: center;
+    font-size: var(--fs-sm);
+    color: var(--color-text-mute);
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+  .meta-card {
+    background: var(--color-surface); border: 1px solid var(--color-border);
+    border-radius: var(--r-md); padding: var(--s-3);
+    text-align: center;
+  }
+  .meta-card__label { color: var(--color-text-mute); font-size: var(--fs-xs); font-weight: 600; text-transform: uppercase; }
+  .meta-card__value { font-size: var(--fs-xl); font-weight: 700; }
+
+  .incident-btn {
+    width: 100%;
+    background: rgba(181,58,48,.08);
+    color: var(--danger);
+    border: 1px dashed var(--danger);
+    border-radius: var(--r-md);
+    padding: var(--s-3);
+    font-weight: 600;
+    margin-top: var(--s-4);
+  }
+</style>
+</head>
+<body>
+<!-- National flag accent strip -->
+<div class="flag-strip" aria-hidden="true">
+  <span class="flag-strip__green"></span>
+  <span class="flag-strip__white"></span>
+  <span class="flag-strip__black"></span>
+</div>
+<div class="driver-shell">
+
+<div id="offline-banner" class="offline-banner hidden" role="status" data-i18n="driver.offline">دون اتصال — يتم تخزين المواقع محلياً وستُرسل عند العودة</div>
+
+<header class="driver-bar">
+  <div>
+    <div class="text-xs muted" style="color:rgba(255,255,255,.7)">حافلة</div>
+    <div class="vehicle-id" id="bar-vehicle">—</div>
+  </div>
+  <div class="center">
+    <span class="gps-pill" id="gps-pill">
+      <span class="live-dot" aria-hidden="true"></span>
+      <span id="gps-text">جاري الاتصال…</span>
+    </span>
+  </div>
+  <button id="logout-btn" class="btn btn--sm" style="background:rgba(255,255,255,.1);color:#fff" title="تسجيل الخروج">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 17l-5-5 5-5M5 12h14"/></svg>
+  </button>
+</header>
+
+<!-- Login pane -->
+<section id="login-pane" class="login-pane">
+  <div class="login-card">
+    <h2 class="card__title" style="font-size:var(--fs-xl);margin-bottom:var(--s-2)">دخول السائق</h2>
+    <p class="muted" style="margin-bottom:var(--s-5)">أدخل بريدك وكلمة المرور، أو استخدم البصمة إن كانت مفعّلة.</p>
+
+    <button id="biometric-btn" class="biometric-btn hidden">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 12a3 3 0 0 1 6 0v4a1 1 0 0 1-2 0v-4"/></svg>
+      الدخول ببصمة الإصبع
+    </button>
+
+    <form id="login-form" class="stack">
+      <div class="field">
+        <label class="field__label" for="email">البريد</label>
+        <input class="input" id="email" type="email" inputmode="email" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label class="field__label" for="password">كلمة المرور</label>
+        <input class="input" id="password" type="password" autocomplete="current-password" required>
+      </div>
+      <button class="btn btn--lg btn--block" type="submit">دخول</button>
+      <p class="field__error hidden" id="login-error">بيانات الدخول غير صحيحة</p>
+    </form>
+  </div>
+</section>
+
+<!-- Trip pane -->
+<section id="trip-pane" class="trip-pane hidden">
+
+  <div class="trip-header">
+    <div class="text-xs" style="color:rgba(255,255,255,.7);text-transform:uppercase">الخط الحالي</div>
+    <div class="route-name" id="route-name">—</div>
+    <div class="next-stop" id="next-stop">المحطة التالية: —</div>
+  </div>
+
+  <button id="start-trip" class="big-button big-button--start">▶ بدء الرحلة</button>
+  <button id="end-trip" class="big-button big-button--end hidden">■ إنهاء الرحلة</button>
+
+  <div id="trip-running" class="hidden">
+    <div class="counter" role="group" aria-label="عدّاد الركاب">
+      <button id="dec" aria-label="إنقاص">−</button>
+      <div>
+        <div class="counter__value" id="pax-count">٠</div>
+        <span class="counter__label">عدد الركاب</span>
+      </div>
+      <button id="inc" aria-label="زيادة">+</button>
+    </div>
+
+    <div class="meta-grid">
+      <div class="meta-card">
+        <div class="meta-card__label">السرعة</div>
+        <div class="meta-card__value" id="meta-speed">٠ <span class="text-xs muted">كم/س</span></div>
+      </div>
+      <div class="meta-card">
+        <div class="meta-card__label">المسافة</div>
+        <div class="meta-card__value" id="meta-dist">٠ <span class="text-xs muted">كم</span></div>
+      </div>
+      <div class="meta-card">
+        <div class="meta-card__label">المدة</div>
+        <div class="meta-card__value" id="meta-time">٠ <span class="text-xs muted">د</span></div>
+      </div>
+      <div class="meta-card">
+        <div class="meta-card__label">الإشغال</div>
+        <div class="meta-card__value" id="meta-occ">٠٪</div>
+      </div>
+    </div>
+
+    <button id="incident-btn" class="incident-btn">
+      🚨 الإبلاغ عن حادث
+    </button>
+  </div>
+</section>
+
+</div>
+
+<!-- Capacitor bridge for native plugins -->
+<script src="/lib/capacitor-bridge.js"></script>
+<script src="/lib/i18n.js" defer></script>
+<script>
+'use strict';
+const $ = (s, r=document) => r.querySelector(s);
+const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:8000' : '';
+const arDigit = (n) => Number(n).toLocaleString('ar-EG');
+
+let token = sessionStorage.getItem('dt_token') || null;
+let user  = JSON.parse(sessionStorage.getItem('dt_user') || 'null');
+let tripId = null;
+let pax = 0;
+let positionWatchStop = null;
+let tripStartedAt = null;
+let lastPos = null;
+let totalKm = 0;
+let timerInterval = null;
+
+function showLogin() {
+  $('#login-pane').classList.remove('hidden');
+  $('#trip-pane').classList.add('hidden');
+}
+function showTrip() {
+  $('#login-pane').classList.add('hidden');
+  $('#trip-pane').classList.remove('hidden');
+  $('#bar-vehicle').textContent = user?.vehicle_code || user?.vehicle_id || '—';
+  $('#route-name').textContent = user?.route_name || 'بانتظار تخصيص الخط';
+}
+
+function setOnline(on) {
+  $('#offline-banner').classList.toggle('hidden', on);
+}
+addEventListener('online', () => setOnline(true));
+addEventListener('offline', () => setOnline(false));
+setOnline(navigator.onLine);
+
+function setGps(connected, text) {
+  const pill = $('#gps-pill');
+  $('#gps-text').textContent = text || (connected ? 'مرتبط بالقمر' : 'بدون GPS');
+  pill.classList.toggle('is-off', !connected);
+}
+
+// ----- Login -----
+$('#login-form').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const email = $('#email').value.trim();
+  const password = $('#password').value;
+  $('#login-error').classList.add('hidden');
+  try {
+    const r = await fetch(API_BASE + '/api/auth/login', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({email, password}),
+    });
+    if (!r.ok) throw new Error('login');
+    const data = await r.json();
+    token = data.token || data.access_token;
+    user  = data.user || data;
+    sessionStorage.setItem('dt_token', token);
+    sessionStorage.setItem('dt_user', JSON.stringify(user));
+    showTrip();
+    setupGPS();
+  } catch (e) {
+    $('#login-error').classList.remove('hidden');
+  }
+});
+
+$('#logout-btn').addEventListener('click', () => {
+  sessionStorage.removeItem('dt_token');
+  sessionStorage.removeItem('dt_user');
+  token = null; user = null;
+  if (positionWatchStop) try { positionWatchStop(); } catch(_) {}
+  showLogin();
+});
+
+// ----- Biometric -----
+const cap = window.CapacitorBridge;
+if (cap && cap.IS_NATIVE) {
+  cap.getBiometryType().then(t => {
+    if (t && t !== 'none') $('#biometric-btn').classList.remove('hidden');
+  }).catch(()=>{});
+}
+$('#biometric-btn').addEventListener('click', async () => {
+  if (!cap) return;
+  const ok = await cap.authenticateBiometric('دخول السائق');
+  if (ok) {
+    // Use stored credentials (omitted: rely on backend session refresh)
+    $('#login-error').textContent = 'يرجى الدخول بالبريد وكلمة المرور أولاً';
+    $('#login-error').classList.remove('hidden');
+  }
+});
+
+// ----- GPS -----
+function setupGPS() {
+  if (cap && cap.IS_NATIVE) {
+    cap.requestLocationPermission().then(perm => {
+      if (perm === 'granted') {
+        positionWatchStop = cap.watchPosition(
+          (p) => onPosition(p.coords),
+          () => setGps(false, 'تعذّر الوصول للموقع')
+        );
+      }
+    });
+  } else if (navigator.geolocation) {
+    const id = navigator.geolocation.watchPosition(
+      (p) => onPosition(p.coords),
+      () => setGps(false, 'فعّل GPS من المتصفح'),
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+    );
+    positionWatchStop = () => navigator.geolocation.clearWatch(id);
+  }
+}
+
+function onPosition(c) {
+  setGps(true);
+  const speed = c.speed != null ? Math.max(0, Math.round(c.speed * 3.6)) : 0;
+  $('#meta-speed').innerHTML = arDigit(speed) + ' <span class="text-xs muted">كم/س</span>';
+
+  if (lastPos) {
+    const km = haversineKm(lastPos.latitude, lastPos.longitude, c.latitude, c.longitude);
+    if (km < 1) totalKm += km;  // ignore GPS jumps >1 km
+    $('#meta-dist').innerHTML = arDigit(totalKm.toFixed(1)) + ' <span class="text-xs muted">كم</span>';
+  }
+  lastPos = c;
+
+  if (tripId && token) {
+    fetch(API_BASE + '/api/driver/position', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
+      body: JSON.stringify({ lat: c.latitude, lon: c.longitude, speed, heading: c.heading })
+    }).catch(()=>{ /* queue offline-tolerant */ });
+  }
+}
+
+function haversineKm(lat1,lon1,lat2,lon2){
+  const R=6371; const toR=d=>d*Math.PI/180;
+  const dLat=toR(lat2-lat1), dLon=toR(lon2-lon1);
+  const a=Math.sin(dLat/2)**2 + Math.cos(toR(lat1))*Math.cos(toR(lat2))*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(a));
+}
+
+// ----- Trip controls -----
+$('#start-trip').addEventListener('click', async () => {
+  if (!token) return;
+  try {
+    const r = await fetch(API_BASE + '/api/driver/trip/start', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
+      body: '{}'
+    });
+    if (!r.ok) throw new Error('start');
+    const data = await r.json();
+    tripId = data.trip_id || data.id || 'local-' + Date.now();
+  } catch (_) {
+    tripId = 'local-' + Date.now();
+  }
+  tripStartedAt = Date.now();
+  totalKm = 0; pax = 0; lastPos = null;
+  $('#pax-count').textContent = arDigit(0);
+  $('#start-trip').classList.add('hidden');
+  $('#end-trip').classList.remove('hidden');
+  $('#trip-running').classList.remove('hidden');
+  timerInterval = setInterval(updateTimer, 1000);
+  if (cap?.startBackgroundGeolocation) cap.startBackgroundGeolocation((p) => onPosition(p.coords || p));
+});
+
+$('#end-trip').addEventListener('click', async () => {
+  if (timerInterval) clearInterval(timerInterval);
+  try {
+    await fetch(API_BASE + '/api/driver/trip/end', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
+      body: JSON.stringify({ trip_id: tripId, passengers: pax, distance_km: totalKm })
+    });
+  } catch (_) {}
+  tripId = null; tripStartedAt = null;
+  $('#start-trip').classList.remove('hidden');
+  $('#end-trip').classList.add('hidden');
+  $('#trip-running').classList.add('hidden');
+});
+
+function updateTimer() {
+  if (!tripStartedAt) return;
+  const mins = Math.floor((Date.now() - tripStartedAt) / 60000);
+  $('#meta-time').innerHTML = arDigit(mins) + ' <span class="text-xs muted">د</span>';
+}
+
+// ----- Passenger counter -----
+$('#inc').addEventListener('click', () => {
+  pax = Math.min(120, pax + 1);
+  $('#pax-count').textContent = arDigit(pax);
+  $('#meta-occ').textContent = arDigit(Math.round(pax / 60 * 100)) + '٪';
+  syncPax();
+  if (cap?.vibrate) cap.vibrate('LIGHT');
+});
+$('#dec').addEventListener('click', () => {
+  pax = Math.max(0, pax - 1);
+  $('#pax-count').textContent = arDigit(pax);
+  $('#meta-occ').textContent = arDigit(Math.round(pax / 60 * 100)) + '٪';
+  syncPax();
+  if (cap?.vibrate) cap.vibrate('LIGHT');
+});
+function syncPax() {
+  if (!tripId || !token) return;
+  fetch(API_BASE + '/api/driver/trip/passenger-count', {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
+    body: JSON.stringify({ trip_id: tripId, count: pax })
+  }).catch(()=>{});
+}
+
+// ----- Incident -----
+$('#incident-btn').addEventListener('click', async () => {
+  if (cap?.captureIncidentPhoto) {
+    try {
+      const photo = await cap.captureIncidentPhoto();
+      // POST photo to backend; backend uploads to storage
+      if (token && photo?.dataUrl) {
+        await fetch(API_BASE + '/api/driver/incident', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json','Authorization':'Bearer '+token},
+          body: JSON.stringify({ photo: photo.dataUrl, lat: lastPos?.latitude, lon: lastPos?.longitude })
+        });
+      }
+      alert('تم الإبلاغ');
+    } catch (_) {}
+  } else {
+    alert('الإبلاغ يتطلب التطبيق الأصلي. سيتم الإرسال نصياً.');
+  }
+});
+
+// ----- Boot -----
+window.addEventListener('DOMContentLoaded', () => {
+  if (token && user) { showTrip(); setupGPS(); } else showLogin();
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/driver/service-worker.js').catch(()=>{});
+});
+</script>
+</body>
+</html>

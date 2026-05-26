@@ -1,0 +1,7 @@
+[run]
+omit =
+    # Dead code: uses supabase-py which is not in requirements.txt
+    lib/auth.py
+    lib/database.py
+    # Diagnostic/debug endpoint, not part of main API
+    api/test.py

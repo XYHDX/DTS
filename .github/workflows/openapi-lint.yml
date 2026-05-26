@@ -1,0 +1,40 @@
+name: OpenAPI lint
+
+on:
+  push:
+    branches: [main]
+    paths: ['openapi.json', '.github/workflows/openapi-lint.yml']
+  pull_request:
+    branches: [main]
+    paths: ['openapi.json', '.github/workflows/openapi-lint.yml']
+
+jobs:
+  spectral:
+    name: Spectral
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Spectral
+        run: npm install -g @stoplight/spectral-cli@6.x
+
+      - name: Write ruleset
+        run: |
+          cat > .spectral.yaml <<'EOF'
+          extends: "spectral:oas"
+          rules:
+            operation-tag-defined: error
+            operation-tags: error
+            operation-description: warn
+            operation-operationId: warn
+            no-$ref-siblings: error
+            oas3-server-not-example.com: warn
+            oas3-server-trailing-slash: warn
+          EOF
+
+      - name: Lint openapi.json
+        run: spectral lint --ruleset .spectral.yaml --fail-severity=error openapi.json

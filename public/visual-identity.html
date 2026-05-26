@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0E5650">
+<meta name="description" content="نقل دمشق — دليل الهوية البصرية الرسمي، بنفس الطابع البصري الذي تعتمده وزارة الخارجية والمغتربين في الجمهورية العربية السورية.">
+<title>الهوية البصرية الرسمية — نقل دمشق</title>
+
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Readex Pro — refined Arabic + Latin pair by TypeTogether, featured in
+     Alaa Shalayel's Free Arabic Fonts reference (Behance). Variable weights
+     200–700, designed for both UI and editorial typography. Source Serif 4
+     paired for Latin display where serif is desired. -->
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200;300;400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+/* =========================================================================
+ *  Visual identity page — modelled on mofaex.gov.sy.
+ *  Dark teal-green chrome, gold geometric pattern overlay, white
+ *  service-card content. Typography: Readex Pro for all Arabic + Latin
+ *  body (chosen from Alaa Shalayel's Free Arabic Fonts reference),
+ *  Source Serif 4 for any Latin display, JetBrains Mono for code.
+ * ========================================================================= */
+:root {
+  --green-950: #061B17;
+  --green-900: #082B25;
+  --green-800: #0A3D34;
+  --green-700: #0C4A40;
+  --green:     #0E5650;     /* primary */
+  --green-100: #DCEAE7;
+
+  --gold:      #C9A95B;
+  --gold-700:  #9C7A3A;
+  --gold-100:  #F8F1DE;
+
+  --red:       #CE1126;
+
+  --paper:     #FFFFFF;
+  --bg:        #FAFAF7;
+  --ink:       #0B0B0B;
+  --ink-soft:  #3C3C3C;
+  --ink-mute:  #6A6A6A;
+  --border:    #E2DDD2;
+  --rule-dark: rgba(255,255,255,.12);
+
+  --serif: 'Source Serif 4', Charter, Georgia, 'Times New Roman', serif;
+  --sans:  'Readex Pro', 'IBM Plex Sans Arabic', system-ui,
+           -apple-system, BlinkMacSystemFont, sans-serif;
+  --mono:  'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+img, svg, picture { max-width: 100%; display: block; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; border: 0; background: transparent; }
+a { color: var(--gold-700); text-decoration: none; }
+a:hover { color: var(--gold); }
+
+h1, h2, h3, h4 { margin: 0; font-weight: 700; line-height: 1.2; color: var(--ink); }
+[dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3, [dir="rtl"] h4 { letter-spacing: 0; }
+
+/* ── Gold-on-green geometric pattern as a reusable background ──────────── */
+.pattern-on-green {
+  background-color: var(--green);
+  background-image: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'>\
+<g fill='none' stroke='%23C9A95B' stroke-width='1' stroke-opacity='0.42'>\
+<polygon points='36,4 40,32 68,36 40,40 36,68 32,40 4,36 32,32'/>\
+<polygon points='36,14 38,34 58,36 38,38 36,58 34,38 14,36 34,34'/>\
+<circle cx='36' cy='36' r='3'/>\
+</g></svg>");
+  background-size: 72px 72px;
+}
+
+/* =========================================================================
+ *  1. Top utility bar (mofaex-style)
+ * ========================================================================= */
+.utility {
+  background: var(--green-950);
+  color: rgba(255,255,255,.78);
+  font-size: 13px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule-dark);
+}
+.container { width: 100%; max-width: 1200px; margin-inline: auto; padding-inline: 24px; }
+.utility .container { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+.utility a { color: var(--gold); font-weight: 500; }
+.utility a:hover { color: #fff; }
+.utility .social { display: flex; gap: 14px; align-items: center; }
+.utility .social a { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,.06); }
+
+/* =========================================================================
+ *  2. Masthead — dark green with eagle + bilingual wordmark
+ * ========================================================================= */
+.masthead {
+  background: var(--green-900);
+  color: #fff;
+  padding: 28px 0;
+  border-bottom: 1px solid var(--gold);
+}
+.masthead .container { display: flex; align-items: center; gap: 18px; }
+.masthead .emblem {
+  width: 88px; height: 88px; border-radius: 6px;
+  background: #fff;
+  display: grid; place-items: center;
+  padding: 8px;
+  flex-shrink: 0;
+}
+.masthead .emblem img { width: 100%; height: 100%; object-fit: contain; }
+.masthead-text { flex: 1; min-width: 0; }
+.masthead-text h1 { color: #fff; font-size: 26px; font-weight: 700; }
+.masthead-text .tag {
+  display: block; margin-top: 4px;
+  color: var(--gold);
+  font-size: 12px;
+  letter-spacing: .08em; text-transform: uppercase; font-weight: 600;
+}
+.masthead-en { text-align: right; opacity: .9; font-size: 14px; color: rgba(255,255,255,.85); font-family: var(--serif); }
+.masthead-en strong { display: block; color: #fff; font-weight: 600; font-size: 16px; }
+[dir="rtl"] .masthead-en { text-align: left; }
+
+/* =========================================================================
+ *  3. Primary navigation (mofaex pattern)
+ * ========================================================================= */
+.nav-primary { background: var(--paper); border-bottom: 1px solid var(--border); }
+.nav-primary .container { display: flex; align-items: stretch; gap: 0; flex-wrap: wrap; }
+.nav-primary a {
+  display: inline-block;
+  padding: 18px 22px;
+  color: var(--ink-soft);
+  font-weight: 600;
+  font-size: 15px;
+  border-bottom: 3px solid transparent;
+  transition: color .15s, border-color .15s;
+}
+.nav-primary a:hover { color: var(--green); }
+.nav-primary a.is-active { color: var(--green); border-bottom-color: var(--gold); }
+.nav-primary .lang-toggle {
+  margin-inline-start: auto;
+  padding: 18px 22px;
+  color: var(--green);
+  font-weight: 700;
+  font-family: var(--mono);
+  font-size: 13px;
+  background: transparent;
+}
+
+/* =========================================================================
+ *  4. Hero — full-width dark green with pattern overlay
+ * ========================================================================= */
+.hero {
+  position: relative;
+  color: #fff;
+  padding: 88px 0 96px;
+  background-color: var(--green);
+  overflow: hidden;
+}
+.hero::before {
+  content: ""; position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'><g fill='none' stroke='%23C9A95B' stroke-width='1' stroke-opacity='0.36'><polygon points='36,4 40,32 68,36 40,40 36,68 32,40 4,36 32,32'/><polygon points='36,14 38,34 58,36 38,38 36,58 34,38 14,36 34,34'/></g></svg>");
+  background-size: 72px 72px;
+  pointer-events: none;
+}
+.hero .container { position: relative; z-index: 1; display: grid; gap: 48px; grid-template-columns: 1fr; align-items: center; }
+@media (min-width: 900px) { .hero .container { grid-template-columns: 1.3fr 1fr; } }
+.hero .eyebrow {
+  display: inline-block;
+  font-size: 13px; font-weight: 700;
+  letter-spacing: .18em; text-transform: uppercase;
+  color: var(--gold);
+  padding: 8px 14px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid var(--gold);
+  border-radius: 4px;
+}
+.hero h2 { color: #fff; font-size: clamp(2rem, 4.5vw, 3.4rem); line-height: 1.15; margin-top: 20px; }
+.hero p { font-size: 18px; color: rgba(255,255,255,.85); margin: 18px 0 0; max-width: 56ch; line-height: 1.75; }
+.hero .meta {
+  display: flex; gap: 32px; flex-wrap: wrap;
+  margin-top: 36px; padding-top: 28px;
+  border-top: 1px solid rgba(255,255,255,.18);
+  color: rgba(255,255,255,.7); font-size: 13px;
+}
+.hero .meta b { color: var(--gold); font-weight: 600; }
+
+.hero-emblem {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 10px;
+  padding: 32px;
+  text-align: center;
+}
+.hero-emblem img {
+  width: 100%; max-width: 260px;
+  margin-inline: auto;
+  background: #fff;
+  padding: 24px;
+  border-radius: 6px;
+}
+.hero-emblem figcaption {
+  margin-top: 16px;
+  color: var(--gold);
+  font-size: 12px;
+  letter-spacing: .08em; text-transform: uppercase; font-weight: 600;
+}
+
+/* =========================================================================
+ *  5. Section frame — alternating white and cream
+ * ========================================================================= */
+.section { padding: 80px 0; }
+.section.cream { background: var(--bg); }
+.section.paper { background: var(--paper); }
+.section.green { background: var(--green-900); color: #fff; }
+.section.green h2 { color: #fff; }
+.section.green .head .num { color: var(--gold); }
+
+.head { max-width: 720px; margin-bottom: 48px; }
+.head .num {
+  display: inline-block;
+  font-family: var(--mono); font-size: 13px;
+  color: var(--gold-700); font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--gold);
+}
+.head h2 {
+  font-size: clamp(1.9rem, 3.2vw, 2.6rem);
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.head p { font-size: 17px; line-height: 1.7; color: var(--ink-soft); max-width: 60ch; }
+.section.green .head p { color: rgba(255,255,255,.78); }
+
+/* =========================================================================
+ *  6. Service-style cards (mofaex services pattern)
+ * ========================================================================= */
+.cards-grid {
+  display: grid;
+  gap: 22px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+.card {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 28px 26px;
+  display: flex; flex-direction: column;
+  transition: transform .15s, box-shadow .15s, border-color .15s;
+}
+.card:hover {
+  border-color: var(--gold);
+  box-shadow: 0 18px 42px rgba(0,0,0,.06);
+  transform: translateY(-2px);
+}
+.card .icon {
+  width: 48px; height: 48px;
+  border-radius: 6px;
+  background: var(--green-100);
+  color: var(--green);
+  display: grid; place-items: center;
+  font-size: 22px; font-weight: 700;
+  margin-bottom: 16px;
+}
+.card h4 { font-size: 17px; font-weight: 700; margin: 0 0 8px; color: var(--ink); }
+.card p { font-size: 14px; color: var(--ink-mute); margin: 0 0 18px; line-height: 1.65; flex: 1; }
+.card .more {
+  font-size: 13px; font-weight: 600; color: var(--green);
+  display: inline-flex; align-items: center; gap: 6px;
+  padding-top: 12px; border-top: 1px solid var(--border);
+}
+.card .more::after { content: "←"; transition: transform .15s; }
+[dir="rtl"] .card .more::after { content: "←"; }
+.card:hover .more::after { transform: translateX(-3px); }
+[dir="rtl"] .card:hover .more::after { transform: translateX(3px); }
+
+/* =========================================================================
+ *  7. Asset gallery (news-card style)
+ * ========================================================================= */
+.gallery {
+  display: grid; gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+.gallery-card {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform .2s, box-shadow .2s;
+}
+.gallery-card:hover { transform: translateY(-3px); box-shadow: 0 18px 42px rgba(0,0,0,.08); }
+.gallery-card .frame {
+  aspect-ratio: 4 / 3;
+  background: var(--bg);
+  overflow: hidden;
+  display: grid; place-items: center;
+}
+.gallery-card .frame img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.gallery-card .frame.contain img { object-fit: contain; padding: 24px; background: #fff; }
+.gallery-card .body { padding: 18px 20px 22px; }
+.gallery-card .stamp {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--gold-700); font-weight: 600;
+  letter-spacing: .08em; text-transform: uppercase;
+}
+.gallery-card h4 { font-size: 16px; font-weight: 700; margin: 8px 0 0; color: var(--ink); line-height: 1.5; }
+.gallery-card p { font-size: 13px; color: var(--ink-mute); margin: 10px 0 0; line-height: 1.6; }
+
+/* =========================================================================
+ *  8. Colour swatches (clean tabular)
+ * ========================================================================= */
+.swatches {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.swatches .row {
+  display: grid; grid-template-columns: 88px 1fr auto;
+  gap: 20px; align-items: center;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+}
+.swatches .row:last-child { border-bottom: 0; }
+.swatches .chip { width: 64px; height: 48px; border-radius: 4px; border: 1px solid var(--border); }
+.swatches .meta { display: flex; flex-direction: column; }
+.swatches .meta b { font-size: 15px; color: var(--ink); font-weight: 700; }
+.swatches .meta span { font-size: 13px; color: var(--ink-mute); }
+.swatches .tok { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); text-align: end; }
+
+/* =========================================================================
+ *  9. Type specimens
+ * ========================================================================= */
+.spec { background: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 32px; margin-bottom: 18px; }
+.spec .label { font-family: var(--mono); font-size: 11px; color: var(--gold-700); letter-spacing: .08em; text-transform: uppercase; margin: 0 0 16px; font-weight: 600; }
+.spec .sample-ar { font-family: var(--sans); font-weight: 700; color: var(--ink); margin: 0; }
+.spec .sample-en { font-family: var(--serif); color: var(--ink); margin: 12px 0 0; }
+.spec.display .sample-ar, .spec.display .sample-en { font-size: 44px; line-height: 1.1; font-weight: 600; }
+.spec.h2 .sample-ar, .spec.h2 .sample-en { font-size: 28px; }
+.spec.body .sample-ar, .spec.body .sample-en { font-size: 16px; line-height: 1.75; font-weight: 400; max-width: 56ch; }
+.spec.body .sample-en { font-family: var(--sans); }
+
+/* =========================================================================
+ *  10. Footer (mofaex pattern)
+ * ========================================================================= */
+.foot { background: var(--green-950); color: rgba(255,255,255,.82); padding: 64px 0 24px; position: relative; overflow: hidden; }
+.foot::before {
+  content: ""; position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'><g fill='none' stroke='%23C9A95B' stroke-width='1' stroke-opacity='0.15'><polygon points='36,4 40,32 68,36 40,40 36,68 32,40 4,36 32,32'/><polygon points='36,14 38,34 58,36 38,38 36,58 34,38 14,36 34,34'/></g></svg>");
+  background-size: 80px 80px; pointer-events: none;
+}
+.foot .container { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr; gap: 36px; }
+@media (min-width: 720px) { .foot .container { grid-template-columns: 2fr 1fr 1fr 1fr; } }
+.foot h6 { color: var(--gold); font-size: 13px; letter-spacing: .06em; text-transform: uppercase; font-weight: 700; margin: 0 0 14px; }
+.foot a { color: rgba(255,255,255,.82); display: block; padding: 4px 0; font-size: 14px; }
+.foot a:hover { color: var(--gold); }
+.foot .copy {
+  grid-column: 1 / -1;
+  margin-top: 28px; padding-top: 24px;
+  border-top: 1px solid var(--rule-dark);
+  text-align: center;
+  font-size: 12px;
+  color: rgba(255,255,255,.5);
+}
+
+/* =========================================================================
+ *  Misc
+ * ========================================================================= */
+.flag-strip { display: flex; height: 5px; }
+.flag-strip span { flex: 1; }
+.flag-strip span:nth-child(1) { background: var(--green); }
+.flag-strip span:nth-child(2) { background: #fff; position: relative; }
+.flag-strip span:nth-child(2)::after { content: "★ ★ ★"; position: absolute; inset: 0; display: grid; place-items: center; color: var(--red); font-size: 8px; letter-spacing: 4px; }
+.flag-strip span:nth-child(3) { background: var(--ink); }
+</style>
+</head>
+<body>
+
+<div class="flag-strip" aria-hidden="true"><span></span><span></span><span></span></div>
+
+<!-- ── 1. Utility bar ─────────────────────────────────────────────────── -->
+<div class="utility">
+  <div class="container">
+    <span>الجمهورية العربية السورية · <a href="https://mofaex.gov.sy" target="_blank" rel="noopener">وزارة الخارجية والمغتربين</a></span>
+    <span class="social">
+      <a href="/" title="الرئيسية">DT</a>
+      <a href="https://github.com/XYHDX/DTS" target="_blank" rel="noopener" title="GitHub">GH</a>
+    </span>
+  </div>
+</div>
+
+<!-- ── 2. Masthead ────────────────────────────────────────────────────── -->
+<header class="masthead">
+  <div class="container">
+    <div class="emblem" aria-hidden="true">
+      <picture>
+        <source srcset="assets/identity/sy-emblem-eagle.avif" type="image/avif">
+        <img src="assets/identity/sy-emblem-eagle.png" alt="">
+      </picture>
+    </div>
+    <div class="masthead-text">
+      <h1>نقل دمشق · الهوية البصرية الرسمية</h1>
+      <span class="tag">دليل الهوية · إصدار ٣٫٠ · ٢٥ مايو ٢٠٢٦</span>
+    </div>
+    <div class="masthead-en">
+      <strong>Damascus Transit</strong>
+      Official Visual Identity Guide
+    </div>
+  </div>
+</header>
+
+<!-- ── 3. Primary nav ─────────────────────────────────────────────────── -->
+<nav class="nav-primary" aria-label="رئيسية">
+  <div class="container">
+    <a href="index.html">الرئيسية</a>
+    <a href="passenger/index.html">للركاب</a>
+    <a href="driver/index.html">للسائقين</a>
+    <a href="admin/login.html">دخول الإدارة</a>
+    <a href="visual-identity.html" class="is-active">الهوية البصرية</a>
+    <button class="lang-toggle" data-i18n-toggle data-i18n="header.toggleLang">EN</button>
+  </div>
+</nav>
+
+<!-- ── 4. Hero ────────────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="container">
+    <div>
+      <span class="eyebrow">الهوية الوطنية الجديدة · ٢٠٢٥</span>
+      <h2>هوية رسمية لمدينة تتحرّك</h2>
+      <p>منصة نقل دمشق تتبنّى الهوية البصرية الوطنية الجديدة للجمهورية العربية السورية كما اعتمدتها وزارة الخارجية والمغتربين: الأخضر الفيروزي العميق، الذهبي الفاتح، والزخارف المستوحاة من الحضارات السورية المتعاقبة.</p>
+      <div class="meta">
+        <span><b>الإصدار</b> · 3.0</span>
+        <span><b>التاريخ</b> · ٢٥ مايو ٢٠٢٦</span>
+        <span><b>المرجع</b> · Syrian Identity Team · 2025</span>
+      </div>
+    </div>
+    <figure class="hero-emblem">
+      <picture>
+        <source srcset="assets/identity/sy-emblem-eagle.avif" type="image/avif">
+        <img src="assets/identity/sy-emblem-eagle.png" alt="الشعار الرسمي للجمهورية العربية السورية">
+      </picture>
+      <figcaption>الشعار الرسمي · النسر الذهبي</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ── 5. Identity pillars (service-card style like mofaex services) ──── -->
+<section class="section paper">
+  <div class="container">
+    <header class="head">
+      <span class="num">01 · أركان الهوية</span>
+      <h2>أربع ركائز للهوية الوطنية</h2>
+      <p>أربعة عناصر تتكوّن منها الهوية: الشعار، اللوحة اللونية، الزخرفة، والطباعة. كل عنصر له دور محدّد لا يتبدّل.</p>
+    </header>
+
+    <div class="cards-grid">
+      <article class="card">
+        <div class="icon">١</div>
+        <h4>الشعار الرسمي</h4>
+        <p>النسر الذهبي مع ثلاث نجوم خماسية تمثّل الشعب. يُستخدم في الترويسة والوثائق الرسمية، لا كرمز تفاعلي.</p>
+        <a href="#emblem" class="more">عرض الاستخدام</a>
+      </article>
+      <article class="card">
+        <div class="icon">٢</div>
+        <h4>اللوحة اللونية</h4>
+        <p>أخضر فيروزي عميق للإجراء الأساسي، ذهبي فاتح للتأكيد، أحمر للنجوم والخطر، أسود وأبيض للحبر والورق.</p>
+        <a href="#palette" class="more">عرض الألوان</a>
+      </article>
+      <article class="card">
+        <div class="icon">٣</div>
+        <h4>الزخارف</h4>
+        <p>زخارف هندسية مستوحاة من العمارة الأموية، تُستخدم كطبقة خلفية بشفافية أقل من ٠٫٦.</p>
+        <a href="#patterns" class="more">عرض الأنماط</a>
+      </article>
+      <article class="card">
+        <div class="icon">٤</div>
+        <h4>الطباعة</h4>
+        <p>IBM Plex Sans Arabic للعربية بأوزان متعدّدة، Source Serif 4 للعناوين اللاتينية.</p>
+        <a href="#type" class="more">عرض الخطوط</a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ── 6. Asset gallery (news-card style) ─────────────────────────────── -->
+<section class="section cream" id="emblem">
+  <div class="container">
+    <header class="head">
+      <span class="num">02 · الأصول الرسمية</span>
+      <h2>أربعة أصول من Syrian Identity Team</h2>
+      <p>صور رسمية من إطلاق الهوية في يوليو ٢٠٢٥. الشعار، الزخارف، التطبيقات الحقيقية، ومصادر الإلهام.</p>
+    </header>
+
+    <div class="gallery">
+      <article class="gallery-card">
+        <div class="frame contain">
+          <picture>
+            <source srcset="assets/identity/sy-emblem-eagle.avif" type="image/avif">
+            <img src="assets/identity/sy-emblem-eagle.png" alt="الشعار الرسمي">
+          </picture>
+        </div>
+        <div class="body">
+          <span class="stamp">٢٠٢٥ · Syrian Identity Team</span>
+          <h4>الشعار الرسمي</h4>
+          <p>النسر الذهبي مع ثلاث نجوم خماسية، والشعار النصّي ثنائي اللغة بنفس الوزن البصري.</p>
+        </div>
+      </article>
+
+      <article class="gallery-card">
+        <div class="frame contain">
+          <picture>
+            <source srcset="assets/identity/sy-patterns.avif" type="image/avif">
+            <img src="assets/identity/sy-patterns.png" alt="الزخارف الرسمية">
+          </picture>
+        </div>
+        <div class="body">
+          <span class="stamp">٢٠٢٥ · الزخارف</span>
+          <h4>ثلاث لوحات زخرفية</h4>
+          <p>زخارف هندسية مستوحاة من الحضارات السورية المتعاقبة — تُستخدم كخلفيات هادئة.</p>
+        </div>
+      </article>
+
+      <article class="gallery-card">
+        <div class="frame">
+          <picture>
+            <source srcset="assets/identity/sy-heritage.avif" type="image/avif">
+            <img src="assets/identity/sy-heritage.png" alt="الجامع الأموي">
+          </picture>
+        </div>
+        <div class="body">
+          <span class="stamp">٢٠٢٥ · الإلهام</span>
+          <h4>العمارة الأموية</h4>
+          <p>واجهة الجامع الأموي بدمشق — المصدر التاريخي للزخارف الجديدة.</p>
+        </div>
+      </article>
+
+      <article class="gallery-card">
+        <div class="frame">
+          <picture>
+            <source srcset="assets/identity/sy-podium.avif" type="image/avif">
+            <img src="assets/identity/sy-podium.png" alt="المنصة الرسمية">
+          </picture>
+        </div>
+        <div class="body">
+          <span class="stamp">٢٠٢٥ · التطبيق</span>
+          <h4>المنصة الرسمية</h4>
+          <p>تطبيق الهوية في مؤسسات الدولة — منصة، خلفية مخملية، علم محايد.</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ── 7. Palette ─────────────────────────────────────────────────────── -->
+<section class="section paper" id="palette">
+  <div class="container">
+    <header class="head">
+      <span class="num">03 · الألوان</span>
+      <h2>اللوحة اللونية الرسمية</h2>
+      <p>الأخضر الفيروزي للإجراء الأساسي، الذهبي للتأكيد والزخرفة، الأحمر للنجوم والخطر فقط.</p>
+    </header>
+
+    <div class="swatches">
+      <div class="row">
+        <div class="chip" style="background:#0E5650"></div>
+        <div class="meta"><b>الأخضر الفيروزي</b><span>الإجراء الأساسي · الأزرار · الروابط</span></div>
+        <div class="tok">#0E5650</div>
+      </div>
+      <div class="row">
+        <div class="chip" style="background:#115148"></div>
+        <div class="meta"><b>الأخضر — تحويم</b><span>الحالات النشطة</span></div>
+        <div class="tok">#115148</div>
+      </div>
+      <div class="row">
+        <div class="chip" style="background:#DCEAE7"></div>
+        <div class="meta"><b>الأخضر — وَشاح</b><span>خلفيات الشارات</span></div>
+        <div class="tok">#DCEAE7</div>
+      </div>
+      <div class="row">
+        <div class="chip" style="background:#C9A95B"></div>
+        <div class="meta"><b>الذهبي</b><span>التأكيد · الحدود · الزخرفة</span></div>
+        <div class="tok">#C9A95B</div>
+      </div>
+      <div class="row">
+        <div class="chip" style="background:#9C7A3A"></div>
+        <div class="meta"><b>الذهبي — عميق</b><span>النصوص الثانوية</span></div>
+        <div class="tok">#9C7A3A</div>
+      </div>
+      <div class="row">
+        <div class="chip" style="background:#F8F1DE"></div>
+        <div class="meta"><b>الذهبي — وَشاح</b><span>خلفيات هادئة</span></div>
+        <div class="tok">#F8F1DE</div>
+      </div>
+      <div class="row">
+        <div class="chip" style="background:#CE1126"></div>
+        <div class="meta"><b>الأحمر</b><span>النجوم · الخطر</span></div>
+        <div class="tok">#CE1126</div>
+      </div>
+      <div class="row">
+        <div class="chip" style="background:#0B0B0B"></div>
+        <div class="meta"><b>الحبر</b><span>النص الأساسي</span></div>
+        <div class="tok">#0B0B0B</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 8. Patterns (the actual mofaex pattern feel — full-width green) ── -->
+<section class="section green pattern-on-green" id="patterns">
+  <div class="container">
+    <header class="head">
+      <span class="num">04 · الزخارف</span>
+      <h2>زخرفة هندسية على الأخضر</h2>
+      <p>الزخارف الذهبية على خلفية خضراء — كما تظهر في المنابر الرسمية وواجهات الوزارات.</p>
+    </header>
+
+    <div class="cards-grid" style="margin-top: 16px;">
+      <article class="card" style="background:rgba(255,255,255,.06); border-color: rgba(201,169,91,.4); color: #fff;">
+        <div class="icon" style="background: var(--gold); color: var(--green-900);">★</div>
+        <h4 style="color: #fff;">على الخلفية الخضراء</h4>
+        <p style="color: rgba(255,255,255,.78);">للمنابر، الترويسات الرسمية، والشاشات الكبرى.</p>
+      </article>
+      <article class="card" style="background:rgba(255,255,255,.06); border-color: rgba(201,169,91,.4); color: #fff;">
+        <div class="icon" style="background: var(--gold); color: var(--green-900);">◆</div>
+        <h4 style="color: #fff;">شفافية أقل من ٠٫٦</h4>
+        <p style="color: rgba(255,255,255,.78);">الزخرفة طبقة خلفية، لا تنافس النصّ.</p>
+      </article>
+      <article class="card" style="background:rgba(255,255,255,.06); border-color: rgba(201,169,91,.4); color: #fff;">
+        <div class="icon" style="background: var(--gold); color: var(--green-900);">✦</div>
+        <h4 style="color: #fff;">النصّ في صندوق</h4>
+        <p style="color: rgba(255,255,255,.78);">فوق الزخرفة، يجب وضع النصّ داخل صندوق أبيض صلب للقراءة.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ── 9. Type specimens ──────────────────────────────────────────────── -->
+<section class="section cream" id="type">
+  <div class="container">
+    <header class="head">
+      <span class="num">05 · الطباعة</span>
+      <h2>الخطوط الرسمية</h2>
+      <p>
+        Readex Pro للعربية واللاتينية — خط مزدوج راقٍ من TypeTogether،
+        ضمن قائمة الخطوط العربية المجانية المختارة من <a href="https://www.behance.net/gallery/168811671/Free-Arabic-Fonts-Reference" target="_blank" rel="noopener">المرجع المنسَّق من علاء شليل</a>.
+        وزن متغيّر من ٢٠٠ إلى ٧٠٠، يعمل بكفاءة في واجهات الاستخدام والمحتوى التحريري. Source Serif 4 للعناوين اللاتينية، JetBrains Mono للأكواد.
+      </p>
+    </header>
+
+    <div class="spec display">
+      <p class="label">Display · 44px — عناوين رئيسية</p>
+      <p class="sample-ar">تتبع حافلات دمشق في الوقت الحقيقي</p>
+      <p class="sample-en">Real-time Damascus bus tracking</p>
+    </div>
+
+    <div class="spec h2">
+      <p class="label">Heading · 28px — عناوين فرعية</p>
+      <p class="sample-ar">الخريطة المباشرة</p>
+      <p class="sample-en">Live map</p>
+    </div>
+
+    <div class="spec body">
+      <p class="label">Body · 16px — متن</p>
+      <p class="sample-ar">منصة وطنية مفتوحة المصدر تربط الركاب والسائقين والمشرفين بمواقع الحافلات وأوقات الوصول لحظياً، بدون إعلانات وبدون مقابل.</p>
+      <p class="sample-en">A national open-source platform connecting passengers, drivers, and dispatchers to live bus positions and accurate arrival times.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── 10. Footer ─────────────────────────────────────────────────────── -->
+<footer class="foot">
+  <div class="container">
+    <div>
+      <h6>نقل دمشق</h6>
+      <p style="margin: 0; color: rgba(255,255,255,.82); max-width: 44ch; font-size: 14px; line-height: 1.7;">
+        منصة وطنية مفتوحة المصدر تربط الركاب والسائقين والمشرفين بمواقع الحافلات وأوقات الوصول لحظياً، بدون إعلانات وبدون مقابل.
+      </p>
+    </div>
+    <div>
+      <h6>الروابط</h6>
+      <a href="index.html">الرئيسية</a>
+      <a href="passenger/index.html">للركاب</a>
+      <a href="driver/index.html">للسائقين</a>
+      <a href="admin/login.html">دخول الإدارة</a>
+    </div>
+    <div>
+      <h6>الهوية</h6>
+      <a href="visual-identity.html">دليل الهوية</a>
+      <a href="https://github.com/XYHDX/DTS" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://mofaex.gov.sy" target="_blank" rel="noopener">وزارة الخارجية</a>
+    </div>
+    <div>
+      <h6>المرجع</h6>
+      <a href="https://worldbranddesign.com" target="_blank" rel="noopener">World Brand Design Society</a>
+      <a href="#" style="opacity:.7;cursor:default">Syrian Identity Team · 2025</a>
+    </div>
+    <div class="copy">
+      © ٢٠٢٦ نقل دمشق · الجمهورية العربية السورية · جميع الحقوق محفوظة · رخصة MIT
+    </div>
+  </div>
+</footer>
+
+<script src="lib/i18n.js"></script>
+</body>
+</html>

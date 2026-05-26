@@ -392,3 +392,85 @@ public/driver/index.html                 hydrateMe() + pollNextTrip() + dispatch
 FIXES_APPLIED.md                         this section
 ```
 
+---
+
+## Track C (added 2026-05-26) — Headway control + bunching alerts
+
+This is the traffic-jam mitigation layer that came out of the
+best-practice research (TransitCenter, Metro Magazine, APTA BRT design
+recommendations). Damascus has chronic congestion, no Transit Signal
+Priority, and an aged microbus fleet — so the highest-leverage tactic
+that's *purely software* is real-time headway control: detect bunching
+between same-route vehicles and ask the trailing driver to hold at the
+next stop.
+
+### C.1 — Schema migration 014
+
+`db/migrations/014_headway_control.sql`:
+- `routes.target_headway_min` — target minutes between vehicles on this
+  route. NULL = headway control disabled.
+- `alert_type` enum value `bus_bunching`.
+- `headway_observations` table — append-only log of detected bunching
+  events (vehicle pair, gap_m, hold_seconds, timestamp). Tenant-RLS'd.
+- RPC `route_headway_status(p_operator)` — per-route gauge data for the
+  Dispatcher Console. Uses an 18 km/h average revenue-service speed
+  (Damascus dense-traffic median) to convert distance into headway
+  minutes.
+- RPC `detect_bunching(vehicle_id, lat, lon, threshold_m)` — returns the
+  closest same-route vehicle within `threshold_m` and the recommended
+  `hold_seconds` for the trailing driver. Returns nothing if headway
+  control is disabled for the route.
+- Seed: R101/R102 target headway 8 min; R201/R202 target 5 min.
+
+### C.2 — API endpoint + bunching detector
+
+- `GET /api/admin/headway` — dispatcher+, operator-scoped wrapper
+  around the `route_headway_status` RPC. Used by the console gauge.
+- `_bunching_check(vehicle, lat, lon)` helper runs after every
+  `/api/driver/position` write:
+  - Calls `detect_bunching` RPC.
+  - When `hold_seconds >= 30` AND no matching open `bus_bunching`
+    alert in the last 5 minutes, emits a new alert (operator-scoped)
+    and writes a `headway_observations` row.
+  - Failures in this path are non-fatal — a missing RPC never blocks
+    the GPS heartbeat.
+- Position response now includes `hold_seconds`, `gap_m`,
+  `other_vehicle_id` so the driver app can act on it.
+
+### C.3 — Driver UI: hold banner
+
+`/driver/index.html` — when `/api/driver/position` returns a
+non-zero `hold_seconds`, an amber banner appears at the top of the
+trip pane with a live countdown:
+> ⏸ Recommended: hold at the next stop. Suggested wait: 42s
+The deadline can only be extended by fresher readings (no flicker);
+when it expires the banner disappears.
+
+### C.4 — Dispatcher Console: route headway strip
+
+`/admin/dispatch.html` — new section above the trips table showing
+one card per active route:
+- Route code, target vs actual headway in minutes.
+- Color status: green (on target), red (bunching, actual < 70% of
+  target), amber (large gap, actual > 150% of target), grey
+  (disabled / insufficient data).
+- Vehicles in service + minimum current pair-gap.
+Refreshes with the existing 20s timer.
+
+### C.5 — Verification
+
+- `python3 -c 'import ast; ast.parse(open("api/index.py").read())'` → **OK**
+- Total endpoints: **48** (was 47 after Track A).
+- New: `GET /api/admin/headway`.
+
+### Files added/modified in Track C
+
+```
+db/migrations/014_headway_control.sql       (NEW)
+api/index.py                                _bunching_check() + /api/admin/headway + position-response surface
+public/driver/index.html                    hold banner + applyBunching() countdown
+public/admin/dispatch.html                  headway strip + renderHeadway()
+FIXES_APPLIED.md                            this section
+```
+
+
