@@ -174,12 +174,43 @@ curl -s "$HOST/api/routes" | python3 -m json.tool | head -40
 
 ## Troubleshooting
 
-- **"updates were rejected because the remote contains work…"** — your
-  GitHub repo has commits that the local main doesn't. Decide whether
-  to merge (`git pull --rebase`) or force-push (`git push -f` — only
-  do this on a personal/non-shared repo).
+### "stale info" or "non-fast-forward" (push rejected)
+
+Means the remote `main` has commits your local doesn't. The script
+prints both sides of the diff so you can choose. Two safe options:
+
+```bash
+# A) Keep the remote commits, replay yours on top:
+cd ~/Documents/Claude/Projects/DamascusTransitSystem
+PUSH_REBASE=1 bash "./Push to GitHub.command"
+
+# B) Overwrite the remote with your local history (you lose any
+#    commits that exist only on origin — check the diff first):
+PUSH_FORCE=1 bash "./Push to GitHub.command"
+```
+
+To inspect without pushing, run this from Terminal:
+
+```bash
+cd ~/Documents/Claude/Projects/DamascusTransitSystem/source
+git fetch origin
+echo "== LOCAL has, REMOTE doesn't:" ; git log --oneline origin/main..main
+echo "== REMOTE has, LOCAL doesn't:" ; git log --oneline main..origin/main
+```
+
 - **"Permission denied (publickey)"** — switch the remote URL from
-  `git@github.com:…` to `https://github.com/XYHDX/DTS.git`.
+  `git@github.com:…` to `https://github.com/XYHDX/DTS.git`:
+
+  ```bash
+  cd source
+  git remote set-url origin https://github.com/XYHDX/DTS.git
+  ```
+
 - **`fatal: cannot lock ref 'HEAD'`** — re-run `bash CLEANUP.command`,
   it clears the stale `.git/HEAD.lock` / `.git/index.lock` files left
   behind by the sandbox.
+
+- **Asked for username/password** — paste your GitHub username and a
+  Personal Access Token (NOT your account password). Generate one at
+  <https://github.com/settings/tokens?type=beta> with **Contents:
+  read & write** scope. The macOS keychain helper remembers it.

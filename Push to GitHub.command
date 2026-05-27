@@ -45,6 +45,18 @@ command -v git >/dev/null 2>&1 || fail "git not found. Install with: xcode-selec
 : "${SOURCE_REMOTE:=https://github.com/XYHDX/DTS.git}"
 : "${META_REMOTE:=}"            # leave empty to skip the top-level push
 
+# Conflict-resolution mode. Pick exactly one (or leave both empty).
+#   PUSH_REBASE=1   → on a stale/non-fast-forward reject, fetch origin,
+#                     rebase local main on top of origin/main, push again.
+#                     Keeps the remote's history; safe for shared repos.
+#   PUSH_FORCE=1    → overwrite the remote with the local history
+#                     (still uses --force-with-lease, so it only succeeds
+#                     when the remote hasn't moved since we last fetched).
+#                     Loses commits on the remote that aren't local.
+#                     Only safe for solo / throwaway-history repos.
+: "${PUSH_REBASE:=}"
+: "${PUSH_FORCE:=}"
+
 banner "Damascus Transit — push v5.0 + Track A + Track C to GitHub"
 dim    "  source remote : $SOURCE_REMOTE"
 dim    "  meta remote   : ${META_REMOTE:-<skipped>}"
@@ -118,14 +130,59 @@ push_repo() {
   fi
   ok "$label origin = $(git remote get-url origin)"
 
-  # Push, force-with-lease for safety.
+  # First attempt — safe push (rejected if the remote has commits we
+  # don't, which is what just happened the first time you ran this).
   banner "Pushing $label → main"
-  if git push -u --force-with-lease origin main; then
+  if git push -u --force-with-lease origin main 2>&1; then
     ok "$label pushed"
-  else
-    fail "push failed for $label — see error above"
+    cd - >/dev/null
+    return 0
   fi
-  cd - >/dev/null
+
+  echo
+  warn "$label push was rejected — the remote has commits the local doesn't."
+  echo
+
+  # Fetch and show the diff in both directions so the human can decide.
+  git fetch origin --quiet || warn "could not fetch origin"
+  echo -e "${BOLD}== LOCAL has but REMOTE doesn't (will be pushed):${RESET}"
+  git log --oneline "origin/main..main" 2>/dev/null | sed 's/^/  /' || echo "  (none)"
+  echo -e "${BOLD}== REMOTE has but LOCAL doesn't (could be lost on force-push):${RESET}"
+  git log --oneline "main..origin/main" 2>/dev/null | sed 's/^/  /' || echo "  (none)"
+  echo
+
+  if [ -n "$PUSH_REBASE" ]; then
+    banner "PUSH_REBASE=1 — rebasing local main onto origin/main"
+    if git pull --rebase origin main; then
+      ok "$label rebase OK — pushing again"
+      git push -u origin main && { ok "$label pushed (post-rebase)"; cd - >/dev/null; return 0; }
+      fail "push still failed after rebase — fix manually with: cd $repo && git status"
+    else
+      fail "rebase reported conflicts — fix manually with: cd $repo && git status"
+    fi
+  fi
+
+  if [ -n "$PUSH_FORCE" ]; then
+    banner "PUSH_FORCE=1 — overwriting remote with local history"
+    # Fetch above already updated origin/main, so this lease will succeed.
+    if git push -u --force-with-lease origin main; then
+      ok "$label force-pushed (the remote commits listed above are now only in your reflog)"
+      cd - >/dev/null
+      return 0
+    fi
+    fail "force push failed — see error above"
+  fi
+
+  echo "Choose one:"
+  echo "  • Keep the remote's commits and replay yours on top:"
+  echo "      PUSH_REBASE=1 bash \"$0\""
+  echo "  • Overwrite the remote with your local history (loses the commits above):"
+  echo "      PUSH_FORCE=1 bash \"$0\""
+  echo "  • Or do it manually:"
+  echo "      cd $repo"
+  echo "      git pull --rebase origin main  # then resolve conflicts"
+  echo "      git push -u origin main"
+  fail "push not completed for $label — pick a strategy and re-run"
 }
 push_repo "$HERE/source" "$SOURCE_REMOTE" "source/"
 [ -n "$META_REMOTE" ] && push_repo "$HERE" "$META_REMOTE" "top-level"
