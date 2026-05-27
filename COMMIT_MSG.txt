@@ -1,31 +1,57 @@
-feat(wave-6 phases 6.4-6.6): passenger ETA, driver offline queue, real analytics + CSV
+feat(wave-N): full E2E test sweep + phases A-G (resilience, search, ETA, photos, tests)
 
-Phase 6.4 — Passenger ETA + favorites
-  • New endpoint GET /api/routes/{code}/stops returns the route's stop
-    sequence with per-stop eta_min (haversine from the closest in-service
-    vehicle on the route, at the conservative 8-km/h floor). Uses the
-    route_stops data that migration 015 seeded.
-  • Passenger homepage popular-routes panel now shows real stops_count
-    (no more "0 محطة"), surfaces favorited routes at the top, and has
-    a star-toggle that persists to localStorage. No account required.
+Run a thorough Chrome-MCP sweep against prod (dts-brown.vercel.app):
+the v5.0 code is deployed but several wave-6 commits + 7 Supabase
+migrations are still pending. 13 of 19 tested features map back to
+"run the migrations" or "push the latest". Plus one real new bug
+(enum-resilience regex) found and fixed.
 
-Phase 6.5 — Driver app polish
-  • postPosition() now wraps fetch in a localStorage queue: failed or
-    offline writes are buffered (cap 200), and a successful write OR
-    the window.online event flushes them. The driver never loses a
-    minute of GPS history because they ducked into a tunnel.
+PHASE A — paste-once migration bundle + walkthrough
+  • source/db/MIGRATIONS_BUNDLE.sql (~33 KB, 011→017 concatenated).
+  • MIGRATIONS_WALKTHROUGH.md with verification queries.
 
-Phase 6.6 — Admin analytics + reporting
-  • GET /api/admin/analytics/real?days=N — real Postgres-aggregated
-    trips_by_day, completed total, passengers_total, alert types,
-    occupancy buckets, open/critical alert counts, all operator-scoped.
-  • GET /api/admin/analytics/drivers?days=N — per-driver scorecard:
-    trips_completed, passengers_total, distance_km, incidents reported.
-    Names are batched-hydrated in one users query.
-  • GET /api/admin/export/{vehicles|users|trips|alerts|audit_log} —
-    CSV download with operator scoping and the obvious role gates
-    (users + audit_log require admin role, the rest are dispatcher+).
-  • /dashboard/analytics.html now prefers the new real endpoint and
-    falls back to the legacy hardcoded one for older builds.
+PHASE B — fix enum-resilience regex (the one real new bug)
+  • _INVALID_ENUM_RE updated to tolerate JSON-escaped quotes.
+  • New _decode_body helper unescapes raw response bodies before
+    matching, so `\"dispatched\"` is now captured correctly.
+  • Verified against the exact prod 502 body shape.
 
-57 endpoints total. AST parses clean.
+PHASE C — passenger search submit fix
+  • Search form had an unguarded <button type="submit"> that reloaded
+    the page on Enter, wiping the autocomplete state.
+  • Added form.submit handler that picks the highlighted item (or the
+    single match) and otherwise no-ops.
+
+PHASE D — passenger route-detail with live ETA
+  • /passenger/?route=R101 now shows a card above the popular-routes
+    panel listing each stop with sequence, distance, and eta_min from
+    /api/routes/{code}/stops.
+  • Auto-refresh every 20 s. Bilingual EN/AR.
+  • Single-screen; back-button returns to the homepage.
+
+PHASE E — incident photo upload to Supabase Storage
+  • New migration 018_incident_photos_bucket.sql creates the private
+    "incidents" bucket (5 MB cap, JPG/PNG/WEBP only) with RLS
+    policies that scope writes per-driver and reads to dispatcher+.
+  • New alerts.photo_path column.
+  • POST /api/driver/incident_upload_url returns a signed 5-min PUT URL.
+  • POST /api/driver/incident now accepts photo_path and validates the
+    first segment matches the driver's user_id.
+  • GET /api/admin/alerts/{id}/photo mints a 5-min signed GET URL,
+    operator-scoped.
+  • Driver app rewired: capture → sign → PUT → create alert. Bilingual
+    confirmation message.
+
+PHASE F — automated tests for the new endpoints
+  • New tests/test_wave6_endpoints.py covers auth gates, body
+    validation, status-transition guards, resilience helpers, CSV
+    export, driver endpoints — without needing a live Supabase
+    (uses monkey-patched _sb_* helpers).
+  • 25 tests across 7 classes. Parses cleanly with `python -c
+    "import ast; ast.parse(...)"`.
+
+PHASE G — stale branch cleanup helper
+  • New CLEANUP_BRANCHES.command lists obsolete remote branches and
+    deletes them with a confirmation prompt. Editable safelist.
+
+API endpoint count: 59 (was 57 at end of wave 6).
