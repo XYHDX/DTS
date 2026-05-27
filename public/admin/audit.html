@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0E5650">
+<title>سجلّ المراجعة — نقل دمشق</title>
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/lib/design-system.css">
+<link rel="stylesheet" href="/admin/_layout.css">
+<script src="/admin/_gate.js"></script>
+<style>
+  .filter-row { display: flex; gap: 8px; margin: 12px 0 16px; flex-wrap: wrap; }
+  .filter-row input, .filter-row select {
+    padding: 8px 12px; border: 1px solid var(--rule); border-radius: 8px; font: inherit;
+  }
+  .filter-row button {
+    padding: 8px 14px; background: #0E5650; color: #fff; border: 0; border-radius: 8px; cursor: pointer; font: inherit;
+  }
+  .details-cell { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #475569; max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .action-pill { font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: #f1f5f9; color: #0f172a; }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--rule); margin-bottom: 14px; }
+  .tabs button { background: transparent; border: 0; padding: 10px 14px; cursor: pointer; font: inherit; border-bottom: 2px solid transparent; color: #64748b; }
+  .tabs button.is-active { color: #0E5650; border-bottom-color: #0E5650; font-weight: 600; }
+</style>
+</head>
+<body data-page="audit">
+
+<div class="utility-bar">
+  <div class="container">
+    <span class="gov">الجمهورية العربية السورية</span>
+    <span class="right">
+      <a href="/">الرئيسية</a><span class="sep"></span>
+      <a href="/passenger/">للركاب</a><span class="sep"></span>
+      <a href="/driver/">للسائقين</a><span class="sep"></span>
+      <a href="/admin/login.html">الإدارة</a>
+    </span>
+  </div>
+</div>
+
+<div class="admin-shell">
+  <aside class="sidebar">
+    <a href="/" class="sidebar__brand">
+      <span class="sidebar__brand-mark"><picture><source srcset="/assets/identity/sy-emblem-eagle.avif" type="image/avif"><img src="/assets/identity/sy-emblem-eagle.png" alt=""></picture></span>
+      <span class="sidebar__brand-text"><b>نقل دمشق</b><small>لوحة الإدارة</small></span>
+    </a>
+    <nav>
+      <a href="/admin/" data-nav="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>النظرة العامة</span></a>
+      <a href="/admin/dispatch.html" data-nav="dispatch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h6l3-8 4 16 3-8h2"/></svg><span>الإرسال / Dispatch</span></a>
+      <a href="/admin/vehicles.html" data-nav="vehicles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13l1.5-7h15L21 13M4 13v6h2v-2h12v2h2v-6"/><circle cx="7" cy="16" r="1"/><circle cx="17" cy="16" r="1"/></svg><span>الحافلات</span></a>
+      <a href="/admin/users.html" data-nav="users"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="4"/><path d="M2 22v-1a7 7 0 0 1 14 0v1"/><circle cx="17" cy="6" r="3"/><path d="M22 22v-1a5 5 0 0 0-5-5"/></svg><span>المستخدمون</span></a>
+      <a href="/admin/routes.html" data-nav="routes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v18M18 3v18M6 7h12M6 12h12M6 17h12"/></svg><span>الخطوط</span></a>
+      <a href="/admin/geofences.html" data-nav="geofences"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8 22 16 12 22 2 16 2 8"/></svg><span>المناطق</span></a>
+      <a href="/admin/alerts.html" data-nav="alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 22h20L12 2Z"/><path d="M12 9v5"/><circle cx="12" cy="18" r=".5" fill="currentColor"/></svg><span>التنبيهات</span></a>
+      <a href="/admin/audit.html" data-nav="audit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>السجل / Audit</span></a>
+      <a href="/dashboard/analytics.html" data-nav="analytics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-7"/></svg><span>التحليلات</span></a>
+      <a href="/help/" data-nav="help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg><span>كيفية الاستخدام</span></a>
+    </nav>
+    <div class="sidebar__footer">
+      <div class="sidebar__user"><div class="avatar-circle" id="user-initial">؟</div><div><div class="name" id="user-name">—</div><div class="role" id="user-role">—</div></div></div>
+      <button class="sidebar__logout" id="logout-btn">تسجيل الخروج</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="pagetitle">
+        <h1>السجل / Audit log</h1>
+        <p>كل إجراء إداري وكل محاولة دخول. للمسؤولين فقط — مرئيّة ضمن نطاق المُشغّل الحالي.</p>
+      </div>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <button data-tab="audit"   class="is-active">إجراءات / Actions</button>
+      <button data-tab="logins">محاولات الدخول / Login attempts</button>
+    </div>
+
+    <div class="filter-row" id="filter-row">
+      <input id="filter-input" placeholder="إجراء أو بريد… / action or email…" style="min-width:240px;">
+      <button id="filter-go">تصفية / Filter</button>
+      <button id="filter-clear" style="background:#fff;color:#0E5650;border:1px solid #0E5650;">إلغاء / Clear</button>
+    </div>
+
+    <section class="data-table-card">
+      <table class="data-table">
+        <thead id="thead"></thead>
+        <tbody id="rows">
+          <tr><td colspan="5"><div class="skeleton" style="width:100%;height:1.2em"></div></td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</div>
+
+<script src="/lib/i18n.js"></script>
+<script src="/admin/_shell.js" defer></script>
+<script>
+(function () {
+  'use strict';
+  let TAB = 'audit', FILTER = '';
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function fmtTs(s) {
+    if (!s) return '—';
+    const d = new Date(s);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleString('ar-SY', { dateStyle: 'short', timeStyle: 'medium' });
+  }
+  function setHead() {
+    const tr = document.getElementById('thead');
+    if (TAB === 'audit') {
+      tr.innerHTML = '<tr><th>الوقت</th><th>الإجراء</th><th>الكيان</th><th>المعرّف</th><th>تفاصيل</th></tr>';
+    } else {
+      tr.innerHTML = '<tr><th>الوقت</th><th>البريد</th><th>الحالة</th><th>IP</th><th>السبب</th></tr>';
+    }
+  }
+  function render(rows) {
+    const tbody = document.getElementById('rows');
+    if (!rows || !rows.length) {
+      tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">لا توجد سجلات بهذا الفلتر. / No rows.</div></td></tr>';
+      return;
+    }
+    if (TAB === 'audit') {
+      tbody.innerHTML = rows.map(r => {
+        const det = r.details ? JSON.stringify(r.details) : '';
+        return '<tr>' +
+          '<td>' + esc(fmtTs(r.created_at)) + '</td>' +
+          '<td><span class="action-pill">' + esc(r.action || '') + '</span></td>' +
+          '<td>' + esc(r.entity_type || '—') + '</td>' +
+          '<td class="cell-mono">' + esc((r.entity_id || '').slice(0,8)) + '</td>' +
+          '<td class="details-cell" title="' + esc(det) + '">' + esc(det) + '</td>' +
+        '</tr>';
+      }).join('');
+    } else {
+      tbody.innerHTML = rows.map(r => {
+        const status = r.success
+          ? '<span class="status-pill is-active">success</span>'
+          : '<span class="status-pill is-offline">fail</span>';
+        return '<tr>' +
+          '<td>' + esc(fmtTs(r.attempted_at)) + '</td>' +
+          '<td class="cell-mono">' + esc(r.email || '') + '</td>' +
+          '<td>' + status + '</td>' +
+          '<td class="cell-mono">' + esc(r.ip_address || '—') + '</td>' +
+          '<td class="cell-muted">' + esc(r.reason || '—') + '</td>' +
+        '</tr>';
+      }).join('');
+    }
+  }
+  async function load() {
+    if (!window.ADMIN_AUTH) return;
+    const url = TAB === 'audit'
+      ? '/api/admin/audit_log?limit=200' + (FILTER ? '&action=' + encodeURIComponent(FILTER) : '')
+      : '/api/admin/login_attempts?limit=200' + (FILTER ? '&email=' + encodeURIComponent(FILTER) : '');
+    try {
+      const r = await window.ADMIN_AUTH.fetch(url);
+      if (!r.ok) {
+        if (r.status === 403) { document.getElementById('rows').innerHTML = '<tr><td colspan="5"><div class="empty-state">403 — Admin role only.</div></td></tr>'; return; }
+        throw new Error('HTTP ' + r.status);
+      }
+      const data = await r.json();
+      render(Array.isArray(data) ? data : []);
+    } catch (e) {
+      if (String(e.message) !== 'unauthorized') {
+        document.getElementById('rows').innerHTML = '<tr><td colspan="5"><div class="empty-state">' + esc(e.message) + '</div></td></tr>';
+      }
+    }
+  }
+  document.addEventListener('DOMContentLoaded', function () {
+    setHead(); load();
+    document.querySelectorAll('#tabs button').forEach(b => b.addEventListener('click', () => {
+      document.querySelectorAll('#tabs button').forEach(x => x.classList.remove('is-active'));
+      b.classList.add('is-active');
+      TAB = b.dataset.tab; FILTER = ''; document.getElementById('filter-input').value = '';
+      setHead(); load();
+    }));
+    document.getElementById('filter-go').addEventListener('click', () => {
+      FILTER = (document.getElementById('filter-input').value || '').trim();
+      load();
+    });
+    document.getElementById('filter-clear').addEventListener('click', () => {
+      FILTER = ''; document.getElementById('filter-input').value = ''; load();
+    });
+    setInterval(load, 30000);  // auto-refresh
+  });
+})();
+</script>
+</body>
+</html>

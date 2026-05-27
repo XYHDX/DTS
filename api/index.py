@@ -122,26 +122,146 @@ def _headers(use_service: bool = False) -> dict:
     }
 
 
+# Wave-6 Phase 6.0a — migration-resilience helpers.
+#
+# Symptom that caused this: prod deploy at v5.0.0 + Supabase schema still
+# at v4.1 → every login failed with PostgREST 42703
+# "column users.must_change_password does not exist". The new helpers
+# below detect that exact error and retry the query without the missing
+# columns, so a half-applied migration never bricks the API again.
+_MISSING_COL_RE = re.compile(r'column\s+(?:"?[\w.]+"?\.)?"?([\w]+)"?\s+does not exist', re.I)
+_INVALID_ENUM_RE = re.compile(r'invalid input value for enum\s+(\w+):\s*"?([\w-]+)"?', re.I)
+
+
+def _extract_missing_column(body_text: str) -> Optional[str]:
+    """Return the name of the missing column from a PostgREST 400/404 body,
+    or None if the body isn't a column-missing error."""
+    if not body_text:
+        return None
+    # PostgREST returns JSON like {"code":"42703","message":"column users.foo does not exist"}
+    if '"42703"' not in body_text and "does not exist" not in body_text:
+        return None
+    m = _MISSING_COL_RE.search(body_text)
+    return m.group(1) if m else None
+
+
+def _extract_invalid_enum_value(body_text: str) -> Optional[tuple[str, str]]:
+    """Return (enum_type, bad_value) if PostgREST rejected a value that
+    isn't part of the enum yet — happens when v5.0 code references a new
+    enum value (e.g. 'dispatched') against a v4.1 schema. Else None."""
+    if not body_text:
+        return None
+    if '"22P02"' not in body_text and "invalid input value for enum" not in body_text:
+        return None
+    m = _INVALID_ENUM_RE.search(body_text)
+    return (m.group(1), m.group(2)) if m else None
+
+
+def _strip_filter_value(params: Optional[dict], bad_value: str) -> Optional[dict]:
+    """Remove `bad_value` from any `=in.(...)` list in `params`. Falls
+    back to dropping the filter entirely if it would become empty.
+    Used to retry a query when PostgREST rejected an enum value that
+    doesn't exist on the under-migrated schema."""
+    if not params:
+        return None
+    changed = False
+    out: dict = {}
+    for k, v in params.items():
+        if isinstance(v, str) and v.startswith("in.(") and v.endswith(")"):
+            inside = v[4:-1]
+            parts = [p for p in inside.split(",") if p.strip() != bad_value]
+            if not parts:
+                changed = True
+                # drop the filter entirely
+                continue
+            new_v = "in.(" + ",".join(parts) + ")"
+            if new_v != v:
+                changed = True
+            out[k] = new_v
+        elif isinstance(v, str) and v == f"eq.{bad_value}":
+            changed = True
+            continue
+        else:
+            out[k] = v
+    return out if changed else None
+
+
+def _strip_select_column(params: Optional[dict], col: str) -> Optional[dict]:
+    """Return a copy of `params` with `col` removed from the comma-list in
+    `select=`. Used to retry a query when PostgREST tells us a column is
+    missing on an under-migrated schema."""
+    if not params or "select" not in params:
+        return None
+    parts = [p.strip() for p in params["select"].split(",") if p.strip() and p.strip() != col]
+    if not parts:
+        return None
+    out = dict(params)
+    out["select"] = ",".join(parts)
+    return out
+
+
 async def _sb_get(path: str, params: Optional[dict] = None, use_service: bool = True) -> Any:
     _require_supabase()
     url = f"{SUPABASE_URL}/rest/v1/{path.lstrip('/')}"
+    # Retry up to MAX_RETRIES times, each time stripping one missing column
+    # from the SELECT list. A v4.1 Supabase has up to 4 columns missing on
+    # `users` and a couple on `trips`, so the bound is comfortably high.
+    MAX_RETRIES = 10  # 6 missing cols + 4 missing enum values, comfortable bound
+    cur_params = dict(params) if params else None
     async with httpx.AsyncClient(timeout=10.0) as client:
-        r = await client.get(url, params=params, headers=_headers(use_service))
-        if r.status_code >= 400:
+        for attempt in range(MAX_RETRIES + 1):
+            r = await client.get(url, params=cur_params, headers=_headers(use_service))
+            if r.status_code < 400:
+                return r.json()
+
+            # 1. Column-missing error — drop the column from `select=`.
+            missing = _extract_missing_column(r.text)
+            if missing and cur_params and attempt < MAX_RETRIES:
+                next_params = _strip_select_column(cur_params, missing)
+                if next_params and next_params != cur_params:
+                    log.warning(
+                        "Supabase GET %s — column '%s' missing on under-migrated schema; retrying without it",
+                        path, missing,
+                    )
+                    cur_params = next_params
+                    continue
+
+            # 2. Enum-value-missing error — drop the value from any in.(…) list.
+            enum_err = _extract_invalid_enum_value(r.text)
+            if enum_err and cur_params and attempt < MAX_RETRIES:
+                next_params = _strip_filter_value(cur_params, enum_err[1])
+                if next_params is not None and next_params != cur_params:
+                    log.warning(
+                        "Supabase GET %s — enum value '%s' not on schema; retrying without it",
+                        path, enum_err[1],
+                    )
+                    cur_params = next_params
+                    continue
+
             log.warning("Supabase GET %s → %d: %s", path, r.status_code, r.text[:200])
             raise HTTPException(status_code=502, detail=f"Supabase error: {r.text[:200]}")
-        return r.json()
+    # Unreachable, but keep mypy happy.
+    raise HTTPException(status_code=502, detail="Supabase GET retries exhausted")
 
 
 async def _sb_post(path: str, payload: dict, use_service: bool = True) -> Any:
     _require_supabase()
     url = f"{SUPABASE_URL}/rest/v1/{path.lstrip('/')}"
+    MAX_RETRIES = 6
+    cur_payload = dict(payload) if isinstance(payload, dict) else payload
     async with httpx.AsyncClient(timeout=10.0) as client:
-        r = await client.post(url, json=payload, headers=_headers(use_service))
-        if r.status_code >= 400:
+        for attempt in range(MAX_RETRIES + 1):
+            r = await client.post(url, json=cur_payload, headers=_headers(use_service))
+            if r.status_code < 400:
+                return r.json() if r.content else {}
+            missing = _extract_missing_column(r.text)
+            if missing and isinstance(cur_payload, dict) and missing in cur_payload and attempt < MAX_RETRIES:
+                log.warning("Supabase POST %s — column '%s' missing; retrying without it", path, missing)
+                cur_payload = {k: v for k, v in cur_payload.items() if k != missing}
+                continue
             log.warning("Supabase POST %s → %d: %s", path, r.status_code, r.text[:200])
             raise HTTPException(status_code=502, detail=f"Supabase error: {r.text[:200]}")
-        return r.json() if r.content else {}
+    raise HTTPException(status_code=502, detail="Supabase POST retries exhausted")
 
 
 async def _sb_patch(
@@ -152,12 +272,21 @@ async def _sb_patch(
 ) -> Any:
     _require_supabase()
     url = f"{SUPABASE_URL}/rest/v1/{path.lstrip('/')}"
+    MAX_RETRIES = 6
+    cur_body = dict(body) if isinstance(body, dict) else body
     async with httpx.AsyncClient(timeout=10.0) as client:
-        r = await client.patch(url, params=params, json=body, headers=_headers(use_service))
-        if r.status_code >= 400:
+        for attempt in range(MAX_RETRIES + 1):
+            r = await client.patch(url, params=params, json=cur_body, headers=_headers(use_service))
+            if r.status_code < 400:
+                return r.json() if r.content else {}
+            missing = _extract_missing_column(r.text)
+            if missing and isinstance(cur_body, dict) and missing in cur_body and attempt < MAX_RETRIES:
+                log.warning("Supabase PATCH %s — column '%s' missing; retrying without it", path, missing)
+                cur_body = {k: v for k, v in cur_body.items() if k != missing}
+                continue
             log.warning("Supabase PATCH %s → %d: %s", path, r.status_code, r.text[:200])
             raise HTTPException(status_code=502, detail=f"Supabase error: {r.text[:200]}")
-        return r.json() if r.content else {}
+    raise HTTPException(status_code=502, detail="Supabase PATCH retries exhausted")
 
 
 async def _sb_delete(path: str, params: dict, use_service: bool = True) -> Any:
@@ -239,6 +368,103 @@ DISPATCHER_ROLES  = ADMIN_ROLES | {"dispatcher"}
 DRIVER_ROLES      = ADMIN_ROLES | {"driver"}
 
 
+# ── Revoked-tokens cache (Phase 6.3) ────────────────────────────────────────
+# A JWT can be killed mid-life by inserting its `jti` into the
+# revoked_tokens table. We keep an in-memory copy for cheap lookups and
+# refresh it once a minute. Vercel cold starts will refresh on first
+# request — acceptable.
+_REVOKED_JTI: set = set()
+_REVOKED_REFRESH_AT: float = 0.0
+_REVOKED_REFRESH_TTL = 60.0
+
+
+async def _refresh_revoked() -> None:
+    global _REVOKED_JTI, _REVOKED_REFRESH_AT
+    now = time.time()
+    if _REVOKED_REFRESH_AT > now:
+        return
+    try:
+        rows = await _sb_get(
+            "revoked_tokens",
+            params={"select": "jti", "expires_at": f"gt.{datetime.now(timezone.utc).isoformat()}"},
+            use_service=True,
+        )
+        _REVOKED_JTI = {r.get("jti") for r in rows if r.get("jti")}
+        _REVOKED_REFRESH_AT = now + _REVOKED_REFRESH_TTL
+    except Exception:
+        _REVOKED_REFRESH_AT = now + 10.0
+        log.exception("revoked-tokens refresh failed; keeping previous cache")
+
+
+async def _check_token_not_revoked(user: dict) -> None:
+    """Raise 401 if the JWT's jti is in the revoked_tokens table."""
+    jti = user.get("jti")
+    if not jti:
+        return  # tokens minted before 6.3 lack jti — let them through until expiry
+    await _refresh_revoked()
+    if jti in _REVOKED_JTI:
+        raise HTTPException(status_code=401, detail="Token has been revoked")
+
+
+# ── Session invalidation cache (Phase 6.2-D) ────────────────────────────────
+# Compares the JWT's `iat` against users.session_invalidate_after and
+# users.is_active. The DB is hit at most once per user per TTL window
+# so a high-frequency driver position stream isn't bottlenecked.
+_SESSION_CACHE: "dict[str, tuple[float, Optional[float], bool]]" = {}
+_SESSION_CACHE_TTL = 60.0  # seconds — short enough that demote takes effect within a minute
+
+
+async def _enforce_session(user: dict) -> None:
+    """Combined session gate (6.2-D + 6.3):
+      • Token jti must not be in revoked_tokens.
+      • User must be is_active.
+      • JWT iat must be >= users.session_invalidate_after.
+    Falls open on any DB error so a Supabase outage doesn't lock
+    every active session out."""
+    # Revoked check first — cheapest path and most exact.
+    await _check_token_not_revoked(user)
+    sub = user.get("sub")
+    iat = user.get("iat", 0)
+    if not sub:
+        return
+    now = time.time()
+    cached = _SESSION_CACHE.get(sub)
+    invalidate_after: Optional[float]
+    is_active: bool
+    if cached and cached[0] > now:
+        _expiry, invalidate_after, is_active = cached
+    else:
+        try:
+            rows = await _sb_get(
+                "users",
+                params={"id": f"eq.{sub}", "select": "session_invalidate_after,is_active", "limit": 1},
+                use_service=True,
+            )
+        except Exception:
+            log.exception("session check failed — allowing through")
+            return
+        if not rows:
+            # User was deleted (hard-deleted); reject.
+            raise HTTPException(status_code=401, detail="Account no longer exists")
+        row = rows[0]
+        is_active = bool(row.get("is_active", True))
+        sia = row.get("session_invalidate_after")
+        if sia:
+            try:
+                if sia.endswith("Z"):
+                    sia = sia[:-1] + "+00:00"
+                invalidate_after = datetime.fromisoformat(sia).timestamp()
+            except (ValueError, TypeError):
+                invalidate_after = None
+        else:
+            invalidate_after = None
+        _SESSION_CACHE[sub] = (now + _SESSION_CACHE_TTL, invalidate_after, is_active)
+    if not is_active:
+        raise HTTPException(status_code=401, detail="Account is deactivated")
+    if invalidate_after is not None and iat < invalidate_after:
+        raise HTTPException(status_code=401, detail="Session invalidated. Please log in again.")
+
+
 def _require_full_scope(user: Optional[dict]) -> dict:
     """Reject password_change_only tokens at every privileged endpoint."""
     if not user:
@@ -251,31 +477,35 @@ def _require_full_scope(user: Optional[dict]) -> dict:
     return user
 
 
-def _require_admin(request: Request) -> dict:
+async def _require_admin(request: Request) -> dict:
     user = _require_full_scope(_bearer_user(request))
     if user.get("role") not in ADMIN_ROLES:
         raise HTTPException(status_code=403, detail="Admin role required")
+    await _enforce_session(user)
     return user
 
 
-def _require_dispatcher(request: Request) -> dict:
+async def _require_dispatcher(request: Request) -> dict:
     user = _require_full_scope(_bearer_user(request))
     if user.get("role") not in DISPATCHER_ROLES:
         raise HTTPException(status_code=403, detail="Dispatcher or admin role required")
+    await _enforce_session(user)
     return user
 
 
-def _require_driver(request: Request) -> dict:
+async def _require_driver(request: Request) -> dict:
     user = _require_full_scope(_bearer_user(request))
     if user.get("role") not in DRIVER_ROLES:
         raise HTTPException(status_code=403, detail="Driver role required")
+    await _enforce_session(user)
     return user
 
 
-def _require_super_admin(request: Request) -> dict:
+async def _require_super_admin(request: Request) -> dict:
     user = _require_full_scope(_bearer_user(request))
     if user.get("role") not in SUPER_ROLES:
         raise HTTPException(status_code=403, detail="Super-admin role required")
+    await _enforce_session(user)
     return user
 
 
@@ -470,6 +700,76 @@ async def health():
 _DUMMY_BCRYPT = bcrypt.hashpw(b"dummy-password-for-timing", bcrypt.gensalt(rounds=10))
 _LOGIN_FAIL_DETAIL = "Invalid email or password / بيانات الدخول غير صحيحة"
 
+# Phase 6.3: how many failed attempts in the last hour to trigger lockout,
+# and how long the lockout lasts. Both deliberately conservative.
+_LOCKOUT_THRESHOLD     = 10
+_LOCKOUT_WINDOW_MIN    = 60
+_LOCKOUT_DURATION_MIN  = 30
+
+
+async def _record_login_attempt(
+    email: str, success: bool, request: Request, reason: Optional[str] = None
+) -> None:
+    """Best-effort write into login_attempts. Never blocks the auth path."""
+    try:
+        await _sb_post(
+            "login_attempts",
+            {
+                "email":      email,
+                "success":    success,
+                "ip_address": _client_ip(request),
+                "user_agent": (request.headers.get("user-agent") or "")[:200] or None,
+                "reason":     reason,
+            },
+            use_service=True,
+        )
+    except Exception:
+        log.exception("login_attempts write failed (non-fatal)")
+
+
+async def _maybe_lock_account(email: str) -> None:
+    """If failed_login_count crosses _LOCKOUT_THRESHOLD in the rolling
+    window, set users.locked_until to now + _LOCKOUT_DURATION_MIN and
+    raise a critical alert so dispatchers see the event."""
+    try:
+        n_rows = await _sb_rpc(
+            "failed_login_count",
+            {"p_email": email, "p_minutes": _LOCKOUT_WINDOW_MIN},
+            use_service=True,
+        )
+        if isinstance(n_rows, list) and n_rows:
+            n = int(n_rows[0]) if isinstance(n_rows[0], int) else 0
+        elif isinstance(n_rows, int):
+            n = n_rows
+        else:
+            n = 0
+    except Exception:
+        log.exception("failed_login_count RPC failed; skipping lockout check")
+        return
+    if n < _LOCKOUT_THRESHOLD:
+        return
+    locked_until = datetime.now(timezone.utc) + timedelta(minutes=_LOCKOUT_DURATION_MIN)
+    try:
+        await _sb_patch(
+            "users",
+            params={"email": f"eq.{email}"},
+            body={"locked_until": locked_until.isoformat()},
+            use_service=True,
+        )
+        await _sb_post(
+            "alerts",
+            {
+                "alert_type":   "sos",  # repurpose existing severity bucket; no new enum needed
+                "severity":     "warning",
+                "title":        f"Account locked: {email}",
+                "title_ar":     f"حساب مقفل: {email}",
+                "description":  f"{n} failed login attempts in the last {_LOCKOUT_WINDOW_MIN}m. Locked until {locked_until.isoformat()}.",
+            },
+            use_service=True,
+        )
+    except Exception:
+        log.exception("account lockout write failed (non-fatal)")
+
 
 @app.post("/api/auth/login")
 async def login(request: Request):
@@ -503,12 +803,30 @@ async def login(request: Request):
         params={
             "email": f"eq.{email}",
             "is_active": "eq.true",
-            "select": "id,email,password_hash,full_name,full_name_ar,role,operator_id,must_change_password",
+            "select": "id,email,password_hash,full_name,full_name_ar,role,operator_id,must_change_password,locked_until",
             "limit": 1,
         },
         use_service=True,
     )
     user = rows[0] if rows else None
+
+    # Phase 6.3: account lockout. If users.locked_until is in the future,
+    # short-circuit before bcrypt so we don't waste CPU on a known-bad
+    # email. Still records the attempt so reviewers can see lockout
+    # was triggered.
+    if user and user.get("locked_until"):
+        lu_raw = user["locked_until"]
+        try:
+            if lu_raw.endswith("Z"):
+                lu_raw = lu_raw[:-1] + "+00:00"
+            lu = datetime.fromisoformat(lu_raw)
+            if lu > datetime.now(timezone.utc):
+                await _record_login_attempt(email, False, request, reason="account_locked")
+                # Same generic error so an attacker can't tell a locked
+                # account apart from a wrong password.
+                raise HTTPException(status_code=401, detail=_LOGIN_FAIL_DETAIL)
+        except (ValueError, TypeError):
+            pass  # malformed timestamp — treat as not locked
 
     # H8: fix the precedence bug in the previous version where the value
     # of `stored` depended on a chained ternary that could blow up if the
@@ -523,7 +841,13 @@ async def login(request: Request):
     except (ValueError, TypeError):
         ok = False
     if not ok:
+        # Phase 6.3: log the failure + maybe lock the account.
+        await _record_login_attempt(email, False, request, reason="invalid_password")
+        await _maybe_lock_account(email)
         raise HTTPException(status_code=401, detail=_LOGIN_FAIL_DETAIL)
+
+    # Success path — log it.
+    await _record_login_attempt(email, True, request)
 
     must_change = bool(user.get("must_change_password"))
     token = _issue_jwt(user, temp=must_change)
@@ -922,7 +1246,7 @@ async def _bunching_check(vehicle: dict, lat: float, lon: float) -> dict:
 
 @app.post("/api/driver/position")
 async def driver_position(request: Request):
-    user = _require_driver(request)
+    user = await _require_driver(request)
     _rate_limit(request, f"driver-pos:{user['sub']}", limit=120, window_s=60)
     body = await request.json()
     lat, lon = _validate_coord(body.get("lat"), body.get("lon"))
@@ -992,7 +1316,7 @@ async def driver_position(request: Request):
 async def admin_headway(request: Request):
     """Dispatcher+ — current headway state for every active route in the
     caller's operator. Powers the headway gauge on /admin/dispatch.html."""
-    user = _require_dispatcher(request)
+    user = await _require_dispatcher(request)
     op_id = None if _is_super(user) else user.get("operator_id")
     try:
         rows = await _sb_rpc(
@@ -1015,7 +1339,7 @@ async def trip_start(request: Request):
     ad-hoc trip on the route their vehicle is currently bound to.
     This is the bridge between the dispatcher-driven flow (Track A) and
     the original always-on-route flow (v4.1)."""
-    user = _require_driver(request)
+    user = await _require_driver(request)
     v = await _driver_vehicle(user)
     if not v:
         raise HTTPException(status_code=400, detail="No vehicle assigned to this driver")
@@ -1062,8 +1386,13 @@ async def trip_start(request: Request):
 
 @app.post("/api/driver/trip/end")
 async def trip_end(request: Request):
-    """H8: enforce ownership — a driver may only end THEIR OWN trip."""
-    user = _require_driver(request)
+    """H8: enforce ownership — a driver may only end THEIR OWN trip.
+
+    Phase 6.2-B: also enforce a status guard so a previously cancelled
+    or completed trip never gets clobbered to 'completed' by a delayed
+    driver tap. If the trip was cancelled mid-flight by a dispatcher,
+    the driver's End Trip press becomes a no-op."""
+    user = await _require_driver(request)
     body = await request.json()
     trip_id = body.get("trip_id")
     if not trip_id or str(trip_id).startswith("local-"):
@@ -1072,7 +1401,7 @@ async def trip_end(request: Request):
         raise HTTPException(status_code=400, detail="Invalid trip_id")
     rows = await _sb_get(
         "trips",
-        params={"id": f"eq.{trip_id}", "select": "id,driver_id,operator_id", "limit": 1},
+        params={"id": f"eq.{trip_id}", "select": "id,driver_id,operator_id,status", "limit": 1},
         use_service=True,
     )
     if not rows:
@@ -1080,6 +1409,15 @@ async def trip_end(request: Request):
     trip = rows[0]
     if trip.get("driver_id") != user["sub"] and not _is_super(user) and user.get("role") not in ADMIN_ROLES:
         raise HTTPException(status_code=403, detail="You can only end your own trips")
+    # 6.2-B status guard.
+    cur_status = trip.get("status")
+    if cur_status in ("cancelled", "completed"):
+        # Return success-ish so the driver's UI moves on, but tell the
+        # caller what actually happened in case the app wants to surface it.
+        return {"ok": True, "no_op": True, "status": cur_status}
+    if cur_status not in ("in_progress", "acked"):
+        # Defensive — only an in-progress (or just-acked) trip can be ended.
+        raise HTTPException(status_code=409, detail=f"Cannot end a trip in status '{cur_status}'")
     await _sb_patch(
         "trips",
         params={"id": f"eq.{trip_id}"},
@@ -1098,7 +1436,7 @@ async def trip_end(request: Request):
 async def trip_passenger_count(request: Request):
     """H8: actually persist the passenger count to the trip row instead of
     returning a fake success."""
-    user = _require_driver(request)
+    user = await _require_driver(request)
     body = await request.json()
     trip_id = body.get("trip_id")
     try:
@@ -1125,7 +1463,7 @@ async def trip_passenger_count(request: Request):
 
 @app.post("/api/driver/incident")
 async def driver_incident(request: Request):
-    user = _require_driver(request)
+    user = await _require_driver(request)
     _rate_limit(request, f"incident:{user['sub']}", limit=5, window_s=600)
     body = await request.json()
     point = None
@@ -1153,7 +1491,7 @@ async def driver_incident(request: Request):
 # ── ADMIN — read endpoints ───────────────────────────────────────────────────
 @app.get("/api/admin/analytics/overview")
 async def admin_overview(request: Request, range: str = "7d"):
-    user = _require_dispatcher(request)
+    user = await _require_dispatcher(request)
     params = _scope_to_operator(user, {"select": "id,status,passenger_count,actual_start"})
     trips = await _sb_get("trips", params=params, use_service=True)
     alerts = await _sb_get(
@@ -1186,7 +1524,7 @@ async def admin_overview(request: Request, range: str = "7d"):
 
 @app.get("/api/admin/alerts")
 async def admin_alerts(request: Request, limit: int = 5):
-    user = _require_dispatcher(request)
+    user = await _require_dispatcher(request)
     limit = max(1, min(int(limit or 5), 500))
     rows = await _sb_get(
         "alerts",
@@ -1203,7 +1541,7 @@ async def admin_alerts(request: Request, limit: int = 5):
 @app.get("/api/admin/users")
 async def admin_users(request: Request, limit: int = 200):
     """Admin / super-admin only. Strict per-operator isolation."""
-    user = _require_admin(request)
+    user = await _require_admin(request)
     limit = max(1, min(int(limit or 200), 1000))
     rows = await _sb_get(
         "users",
@@ -1222,7 +1560,7 @@ async def admin_users(request: Request, limit: int = 200):
 
 @app.get("/api/admin/vehicles")
 async def admin_vehicles(request: Request, limit: int = 200):
-    user = _require_dispatcher(request)
+    user = await _require_dispatcher(request)
     limit = max(1, min(int(limit or 200), 1000))
     vehicles = await _sb_get(
         "vehicles",
@@ -1259,7 +1597,7 @@ async def admin_vehicles(request: Request, limit: int = 200):
 
 @app.get("/api/admin/stats")
 async def admin_stats(request: Request):
-    user = _require_dispatcher(request)
+    user = await _require_dispatcher(request)
     vehicles = await _sb_get("vehicles", params=_scope_to_operator(user, {"select": "id,status"}), use_service=True)
     routes = await _sb_get("routes", params=_scope_to_operator(user, {"select": "id,is_active"}), use_service=True)
     stops = await _sb_get("stops", params=_scope_to_operator(user, {"select": "id"}), use_service=False)
@@ -1289,7 +1627,7 @@ async def admin_stats(request: Request):
 
 @app.patch("/api/admin/alerts/{alert_id}/resolve")
 async def admin_resolve_alert(alert_id: str, request: Request):
-    user = _require_dispatcher(request)
+    user = await _require_dispatcher(request)
     _require_uuid(alert_id, "alert id")
     # H8: enforce operator ownership before resolving.
     rows = await _sb_get(
@@ -1415,7 +1753,7 @@ def _validate_vehicle_payload(body: dict, *, partial: bool = False) -> dict:
 @app.post("/api/admin/vehicles")
 async def admin_create_vehicle(request: Request):
     """Create a new bus / microbus / taxi. Admin-only."""
-    user = _require_admin(request)
+    user = await _require_admin(request)
     body = await request.json()
     fields = _validate_vehicle_payload(body, partial=False)
 
@@ -1453,7 +1791,7 @@ async def admin_create_vehicle(request: Request):
 
 @app.patch("/api/admin/vehicles/{vehicle_id}")
 async def admin_update_vehicle(vehicle_id: str, request: Request):
-    user = _require_admin(request)
+    user = await _require_admin(request)
     _require_uuid(vehicle_id, "vehicle id")
     body = await request.json()
     patch = _validate_vehicle_payload(body, partial=True)
@@ -1494,7 +1832,7 @@ async def admin_update_vehicle(vehicle_id: str, request: Request):
 async def admin_delete_vehicle(vehicle_id: str, request: Request):
     """Soft-delete (is_active=false). Real deletes risk leaving orphan
     trip/alert rows behind."""
-    user = _require_admin(request)
+    user = await _require_admin(request)
     _require_uuid(vehicle_id, "vehicle id")
     rows = await _sb_get(
         "vehicles",
@@ -1505,14 +1843,49 @@ async def admin_delete_vehicle(vehicle_id: str, request: Request):
         raise HTTPException(status_code=404, detail="Vehicle not found")
     if not _is_super(user) and rows[0].get("operator_id") != user.get("operator_id"):
         raise HTTPException(status_code=403, detail="Vehicle belongs to a different operator")
+    # Phase 6.2-C: cancel any in-progress / acked / dispatched / scheduled
+    # trip on this vehicle before flipping it off, so drivers don't end up
+    # with a dangling trip ID whose vehicle suddenly has no GPS path.
+    cancelled = 0
+    try:
+        cancelled_rows = await _sb_rpc(
+            "cancel_active_trips_for_vehicle",
+            {"p_vehicle_id": vehicle_id, "p_reason": "vehicle decommissioned"},
+            use_service=True,
+        )
+        if isinstance(cancelled_rows, int):
+            cancelled = cancelled_rows
+        elif isinstance(cancelled_rows, list) and cancelled_rows:
+            cancelled = int(cancelled_rows[0]) if isinstance(cancelled_rows[0], int) else 0
+    except Exception:
+        # Best-effort. On older schemas the RPC doesn't exist yet; we
+        # fall back to a direct PATCH so the orphan-trip bug is still
+        # avoided.
+        try:
+            await _sb_patch(
+                "trips",
+                params={
+                    "vehicle_id": f"eq.{vehicle_id}",
+                    "status":     "in.(scheduled,dispatched,acked,in_progress)",
+                },
+                body={
+                    "status":              "cancelled",
+                    "actual_end":          datetime.now(timezone.utc).isoformat(),
+                    "cancellation_reason": "vehicle decommissioned",
+                },
+                use_service=True,
+            )
+        except Exception:
+            log.exception("could not cancel active trips for vehicle %s", vehicle_id)
+
     await _sb_patch(
         "vehicles",
         params={"id": f"eq.{vehicle_id}"},
         body={"is_active": False, "status": "decommissioned", "assigned_driver_id": None, "updated_at": datetime.now(timezone.utc).isoformat()},
         use_service=True,
     )
-    await _audit(user, "vehicle_decommissioned", "vehicles", entity_id=vehicle_id)
-    return {"ok": True}
+    await _audit(user, "vehicle_decommissioned", "vehicles", entity_id=vehicle_id, details={"cancelled_trips": cancelled})
+    return {"ok": True, "cancelled_trips": cancelled}
 
 
 @app.post("/api/admin/vehicles/register")
@@ -1527,7 +1900,7 @@ async def admin_register_vehicle(request: Request):
 
     Steps run in order; if any step fails the vehicle is rolled back so
     we never leave partial linkage behind."""
-    user = _require_admin(request)
+    user = await _require_admin(request)
     body = await request.json()
     fields = _validate_vehicle_payload(body, partial=False)
     geofence_id = body.get("geofence_id")
@@ -1672,7 +2045,7 @@ def _validate_route_payload(body: dict, *, partial: bool = False) -> dict:
 
 @app.post("/api/admin/routes")
 async def admin_create_route(request: Request):
-    user = _require_admin(request)
+    user = await _require_admin(request)
     body = await request.json()
     fields = _validate_route_payload(body, partial=False)
     op_id = user.get("operator_id") if not _is_super(user) else (body.get("operator_id") or user.get("operator_id"))
@@ -1690,7 +2063,7 @@ async def admin_create_route(request: Request):
 
 @app.patch("/api/admin/routes/{route_id}")
 async def admin_update_route(route_id: str, request: Request):
-    user = _require_admin(request)
+    user = await _require_admin(request)
     _require_uuid(route_id, "route id")
     body = await request.json()
     patch = _validate_route_payload(body, partial=True)
@@ -1718,7 +2091,7 @@ async def admin_update_route(route_id: str, request: Request):
 
 @app.delete("/api/admin/routes/{route_id}")
 async def admin_delete_route(route_id: str, request: Request):
-    user = _require_admin(request)
+    user = await _require_admin(request)
     _require_uuid(route_id, "route id")
     rows = await _sb_get("routes", params={"id": f"eq.{route_id}", "select": "id,operator_id", "limit": 1}, use_service=True)
     if not rows:
@@ -1768,7 +2141,7 @@ def _validate_stop_payload(body: dict, *, partial: bool = False) -> dict:
 
 @app.post("/api/admin/stops")
 async def admin_create_stop(request: Request):
-    user = _require_admin(request)
+    user = await _require_admin(request)
     body = await request.json()
     fields = _validate_stop_payload(body, partial=False)
     op_id = user.get("operator_id") if not _is_super(user) else (body.get("operator_id") or user.get("operator_id"))
@@ -1786,7 +2159,7 @@ async def admin_create_stop(request: Request):
 
 @app.patch("/api/admin/stops/{stop_id}")
 async def admin_update_stop(stop_id: str, request: Request):
-    user = _require_admin(request)
+    user = await _require_admin(request)
     _require_uuid(stop_id, "stop id")
     body = await request.json()
     patch = _validate_stop_payload(body, partial=True)
@@ -1804,7 +2177,7 @@ async def admin_update_stop(stop_id: str, request: Request):
 
 @app.delete("/api/admin/stops/{stop_id}")
 async def admin_delete_stop(stop_id: str, request: Request):
-    user = _require_admin(request)
+    user = await _require_admin(request)
     _require_uuid(stop_id, "stop id")
     rows = await _sb_get("stops", params={"id": f"eq.{stop_id}", "select": "id,operator_id", "limit": 1}, use_service=True)
     if not rows:
@@ -1858,7 +2231,7 @@ async def admin_create_user(request: Request):
     """Create a new user. Caller's role must be >= the new user's role
     (no privilege escalation). operator_id auto-bound. must_change_password
     set to true on creation so the new user is forced to rotate."""
-    user = _require_admin(request)
+    user = await _require_admin(request)
     body = await request.json()
     fields = _validate_user_payload(body, partial=False)
     new_role = fields["role"]
@@ -1891,7 +2264,7 @@ async def admin_create_user(request: Request):
 
 @app.patch("/api/admin/users/{target_id}")
 async def admin_update_user(target_id: str, request: Request):
-    user = _require_admin(request)
+    user = await _require_admin(request)
     _require_uuid(target_id, "user id")
     body = await request.json()
     rows = await _sb_get(
@@ -1920,7 +2293,7 @@ async def admin_update_user(target_id: str, request: Request):
 
 @app.delete("/api/admin/users/{target_id}")
 async def admin_delete_user(target_id: str, request: Request):
-    user = _require_admin(request)
+    user = await _require_admin(request)
     _require_uuid(target_id, "user id")
     if target_id == user["sub"]:
         raise HTTPException(status_code=400, detail="You cannot delete your own account")
@@ -1960,7 +2333,7 @@ def _validate_polygon(geom: Any) -> dict:
 
 @app.get("/api/admin/geofences")
 async def admin_list_geofences(request: Request):
-    user = _require_dispatcher(request)
+    user = await _require_dispatcher(request)
     rows = await _sb_get(
         "geofences",
         params=_scope_to_operator(user, {
@@ -1974,7 +2347,7 @@ async def admin_list_geofences(request: Request):
 
 @app.post("/api/admin/geofences")
 async def admin_create_geofence(request: Request):
-    user = _require_admin(request)
+    user = await _require_admin(request)
     body = await request.json()
     name = (body.get("name") or "").strip()
     if not name:
@@ -2022,7 +2395,7 @@ async def admin_create_geofence(request: Request):
 
 @app.patch("/api/admin/geofences/{gf_id}")
 async def admin_update_geofence(gf_id: str, request: Request):
-    user = _require_admin(request)
+    user = await _require_admin(request)
     _require_uuid(gf_id, "geofence id")
     body = await request.json()
     rows = await _sb_get("geofences", params={"id": f"eq.{gf_id}", "select": "id,operator_id", "limit": 1}, use_service=True)
@@ -2054,7 +2427,7 @@ async def admin_update_geofence(gf_id: str, request: Request):
 
 @app.delete("/api/admin/geofences/{gf_id}")
 async def admin_delete_geofence(gf_id: str, request: Request):
-    user = _require_admin(request)
+    user = await _require_admin(request)
     _require_uuid(gf_id, "geofence id")
     rows = await _sb_get("geofences", params={"id": f"eq.{gf_id}", "select": "id,operator_id", "limit": 1}, use_service=True)
     if not rows:
@@ -2210,7 +2583,7 @@ async def _trip_payload_validate(body: dict, *, partial: bool, op_id: Optional[s
 async def admin_list_trips(request: Request, limit: int = 100, status: Optional[str] = None):
     """Dispatcher+ — list trips, scoped to the caller's operator. Optional
     ?status= filter accepts a comma list (e.g. status=scheduled,dispatched)."""
-    user = _require_dispatcher(request)
+    user = await _require_dispatcher(request)
     limit = max(1, min(int(limit or 100), 1000))
     params = _scope_to_operator(user, {
         "select": "id,vehicle_id,route_id,driver_id,status,scheduled_start,actual_start,actual_end,passenger_count,planned_passengers,dispatched_by_user_id,dispatched_at,acked_at,notes,operator_id,created_at",
@@ -2230,7 +2603,7 @@ async def admin_list_trips(request: Request, limit: int = 100, status: Optional[
 async def admin_create_trip(request: Request):
     """Dispatcher+ — schedule a new trip. Detects schedule conflicts for
     the same driver within ±30 minutes and returns 409 instead of inserting."""
-    user = _require_dispatcher(request)
+    user = await _require_dispatcher(request)
     body = await request.json()
     op_id = user.get("operator_id") if not _is_super(user) else (body.get("operator_id") or user.get("operator_id"))
     if not op_id:
@@ -2271,7 +2644,7 @@ async def admin_update_trip(trip_id: str, request: Request):
         dispatched → acked | cancelled
         acked      → in_progress | cancelled
     Drivers handle in_progress→completed via /api/driver/trip/end."""
-    user = _require_dispatcher(request)
+    user = await _require_dispatcher(request)
     _require_uuid(trip_id, "trip id")
     body = await request.json()
     rows = await _sb_get(
@@ -2319,7 +2692,7 @@ async def admin_update_trip(trip_id: str, request: Request):
 async def admin_delete_trip(trip_id: str, request: Request):
     """Cancel a trip (soft). Real DELETE is reserved for never-dispatched
     drafts; once a driver has acked we always go through cancel-with-reason."""
-    user = _require_dispatcher(request)
+    user = await _require_dispatcher(request)
     _require_uuid(trip_id, "trip id")
     rows = await _sb_get(
         "trips",
@@ -2352,7 +2725,7 @@ async def driver_me(request: Request):
     """Return the driver's own assigned vehicle/route bundle so the driver
     app can show 'Bus B-101 — Route R101' instead of the stale 'Waiting
     for route assignment' placeholder."""
-    user = _require_driver(request)
+    user = await _require_driver(request)
     v = await _driver_vehicle(user)
     if not v:
         return {"vehicle": None, "route": None}
@@ -2381,7 +2754,7 @@ async def driver_next_trip(request: Request):
     """The driver app polls this on launch and after every successful
     end-of-trip. Returns the next non-completed, non-cancelled trip for
     this driver, or null if there isn't one queued."""
-    user = _require_driver(request)
+    user = await _require_driver(request)
     rows = await _sb_get(
         "trips",
         params={
@@ -2411,7 +2784,7 @@ async def driver_next_trip(request: Request):
 @app.post("/api/driver/trip/{trip_id}/ack")
 async def driver_ack_trip(trip_id: str, request: Request):
     """Driver acknowledges a dispatched trip. Moves dispatched → acked."""
-    user = _require_driver(request)
+    user = await _require_driver(request)
     _require_uuid(trip_id, "trip id")
     rows = await _sb_get(
         "trips",
@@ -2432,6 +2805,128 @@ async def driver_ack_trip(trip_id: str, request: Request):
         use_service=True,
     )
     await _audit({"sub": user["sub"], "operator_id": trip.get("operator_id")}, "trip_acked", "trips", entity_id=trip_id)
+    return {"ok": True}
+
+
+# ── ADMIN — OPERATIONAL HARDENING ENDPOINTS (Phase 6.3) ─────────────────────
+
+@app.post("/api/admin/users/{target_id}/revoke_sessions")
+async def admin_revoke_sessions(target_id: str, request: Request):
+    """Force-logout every active session for the target user. Admin-only.
+    Bumps users.session_invalidate_after so all currently-issued JWTs
+    (which have iat < now) are rejected by _enforce_session within ~60s."""
+    user = await _require_admin(request)
+    _require_uuid(target_id, "user id")
+    rows = await _sb_get(
+        "users",
+        params={"id": f"eq.{target_id}", "select": "id,role,operator_id", "limit": 1},
+        use_service=True,
+    )
+    if not rows:
+        raise HTTPException(status_code=404, detail="User not found")
+    target = rows[0]
+    if not _is_super(user) and target.get("operator_id") != user.get("operator_id"):
+        raise HTTPException(status_code=403, detail="User belongs to a different operator")
+    if ROLE_RANK.get(target.get("role"), 0) > ROLE_RANK.get(user.get("role"), 0):
+        raise HTTPException(status_code=403, detail="Cannot revoke sessions of a higher-role user")
+    await _sb_patch(
+        "users",
+        params={"id": f"eq.{target_id}"},
+        body={"session_invalidate_after": datetime.now(timezone.utc).isoformat()},
+        use_service=True,
+    )
+    # Drop the per-user cache so the change kicks in on the next request
+    # instead of waiting for the 60s TTL.
+    _SESSION_CACHE.pop(target_id, None)
+    await _audit(user, "user_sessions_revoked", "users", entity_id=target_id)
+    return {"ok": True}
+
+
+@app.post("/api/admin/tokens/revoke")
+async def admin_revoke_token(request: Request):
+    """Revoke a single JWT by its `jti`. Admin-only. Useful when you
+    spot a suspicious session in audit_log."""
+    user = await _require_admin(request)
+    body = await request.json()
+    jti = (body.get("jti") or "").strip()
+    reason = (body.get("reason") or "manual revoke")[:200]
+    if not jti or len(jti) > 64:
+        raise HTTPException(status_code=400, detail="jti required")
+    target_user_id = body.get("user_id")
+    if target_user_id and not _is_uuid(target_user_id):
+        raise HTTPException(status_code=400, detail="Invalid user_id")
+    # Tokens expire 24h after issue at most; keep the row around for 25h
+    # to cover clock skew, then it's pruned.
+    expires_at = (datetime.now(timezone.utc) + timedelta(hours=25)).isoformat()
+    await _sb_post(
+        "revoked_tokens",
+        {"jti": jti, "user_id": target_user_id, "expires_at": expires_at, "reason": reason},
+        use_service=True,
+    )
+    # Force a refresh next request.
+    global _REVOKED_REFRESH_AT
+    _REVOKED_REFRESH_AT = 0.0
+    await _audit(user, "token_revoked", "revoked_tokens", entity_id=jti, details={"reason": reason})
+    return {"ok": True}
+
+
+@app.get("/api/admin/login_attempts")
+async def admin_login_attempts(request: Request, email: Optional[str] = None, limit: int = 100):
+    """Admin-only — list recent login attempts.
+    Optional ?email= filter. Useful when investigating a lockout."""
+    user = await _require_admin(request)
+    limit = max(1, min(int(limit or 100), 1000))
+    params = {
+        "select": "id,email,success,ip_address,user_agent,reason,attempted_at",
+        "order":  "attempted_at.desc",
+        "limit":  limit,
+    }
+    if email:
+        params["email"] = f"eq.{email.strip().lower()}"
+    rows = await _sb_get("login_attempts", params=params, use_service=True)
+    return rows
+
+
+@app.get("/api/admin/audit_log")
+async def admin_audit_log(request: Request, limit: int = 200, action: Optional[str] = None):
+    """Admin-only — recent audit_log rows, scoped to the caller's operator
+    (super_admin sees all). Powers the audit-log review page."""
+    user = await _require_admin(request)
+    limit = max(1, min(int(limit or 200), 1000))
+    params: dict = {
+        "select": "id,action,entity_type,entity_id,user_id,operator_id,details,created_at",
+        "order":  "created_at.desc",
+        "limit":  limit,
+    }
+    if action:
+        params["action"] = f"eq.{action.strip()}"
+    params = _scope_to_operator(user, params)
+    rows = await _sb_get("audit_log", params=params, use_service=True)
+    return rows
+
+
+@app.post("/api/admin/users/{target_id}/unlock")
+async def admin_unlock_user(target_id: str, request: Request):
+    """Clear locked_until on the user record. Admin-only."""
+    user = await _require_admin(request)
+    _require_uuid(target_id, "user id")
+    rows = await _sb_get(
+        "users",
+        params={"id": f"eq.{target_id}", "select": "id,role,operator_id", "limit": 1},
+        use_service=True,
+    )
+    if not rows:
+        raise HTTPException(status_code=404, detail="User not found")
+    target = rows[0]
+    if not _is_super(user) and target.get("operator_id") != user.get("operator_id"):
+        raise HTTPException(status_code=403, detail="User belongs to a different operator")
+    await _sb_patch(
+        "users",
+        params={"id": f"eq.{target_id}"},
+        body={"locked_until": None},
+        use_service=True,
+    )
+    await _audit(user, "user_unlocked", "users", entity_id=target_id)
     return {"ok": True}
 
 
