@@ -45,15 +45,22 @@ command -v git >/dev/null 2>&1 || fail "git not found. Install with: xcode-selec
 : "${SOURCE_REMOTE:=https://github.com/XYHDX/DTS.git}"
 : "${META_REMOTE:=}"            # leave empty to skip the top-level push
 
-# Conflict-resolution mode. Pick exactly one (or leave both empty).
-#   PUSH_REBASE=1   → on a stale/non-fast-forward reject, fetch origin,
-#                     rebase local main on top of origin/main, push again.
-#                     Keeps the remote's history; safe for shared repos.
-#   PUSH_FORCE=1    → overwrite the remote with the local history
-#                     (still uses --force-with-lease, so it only succeeds
-#                     when the remote hasn't moved since we last fetched).
-#                     Loses commits on the remote that aren't local.
-#                     Only safe for solo / throwaway-history repos.
+# Conflict-resolution mode. Pick exactly one (or leave all empty).
+#   PUSH_MERGE=1    → RECOMMENDED for "switching deployment generations"
+#                     (e.g. landing the v5.0 rewrite on a v4.x project
+#                     history). Soft-resets HEAD to origin/main and
+#                     commits the entire working tree as ONE new commit
+#                     on top. Result: remote history is preserved AND
+#                     your new tree is the new HEAD. Zero conflicts.
+#   PUSH_REBASE=1   → on a non-fast-forward reject, fetch origin and
+#                     rebase local commits on top of origin/main with
+#                     `-X theirs` so conflicts auto-resolve in favor of
+#                     your local changes. Keeps your commit granularity
+#                     but the diffs may not be quite what you expect if
+#                     remote and local edited the same lines.
+#   PUSH_FORCE=1    → wipe the remote with --force-with-lease. Loses
+#                     remote-only commits. Solo / throwaway repos only.
+: "${PUSH_MERGE:=}"
 : "${PUSH_REBASE:=}"
 : "${PUSH_FORCE:=}"
 
@@ -151,14 +158,79 @@ push_repo() {
   git log --oneline "main..origin/main" 2>/dev/null | sed 's/^/  /' || echo "  (none)"
   echo
 
+  if [ -n "$PUSH_MERGE" ]; then
+    banner "PUSH_MERGE=1 — soft-reset to origin/main, then squash-commit working tree"
+    # Snapshot the current branch SHA so we can show it in the squashed
+    # commit message and so the reflog still has it.
+    local prev_sha
+    prev_sha="$(git rev-parse HEAD)"
+    local prev_short remote_short
+    prev_short="$(git rev-parse --short HEAD)"
+    remote_short="$(git rev-parse --short origin/main)"
+
+    # Move HEAD to origin/main without touching the working tree. After
+    # this, `git status` shows every file that differs between origin/main
+    # and our v5.0 tree as a staged change.
+    git reset --soft origin/main || fail "soft reset failed"
+
+    if git diff --cached --quiet; then
+      warn "$label working tree already matches origin/main — nothing to commit"
+      cd - >/dev/null
+      return 0
+    fi
+
+    # Compose a commit message that names the snapshot we came from.
+    local msg
+    msg="feat: land v5.0 + Track A + Track C on top of origin/main ($remote_short)
+
+This single commit replays the tree that lived at $prev_short
+on top of the remote's existing history.  No remote commit is lost.
+
+What this brings in (full ledger in FIXES_APPLIED.md):
+  • H1–H10 hardening (rotated shared bcrypt hash, super_admin role +
+    per-operator isolation, full CRUD on vehicles/routes/stops/users/
+    geofences, atomic vehicle registration, audit log on every admin
+    write, JWT_SECRET 32-char minimum, fix login precedence bug,
+    trip-end ownership, alert resolve scope, …).
+  • Track A: trip dispatch lifecycle (scheduled → dispatched → acked
+    → in_progress → completed | cancelled), new /admin/dispatch.html
+    Dispatcher Console, /api/driver/me + next_trip + ack, Start Trip
+    promotes a queued trip.
+  • Track C: target_headway_min on routes, bus_bunching alert type,
+    detect_bunching + route_headway_status RPCs, /api/admin/headway
+    endpoint, driver-app amber hold banner with countdown, headway
+    strip on the Dispatcher Console.
+  • Visible-bug fixes: stops_count hydration, idle/decommissioned
+    i18n keys, footer v4.0 → v5.0, _gate.js eliminates the
+    flash-of-empty-admin-shell, computed KPI deltas.
+
+Migrations to apply on Supabase in order:
+  011_rotate_demo_credentials.sql
+  012_geofence_capacity_and_links.sql
+  013_trip_dispatch.sql
+  014_headway_control.sql"
+
+    git commit -m "$msg" || fail "squash commit failed"
+
+    if git push -u origin main; then
+      ok "$label landed v5.0 on top of remote history"
+      cd - >/dev/null
+      return 0
+    fi
+    fail "push failed even after squash — check origin moved between fetch and push"
+  fi
+
   if [ -n "$PUSH_REBASE" ]; then
-    banner "PUSH_REBASE=1 — rebasing local main onto origin/main"
-    if git pull --rebase origin main; then
+    banner "PUSH_REBASE=1 — rebasing local main onto origin/main (favoring local in conflicts)"
+    # -X theirs in a rebase context means "prefer the side being applied"
+    # which is OUR commits (rebase terminology is reversed).
+    if git pull --rebase -X theirs origin main; then
       ok "$label rebase OK — pushing again"
       git push -u origin main && { ok "$label pushed (post-rebase)"; cd - >/dev/null; return 0; }
       fail "push still failed after rebase — fix manually with: cd $repo && git status"
     else
-      fail "rebase reported conflicts — fix manually with: cd $repo && git status"
+      warn "rebase reported a tree-level conflict that -X theirs couldn't auto-resolve"
+      fail "fix manually: cd $repo && git status (or: git rebase --abort && PUSH_MERGE=1 bash \"$0\")"
     fi
   fi
 
@@ -173,15 +245,15 @@ push_repo() {
     fail "force push failed — see error above"
   fi
 
-  echo "Choose one:"
-  echo "  • Keep the remote's commits and replay yours on top:"
+  echo -e "${BOLD}Choose ONE:${RESET}"
+  echo "  • RECOMMENDED — keep the remote's history, add v5.0 as one new commit on top:"
+  echo "      PUSH_MERGE=1 bash \"$0\""
+  echo "  • Replay your local commits on top with auto-resolve favoring v5.0:"
   echo "      PUSH_REBASE=1 bash \"$0\""
-  echo "  • Overwrite the remote with your local history (loses the commits above):"
+  echo "  • Discard the remote history entirely (you lose the commits listed above):"
   echo "      PUSH_FORCE=1 bash \"$0\""
   echo "  • Or do it manually:"
-  echo "      cd $repo"
-  echo "      git pull --rebase origin main  # then resolve conflicts"
-  echo "      git push -u origin main"
+  echo "      cd $repo && git pull --rebase origin main && git push"
   fail "push not completed for $label — pick a strategy and re-run"
 }
 push_repo "$HERE/source" "$SOURCE_REMOTE" "source/"

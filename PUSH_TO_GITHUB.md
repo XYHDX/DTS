@@ -177,15 +177,27 @@ curl -s "$HOST/api/routes" | python3 -m json.tool | head -40
 ### "stale info" or "non-fast-forward" (push rejected)
 
 Means the remote `main` has commits your local doesn't. The script
-prints both sides of the diff so you can choose. Two safe options:
+prints both sides of the diff so you can see what's about to happen,
+then offers three recovery modes — pick based on what the diff shows:
 
 ```bash
-# A) Keep the remote commits, replay yours on top:
+# RECOMMENDED for "switching deployment generations" — the remote
+# has the v4.x history (design system, deploy fixes, wave2/3, etc.)
+# and your local is the fresh v5.0 / Track A / Track C work that
+# replaces almost everything. This soft-resets to origin/main and
+# lands your entire working tree as ONE new commit on top, so the
+# remote history is preserved AND your new tree becomes HEAD.
+# Zero conflicts.
 cd ~/Documents/Claude/Projects/DamascusTransitSystem
+PUSH_MERGE=1 bash "./Push to GitHub.command"
+
+# Alternative — replay your local commits on top of origin/main,
+# auto-resolving conflicts in favor of your changes (-X theirs):
 PUSH_REBASE=1 bash "./Push to GitHub.command"
 
-# B) Overwrite the remote with your local history (you lose any
-#    commits that exist only on origin — check the diff first):
+# DESTRUCTIVE — overwrite the remote with the local history. You
+# lose every commit listed in "REMOTE has but LOCAL doesn't". Only
+# use on a personal / throwaway repo:
 PUSH_FORCE=1 bash "./Push to GitHub.command"
 ```
 
