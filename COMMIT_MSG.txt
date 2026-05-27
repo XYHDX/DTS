@@ -1,32 +1,31 @@
-feat(track-c): headway control + bunching alerts
+feat(wave-6 phases 6.4-6.6): passenger ETA, driver offline queue, real analytics + CSV
 
-Adds the traffic-jam mitigation layer recommended by TransitCenter /
-Metro Magazine / APTA BRT design guidance — purely software, no signal
-or lane infrastructure required.
+Phase 6.4 — Passenger ETA + favorites
+  • New endpoint GET /api/routes/{code}/stops returns the route's stop
+    sequence with per-stop eta_min (haversine from the closest in-service
+    vehicle on the route, at the conservative 8-km/h floor). Uses the
+    route_stops data that migration 015 seeded.
+  • Passenger homepage popular-routes panel now shows real stops_count
+    (no more "0 محطة"), surfaces favorited routes at the top, and has
+    a star-toggle that persists to localStorage. No account required.
 
-Schema (migration 014_headway_control.sql):
-- routes.target_headway_min  — NULL disables headway control.
-- alert_type 'bus_bunching'  — new enum value.
-- headway_observations       — append-only log, tenant-RLS'd.
-- RPC route_headway_status(p_operator) → per-route gauge data.
-- RPC detect_bunching(vehicle_id, lat, lon, threshold_m) → closest
-  same-route vehicle and recommended hold_seconds (uses an 18 km/h
-  Damascus dense-traffic median speed).
-- Seed: R101/R102 target headway 8min, R201/R202 target 5min.
+Phase 6.5 — Driver app polish
+  • postPosition() now wraps fetch in a localStorage queue: failed or
+    offline writes are buffered (cap 200), and a successful write OR
+    the window.online event flushes them. The driver never loses a
+    minute of GPS history because they ducked into a tunnel.
 
-API:
-- GET /api/admin/headway (dispatcher+) — wraps route_headway_status.
-- _bunching_check() runs after every /api/driver/position write,
-  dedupes alerts (no repeat within 5 min for the same pair), records
-  every observation, and surfaces hold_seconds + gap_m +
-  other_vehicle_id on the position response.
+Phase 6.6 — Admin analytics + reporting
+  • GET /api/admin/analytics/real?days=N — real Postgres-aggregated
+    trips_by_day, completed total, passengers_total, alert types,
+    occupancy buckets, open/critical alert counts, all operator-scoped.
+  • GET /api/admin/analytics/drivers?days=N — per-driver scorecard:
+    trips_completed, passengers_total, distance_km, incidents reported.
+    Names are batched-hydrated in one users query.
+  • GET /api/admin/export/{vehicles|users|trips|alerts|audit_log} —
+    CSV download with operator scoping and the obvious role gates
+    (users + audit_log require admin role, the rest are dispatcher+).
+  • /dashboard/analytics.html now prefers the new real endpoint and
+    falls back to the legacy hardcoded one for older builds.
 
-UI:
-- /driver/ amber hold banner with live countdown when hold_seconds > 0
-  (cooperative — no forced behavior, just a clear suggestion).
-- /admin/dispatch.html new headway strip above the trips table; one
-  card per active route showing target vs actual headway with green /
-  red / amber / grey status; refreshes on the existing 20s timer.
-
-48 endpoints total. AST parse OK. See FIXES_APPLIED.md "Track C" for
-the full per-file changelog.
+57 endpoints total. AST parses clean.
