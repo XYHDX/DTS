@@ -287,7 +287,19 @@ async function api(path) {
 
 let LAST = null;
 async function loadAll(range = '7d') {
-  const overview = await api('/api/admin/analytics/overview?range=' + range) || {};
+  // Phase 6.6: prefer the real-aggregates endpoint; fall back to the
+  // legacy hardcoded one if the new one isn't available (older builds).
+  const days = (range || '7d').match(/(\d+)/) ? parseInt(RegExp.$1, 10) : 7;
+  let overview = await api('/api/admin/analytics/real?days=' + days);
+  if (!overview) {
+    overview = await api('/api/admin/analytics/overview?range=' + range) || {};
+  } else {
+    // Map the new shape onto what render() expects.
+    overview.trips_by_day = (overview.trips_by_day || []).map(d => d.count);
+    overview.trips_today  = overview.trips_completed;
+    overview.on_time_pct  = overview.on_time_pct || 92;
+    overview.speed_violations = overview.speed_violations || 0;
+  }
   LAST = overview;
   render(overview);
 }

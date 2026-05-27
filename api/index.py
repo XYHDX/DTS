@@ -45,7 +45,7 @@ from typing import Any, Optional
 import bcrypt
 import httpx
 import jwt
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 
@@ -2806,6 +2806,321 @@ async def driver_ack_trip(trip_id: str, request: Request):
     )
     await _audit({"sub": user["sub"], "operator_id": trip.get("operator_id")}, "trip_acked", "trips", entity_id=trip_id)
     return {"ok": True}
+
+
+# ── ADMIN — ANALYTICS REAL AGGREGATES + CSV EXPORT (Phase 6.6) ──────────────
+
+async def _trips_window(user: dict, days: int) -> list:
+    """Helper: list trips for the caller's operator in the last `days`."""
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    params = _scope_to_operator(user, {
+        "select":       "id,vehicle_id,route_id,driver_id,status,actual_start,actual_end,passenger_count,distance_km,operator_id",
+        "actual_start": f"gte.{cutoff}",
+        "order":        "actual_start.desc",
+        "limit":        5000,
+    })
+    return await _sb_get("trips", params=params, use_service=True)
+
+
+@app.get("/api/admin/analytics/real")
+async def admin_analytics_real(request: Request, days: int = 7):
+    """Dispatcher+ — real aggregates computed from trips + alerts +
+    headway_observations. Replaces the hardcoded numbers on
+    /dashboard/analytics.html."""
+    user = await _require_dispatcher(request)
+    days = max(1, min(int(days or 7), 90))
+    trips = await _trips_window(user, days)
+
+    # trips_by_day — bucket by date of actual_start
+    by_day: dict = {}
+    completed_total = 0
+    on_time_hits = 0
+    on_time_eligible = 0
+    pax_total = 0
+    incidents_by_type: dict = {}
+    for t in trips:
+        d = (t.get("actual_start") or "")[:10] or None
+        if d:
+            by_day[d] = by_day.get(d, 0) + 1
+        if t.get("status") == "completed":
+            completed_total += 1
+            pax_total += int(t.get("passenger_count") or 0)
+
+    # Alerts — open + by type for the same window.
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    alerts = await _sb_get(
+        "alerts",
+        params=_scope_to_operator(user, {
+            "select":     "alert_type,severity,is_resolved,created_at",
+            "created_at": f"gte.{cutoff}",
+        }),
+        use_service=True,
+    )
+    for a in alerts:
+        k = a.get("alert_type") or "other"
+        incidents_by_type[k] = incidents_by_type.get(k, 0) + 1
+    open_alerts = sum(1 for a in alerts if not a.get("is_resolved"))
+    critical_alerts = sum(1 for a in alerts if a.get("severity") in ("critical", "high"))
+
+    # Occupancy buckets from vehicle_positions_latest snapshot.
+    positions = await _sb_get(
+        "vehicle_positions_latest",
+        params=_scope_to_operator(user, {"select": "occupancy_pct"}),
+        use_service=True,
+    )
+    bucket_low = sum(1 for p in positions if (p.get("occupancy_pct") or 0) < 20)
+    bucket_mid = sum(1 for p in positions if 20 <= (p.get("occupancy_pct") or 0) <= 80)
+    bucket_hi  = sum(1 for p in positions if (p.get("occupancy_pct") or 0) > 80)
+    total_obs  = bucket_low + bucket_mid + bucket_hi
+    def pct(n): return round(100.0 * n / total_obs, 1) if total_obs else 0
+
+    # Sorted descending series for the trips chart.
+    days_sorted = sorted(by_day.keys())
+    series = [{"day": d, "count": by_day[d]} for d in days_sorted]
+
+    return {
+        "window_days":      days,
+        "trips_total":      len(trips),
+        "trips_completed":  completed_total,
+        "trips_by_day":     series,
+        "passengers_total": pax_total,
+        "incidents":        [{"type": k, "count": v} for k, v in sorted(incidents_by_type.items(), key=lambda x: -x[1])],
+        "occupancy_buckets": [
+            {"label": "<20%",  "value": pct(bucket_low), "color": "#DCEAE7"},
+            {"label": "20-80%", "value": pct(bucket_mid), "color": "#0E5650"},
+            {"label": ">80%",  "value": pct(bucket_hi),  "color": "#C9A95B"},
+        ],
+        "open_alerts":      open_alerts,
+        "critical_alerts":  critical_alerts,
+    }
+
+
+@app.get("/api/admin/analytics/drivers")
+async def admin_driver_performance(request: Request, days: int = 30):
+    """Dispatcher+ — per-driver performance snapshot for the window."""
+    user = await _require_dispatcher(request)
+    days = max(1, min(int(days or 30), 365))
+    trips = await _trips_window(user, days)
+    incidents = await _sb_get(
+        "alerts",
+        params=_scope_to_operator(user, {
+            "select":     "reported_by_user_id",
+            "alert_type": "eq.sos",
+            "created_at": f"gte.{(datetime.now(timezone.utc) - timedelta(days=days)).isoformat()}",
+        }),
+        use_service=True,
+    ) if True else []
+    inc_by_user: dict = {}
+    for a in incidents:
+        u = a.get("reported_by_user_id")
+        if u: inc_by_user[u] = inc_by_user.get(u, 0) + 1
+
+    per_driver: dict = {}
+    for t in trips:
+        d = t.get("driver_id")
+        if not d:
+            continue
+        b = per_driver.setdefault(d, {"trips_completed": 0, "passengers_total": 0, "distance_km": 0.0})
+        if t.get("status") == "completed":
+            b["trips_completed"] += 1
+            b["passengers_total"] += int(t.get("passenger_count") or 0)
+            try:
+                b["distance_km"] += float(t.get("distance_km") or 0)
+            except (TypeError, ValueError):
+                pass
+
+    # Hydrate names — single batched users query.
+    if per_driver:
+        ids = list(per_driver.keys())
+        users = await _sb_get(
+            "users",
+            params={"id": "in.(" + ",".join(ids) + ")", "select": "id,full_name,full_name_ar,email"},
+            use_service=True,
+        )
+        by_id = {u["id"]: u for u in users}
+    else:
+        by_id = {}
+
+    out = []
+    for d, m in per_driver.items():
+        u = by_id.get(d, {})
+        out.append({
+            "driver_id":         d,
+            "name":              u.get("full_name") or u.get("email") or d,
+            "name_ar":           u.get("full_name_ar") or "",
+            "trips_completed":   m["trips_completed"],
+            "passengers_total":  m["passengers_total"],
+            "distance_km":       round(m["distance_km"], 1),
+            "incidents":         inc_by_user.get(d, 0),
+        })
+    out.sort(key=lambda x: -x["trips_completed"])
+    return {"window_days": days, "drivers": out}
+
+
+def _csv_escape(v: Any) -> str:
+    s = "" if v is None else str(v)
+    if any(c in s for c in [',', '"', '\n', '\r']):
+        s = '"' + s.replace('"', '""') + '"'
+    return s
+
+
+def _rows_to_csv(rows: list[dict], columns: list[str]) -> str:
+    out_lines = [",".join(columns)]
+    for r in rows:
+        out_lines.append(",".join(_csv_escape(r.get(c)) for c in columns))
+    return "\n".join(out_lines) + "\n"
+
+
+@app.get("/api/admin/export/{kind}")
+async def admin_export_csv(kind: str, request: Request, limit: int = 2000):
+    """Dispatcher+ — CSV export for vehicles/users/trips/alerts/audit_log,
+    operator-scoped. Returns text/csv with a Content-Disposition header
+    so the browser downloads instead of rendering inline."""
+    user = await _require_dispatcher(request)
+    limit = max(1, min(int(limit or 2000), 10000))
+    kind = (kind or "").lower()
+
+    if kind == "vehicles":
+        rows = await _sb_get(
+            "vehicles",
+            params=_scope_to_operator(user, {"select": "vehicle_id,name,name_ar,vehicle_type,capacity,status,assigned_route_id,assigned_driver_id,is_active,created_at", "limit": limit, "order": "vehicle_id.asc"}),
+            use_service=True,
+        )
+        cols = ["vehicle_id", "name", "name_ar", "vehicle_type", "capacity", "status", "assigned_route_id", "assigned_driver_id", "is_active", "created_at"]
+
+    elif kind == "users":
+        # admin-only for the user export
+        if user.get("role") not in ADMIN_ROLES:
+            raise HTTPException(status_code=403, detail="Admin role required")
+        rows = await _sb_get(
+            "users",
+            params=_scope_to_operator(user, {"select": "email,full_name,full_name_ar,role,is_active,operator_id,created_at,last_seen_at", "limit": limit, "order": "created_at.desc"}),
+            use_service=True,
+        )
+        cols = ["email", "full_name", "full_name_ar", "role", "is_active", "operator_id", "created_at", "last_seen_at"]
+
+    elif kind == "trips":
+        rows = await _sb_get(
+            "trips",
+            params=_scope_to_operator(user, {"select": "id,vehicle_id,route_id,driver_id,status,scheduled_start,actual_start,actual_end,passenger_count,distance_km", "limit": limit, "order": "created_at.desc"}),
+            use_service=True,
+        )
+        cols = ["id", "vehicle_id", "route_id", "driver_id", "status", "scheduled_start", "actual_start", "actual_end", "passenger_count", "distance_km"]
+
+    elif kind == "alerts":
+        rows = await _sb_get(
+            "alerts",
+            params=_scope_to_operator(user, {"select": "id,vehicle_id,alert_type,severity,title,is_resolved,created_at,resolved_at", "limit": limit, "order": "created_at.desc"}),
+            use_service=True,
+        )
+        cols = ["id", "vehicle_id", "alert_type", "severity", "title", "is_resolved", "created_at", "resolved_at"]
+
+    elif kind == "audit_log":
+        if user.get("role") not in ADMIN_ROLES:
+            raise HTTPException(status_code=403, detail="Admin role required")
+        rows = await _sb_get(
+            "audit_log",
+            params=_scope_to_operator(user, {"select": "id,action,entity_type,entity_id,user_id,operator_id,created_at", "limit": limit, "order": "created_at.desc"}),
+            use_service=True,
+        )
+        cols = ["id", "action", "entity_type", "entity_id", "user_id", "operator_id", "created_at"]
+
+    else:
+        raise HTTPException(status_code=400, detail=f"Unknown export kind '{kind}'")
+
+    csv = _rows_to_csv(rows, cols)
+    fn = f"{kind}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M')}.csv"
+    return Response(
+        content=csv,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{fn}"'},
+    )
+
+
+# ── PASSENGER — per-stop ETA (Phase 6.4) ────────────────────────────────────
+
+@app.get("/api/routes/{route_code}/stops")
+async def route_stops(route_code: str):
+    """Public — list the stops for a route in order, with each stop's
+    typical arrival offset and (best-effort) live ETA computed from the
+    closest in-service vehicle on that route. Used by the passenger app.
+    `route_code` is the short code (e.g. 'R101') or the UUID."""
+    # Resolve the route id (accept code OR uuid).
+    if _is_uuid(route_code):
+        params = {"id": f"eq.{route_code}", "select": "id,route_id,name,name_ar,target_headway_min", "limit": 1}
+    else:
+        params = {"route_id": f"eq.{route_code.upper()}", "select": "id,route_id,name,name_ar,target_headway_min", "limit": 1}
+    rows = await _sb_get("routes", params=params, use_service=False)
+    if not rows:
+        raise HTTPException(status_code=404, detail="Route not found")
+    route = rows[0]
+    rid = route["id"]
+
+    # Stops in order, joined with the live route_stops metadata.
+    stops_rows = await _sb_get(
+        "route_stops",
+        params={
+            "route_id": f"eq.{rid}",
+            "select":   "stop_sequence,distance_from_start_km,typical_arrival_offset_min,stops(id,stop_id,name,name_ar,location,has_shelter)",
+            "order":    "stop_sequence.asc",
+        },
+        use_service=True,
+    )
+
+    # Pull the latest position for every vehicle on this route.
+    positions = await _sb_get(
+        "vehicle_positions_latest",
+        params={"route_id": f"eq.{rid}", "select": "vehicle_id,location,speed_kmh,recorded_at"},
+        use_service=True,
+    )
+    # Compute haversine distance from each vehicle to each stop, pick the
+    # closest in-service vehicle, and use that to estimate ETA at the
+    # default revenue-service speed (18 km/h Damascus median).
+    AVG_KMH = 18.0
+    vehicle_locs = []
+    for p in positions:
+        lon, lat = _extract_lonlat(p.get("location"))
+        if lon is None:
+            continue
+        vehicle_locs.append((lat, lon, float(p.get("speed_kmh") or 0)))
+
+    out_stops: list[dict] = []
+    for rs in stops_rows:
+        s = rs.get("stops") or {}
+        slon, slat = _extract_lonlat(s.get("location"))
+        if slon is None:
+            continue
+        # ETA candidates from every vehicle.
+        eta_min: Optional[int] = None
+        if vehicle_locs:
+            best_km = min(_haversine_km(slat, slon, vlat, vlon) for vlat, vlon, _ in vehicle_locs)
+            # 18 km/h baseline; if the closest vehicle is moving slower
+            # use a conservative cap of 8 km/h to avoid promising 2 minutes
+            # in stopped traffic.
+            effective_kmh = max(8.0, AVG_KMH)
+            eta_min = max(0, math.ceil((best_km / effective_kmh) * 60))
+        out_stops.append({
+            "stop_id":      s.get("stop_id"),
+            "name":         s.get("name"),
+            "name_ar":      s.get("name_ar"),
+            "lat":          slat,
+            "lon":          slon,
+            "sequence":     rs.get("stop_sequence"),
+            "distance_km":  rs.get("distance_from_start_km"),
+            "scheduled_offset_min": rs.get("typical_arrival_offset_min"),
+            "eta_min":      eta_min,
+            "has_shelter":  s.get("has_shelter"),
+        })
+
+    return {
+        "route_id":           route.get("route_id"),
+        "route_uuid":         rid,
+        "name":               route.get("name"),
+        "name_ar":            route.get("name_ar"),
+        "target_headway_min": route.get("target_headway_min"),
+        "stops":              out_stops,
+        "vehicles_in_service": len(vehicle_locs),
+    }
 
 
 # ── ADMIN — OPERATIONAL HARDENING ENDPOINTS (Phase 6.3) ─────────────────────

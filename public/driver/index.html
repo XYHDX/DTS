@@ -576,13 +576,53 @@ function onPosition(c) {
   lastPos = c;
 
   if (tripId && token) {
-    fetch(API_BASE + '/api/driver/position', {
-      method: 'POST',
-      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
-      body: JSON.stringify({ lat: c.latitude, lon: c.longitude, speed, heading: c.heading })
-    }).then(r => r.ok ? r.json() : null).then(applyBunching).catch(()=>{});
+    postPosition({ lat: c.latitude, lon: c.longitude, speed, heading: c.heading });
   }
 }
+
+// ── Phase 6.5: offline-tolerant position queue ─────────────────────────────
+// Buffers position writes in localStorage when offline (or when a write
+// fails) and flushes them on the next successful write OR when the
+// browser fires `online`. Capped at 200 entries to keep storage bounded.
+const __POS_QUEUE_KEY = 'dt_pos_queue';
+function _qGet() { try { return JSON.parse(localStorage.getItem(__POS_QUEUE_KEY) || '[]'); } catch (_) { return []; } }
+function _qSet(arr) { try { localStorage.setItem(__POS_QUEUE_KEY, JSON.stringify(arr.slice(-200))); } catch (_) {} }
+async function postPosition(payload) {
+  if (!token) return;
+  try {
+    const r = await fetch(API_BASE + '/api/driver/position', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
+      body: JSON.stringify(payload),
+    });
+    if (!r.ok) { _qSet(_qGet().concat(payload)); return; }
+    const d = await r.json().catch(()=>null);
+    applyBunching(d);
+    // On success, flush anything buffered.
+    flushQueue();
+  } catch (_) {
+    _qSet(_qGet().concat(payload));
+  }
+}
+async function flushQueue() {
+  if (!token) return;
+  const q = _qGet();
+  if (!q.length) return;
+  _qSet([]);                       // optimistic: pull them off the queue
+  for (const item of q) {
+    try {
+      await fetch(API_BASE + '/api/driver/position', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
+        body: JSON.stringify(item),
+      });
+    } catch (_) {
+      // Re-queue what didn't make it through.
+      _qSet(_qGet().concat(item));
+    }
+  }
+}
+window.addEventListener('online', flushQueue);
 
 // ── Track C: Bunching / hold-here banner ────────────────────────────────────
 // The /api/driver/position response includes hold_seconds when this vehicle
