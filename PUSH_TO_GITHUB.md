@@ -1,86 +1,185 @@
 # Push to https://github.com/XYHDX/DTS
 
-> The sandbox where the code was prepared is firewalled from github.com (proxy returns HTTP 403 on CONNECT). So **you push from your own machine**. The repo is already initialised, committed, and bundled — just run two commands.
+> **Current state (2026-05-26):** Both repos are committed on `main`.
+> The work just needs to be pushed from your Mac — the sandbox where it
+> was prepared is firewalled from github.com.
+>
+> | Repo            | Branch | Last commit                                           |
+> |-----------------|--------|-------------------------------------------------------|
+> | `source/`       | `main` | `74142d1 feat(track-c): headway control + bunching alerts` |
+> | top-level       | `main` | `8018092 feat(track-c): headway control + bunching alerts` |
+>
+> Older runs of this doc described a `dts-repo.bundle` / tarball flow.
+> Those are obsolete — the actual git history is now in the working
+> folders. Use **Option A** below.
 
-## Option A — Restore the git bundle (recommended, ~30 seconds)
+---
 
-Open a terminal on your Mac and paste:
+## Option A — Push the two working repos (recommended, ~10 seconds)
 
-```bash
-cd ~/Documents/Claude/Projects/DamascusTransitSystem
-
-# 1. Materialise the prepared repo from the bundle file
-git clone dts-repo.bundle dts-push
-cd dts-push
-
-# 2. Re-point the remote and push
-git remote remove origin
-git remote add origin https://github.com/XYHDX/DTS.git
-git branch -M main
-git push -u origin main
-```
-
-That's it. Vercel auto-deploys on the first push if you've already connected the repo there.
-
-If GitHub asks for credentials, use a **Personal Access Token** (not your password) — generate one at <https://github.com/settings/tokens?type=beta> with **Contents: read & write** scope, and paste it when prompted.
-
-## Option B — From the files-only tarball
-
-If you'd rather start a fresh git history:
+Open Terminal on your Mac:
 
 ```bash
 cd ~/Documents/Claude/Projects/DamascusTransitSystem
 
-mkdir dts-push && tar -xzf dts-repo-files.tar.gz -C dts-push
-cd dts-push
+# OPTIONAL but recommended: clear the stub files the sandbox left behind
+# (broken refs, *.bak files from sed). Safe to skip if you don't see
+# "ignoring broken ref" warnings.
+bash CLEANUP.command
 
-git init -b main
-git add -A
-git commit -m "feat: post-revival v1.0 — Claude design + Flutter + 100k-scale foundation"
-git remote add origin https://github.com/XYHDX/DTS.git
+# 1. Push the actual code repo (api + db + public).
+cd source
+git remote -v   # verify origin points at the right GitHub repo
+# If origin is missing:
+#   git remote add origin https://github.com/XYHDX/DTS.git
+git push -u origin main
+
+# 2. Push the top-level project repo (docs + bundle artifacts).
+cd ..
+git remote -v
+# If origin is missing:
+#   git remote add origin https://github.com/XYHDX/DTS-meta.git   # or whatever you call the wrapper repo
 git push -u origin main
 ```
 
-## Option C — If the repo already has history at XYHDX/DTS
+> If GitHub asks for credentials, use a **Personal Access Token** (not your
+> password) — generate one at <https://github.com/settings/tokens?type=beta>
+> with **Contents: read & write** scope, paste it as the password.
 
-Force-pushing would wipe your existing commits. If you want to merge instead:
+---
 
-```bash
-git clone https://github.com/XYHDX/DTS.git dts-existing
-cd dts-existing
-# Then copy the changed files in by hand or with rsync from dts-push/
-rsync -a --exclude='.git' ../dts-push/ ./
-git add -A
-git commit -m "feat: revival 2026-05-24"
-git push
+## What's in this push
+
+This push contains every change made in the last two days:
+
+### v5.0 hardening (H1–H10) — commit `f3375c1` / `7511bb3`
+- **H1:** rotated the shared `damascus2025` bcrypt hash; 35 unique
+  hashes across all seed files. `must_change_password = true` on
+  every seeded account.
+- **H2:** added `super_admin` role + strict per-operator isolation on
+  every admin endpoint.
+- **H3:** vehicle CRUD with fixed `vehicle_status` enum
+  (`active|idle|maintenance|decommissioned`) and `vehicle_type` ↔
+  route `route_type` cross-check.
+- **H4:** routes & stops CRUD with GeoJSON validation (Syria bbox).
+- **H5:** users CRUD with role-rank guard (no privilege escalation).
+- **H6:** geofence CRUD + hard cap on `max_vehicles` enforced in
+  `/api/driver/position`.
+- **H7:** atomic `POST /api/admin/vehicles/register` linking flow.
+- **H8:** trip-end ownership, alert-resolve operator scope,
+  passenger-count actually persists, login precedence bug, JWT_SECRET
+  32-char minimum, audit_log on every admin mutation.
+- **H9:** Add/Edit forms on every admin page; new geofences page;
+  forced password rotation flow.
+- **H10:** 47 endpoints; full verification report in `FIXES_APPLIED.md`.
+
+### Track A — Trip dispatch & operator console — same commit
+- POST/GET/PATCH/DELETE `/api/admin/trips` with the
+  `scheduled → dispatched → acked → in_progress → completed | cancelled`
+  lifecycle.
+- New `/admin/dispatch.html` Dispatcher Console (status pills,
+  Schedule modal, Push/Cancel actions, 20-second auto-refresh).
+- `/api/driver/me`, `/api/driver/me/next_trip`,
+  `POST /api/driver/trip/{id}/ack`. Driver app shows a banner with
+  Acknowledge button when a trip is queued.
+- `Start Trip` now promotes a queued trip instead of always creating
+  ad-hoc.
+
+### Track C — Headway control + bunching alerts — commit `74142d1` / `8018092`
+- New `routes.target_headway_min` column, `alert_type` value
+  `bus_bunching`, `headway_observations` append-only table,
+  `route_headway_status()` and `detect_bunching()` RPCs.
+- `GET /api/admin/headway` for the new console gauge.
+- `/api/driver/position` runs the bunching detector; deduped
+  `bus_bunching` alerts; response surface `hold_seconds + gap_m +
+  other_vehicle_id`.
+- Driver UI: amber **hold banner** with live countdown.
+- Dispatcher Console: per-route headway strip (target ↔ actual, with
+  green/red/amber/grey status).
+
+### Visible-bug fixes (folded into the v5.0 commit)
+- `/api/routes` `stops_count` now hydrated from `route_stops`.
+- Missing i18n keys for `idle` / `decommissioned` status pills added.
+- Footer `v4.0` → `v5.0`.
+- New `_gate.js` eliminates the flash-of-empty-admin-shell.
+- Hardcoded fake KPI deltas replaced with computed values.
+- `critical_alerts` exposed on `/api/admin/analytics/overview`.
+
+### New migrations to apply (run in order)
+
+```
+db/migrations/011_rotate_demo_credentials.sql
+db/migrations/012_geofence_capacity_and_links.sql
+db/migrations/013_trip_dispatch.sql
+db/migrations/014_headway_control.sql
 ```
 
-## What's inside
+---
 
-- `dts-repo.bundle` (787 KB) — full git history with one commit, ready to clone.
-- `dts-repo-files.tar.gz` (1.1 MB) — same content as plain files, no git history.
+## After the push — deploy to Vercel + Supabase
 
-Both contain:
+1. **Vercel:** if the project is already connected to the GitHub repo,
+   the push triggers an automatic deploy. Otherwise, in the dashboard:
+   - Import Project → pick the XYHDX/DTS repository.
+   - Framework preset: "Other" (Vercel will detect `vercel.json`).
+   - Environment variables (minimum):
+     - `SUPABASE_URL`
+     - `SUPABASE_KEY` (anon public key)
+     - `SUPABASE_SERVICE_KEY` (service-role secret)
+     - `JWT_SECRET` — **must be ≥32 chars** (the v5.0 backend will return
+       503 otherwise). Generate one with:
+       ```bash
+       python3 -c "import secrets; print(secrets.token_urlsafe(48))"
+       ```
+     - `ALLOWED_ORIGINS` (your production hostname)
 
-- Backend (`api/`), database migrations (`db/`), web apps (`public/`), Capacitor wrapper (`mobile/`), Flutter app (`flutter_app/`).
-- All eight CI workflows (`.github/workflows/`).
-- All documentation (`markdown-files/`, runbooks, ADRs, `ROADMAP_100.md`, `Scale_100k_Roadmap.md`).
-- `vercel.json` — Vercel will detect it on first deploy.
+2. **Supabase:** open the SQL Editor and run the four migrations in
+   order: `011`, `012`, `013`, `014`. They are idempotent — safe to
+   re-run.
 
-## After the push: Vercel deploy
+3. **Verify the deploy** — hit `https://dts-brown.vercel.app/api/health`
+   (or your own host) and confirm the response shows:
+   ```json
+   {"status":"ok","version":"5.0.0","config":{"jwt_configured":true,"jwt_secret_min_len":32, …}}
+   ```
+   If you see `4.1.0` the new build hasn't gone live yet.
 
-In the Vercel dashboard:
+4. **Rotate demo credentials.** The new demo passwords are documented
+   in `DEMO_CREDENTIALS.md`. Every seeded account starts with
+   `must_change_password = true`, so the first login will be forced
+   through `/admin/reset.html?force=1` before any privileged endpoint
+   accepts the JWT.
 
-1. **Import Project** → pick the XYHDX/DTS repository.
-2. **Framework Preset:** "Other" (Vercel will detect `vercel.json`).
-3. **Environment variables** (at minimum):
-   - `SUPABASE_URL`
-   - `SUPABASE_KEY` (anon)
-   - `SUPABASE_SERVICE_KEY`
-   - `JWT_SECRET` (≥32 chars — generate with `python3 -c "import secrets; print(secrets.token_urlsafe(48))"`)
-   - `ALLOWED_ORIGINS` (your production hostname)
-   - `TRUSTED_PROXY_IPS` (Vercel edge — leave blank initially; the limiter falls back to TCP source IP).
+---
 
-Full env-var table is in `DEPLOY.md` inside the repo.
+## After-deploy smoke checks
 
-After the first deploy, hit `https://<your-project>.vercel.app/api/health/deep` — you should see `{"status":"healthy"}`.
+```bash
+HOST=https://dts-brown.vercel.app
+
+# 1. Health, should report 5.0.0 with jwt_secret_min_len = 32
+curl -s "$HOST/api/health" | python3 -m json.tool
+
+# 2. Login as admin — must_change_password=true expected on the first one.
+curl -s -X POST "$HOST/api/auth/login" \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"admin@damascus-transit.demo","password":"AdminDamascus#2026"}' \
+  | python3 -m json.tool
+
+# 3. Routes endpoint — confirm stops_count is no longer null.
+curl -s "$HOST/api/routes" | python3 -m json.tool | head -40
+```
+
+---
+
+## Troubleshooting
+
+- **"updates were rejected because the remote contains work…"** — your
+  GitHub repo has commits that the local main doesn't. Decide whether
+  to merge (`git pull --rebase`) or force-push (`git push -f` — only
+  do this on a personal/non-shared repo).
+- **"Permission denied (publickey)"** — switch the remote URL from
+  `git@github.com:…` to `https://github.com/XYHDX/DTS.git`.
+- **`fatal: cannot lock ref 'HEAD'`** — re-run `bash CLEANUP.command`,
+  it clears the stale `.git/HEAD.lock` / `.git/index.lock` files left
+  behind by the sandbox.
