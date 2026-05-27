@@ -29,4 +29,16 @@
   s.id = 'dts-auth-cloak';
   s.textContent = 'html:not([data-auth="ok"]) body{visibility:hidden}';
   (document.head || document.documentElement).appendChild(s);
+
+  // Watchdog: if _shell.js fails to run within 3 seconds (404, parse
+  // error, missing <script> tag, etc.), lift the cloak anyway so the
+  // user sees a partially-broken page instead of a fully-white one.
+  // Whichever happens first — _shell.js sets data-auth=ok, or this
+  // timer trips — wins.
+  setTimeout(function () {
+    if (!document.documentElement.dataset.auth) {
+      document.documentElement.dataset.auth = 'ok';
+      console.warn('[dts] _shell.js never set data-auth — cloak lifted by watchdog. Admin chrome may be missing.');
+    }
+  }, 3000);
 })();

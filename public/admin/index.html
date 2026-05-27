@@ -349,6 +349,10 @@
 
 <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="/lib/i18n.js"></script>
+<!-- Phase 6.x fix: /admin/index.html lost its _shell.js include during a
+     prior linter pass which left the auth cloak permanently engaged and
+     produced a white screen on the overview after login. Re-added below. -->
+<script src="/admin/_shell.js" defer></script>
 <script>
 'use strict';
 
