@@ -19,4 +19,4 @@ upstash-redis>=1.0.0
 gtfs-realtime-bindings>=1.0.0
 protobuf>=4.21.0
 sentry-sdk[fastapi]>=2.0.0
-pywebpush>=2.0.0
+pywebpush>=2.3.0
