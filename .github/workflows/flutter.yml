@@ -27,7 +27,7 @@ jobs:
       - run: flutter pub get
       - run: flutter analyze --fatal-infos
       - run: flutter test --reporter expanded --coverage
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v6
         if: success() && env.CODECOV_TOKEN != ''
         with:
           files: flutter_app/coverage/lcov.info
