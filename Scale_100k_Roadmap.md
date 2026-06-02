@@ -31,7 +31,7 @@ This document plans the migration without breaking the 500-vehicle deployment th
 ## Phase S2 — Protocol bridge (weeks 2–3)
 
 - [x] **S2.1.** `api/routers/mqtt_ingest.py` — HTTP-bridge endpoint that accepts Protobuf-encoded payloads compatible with the future MQTT pipeline. Lets the firmware switch transport without changing the wire format.
-- [ ] **S2.2.** Embedded MQTT bridge in dev — `mosquitto` Docker service in `docker-compose.prod.yml` as an optional service.
+- [x] **S2.2.** Embedded MQTT broker in dev — `mosquitto` service in **`docker-compose.scale.yml`** (kept out of `docker-compose.prod.yml` so the working deployment is untouched) + async consumer worker `api/workers/mqtt_consumer.py` that subscribes to `vehicles/+/status|event` and reuses the existing `_ingest` pipeline (Redis Geo + persist). Test publisher: `scripts/mqtt_sim_publish.py`. _(2026-06-02)_
 - [ ] **S2.3.** Devices switch to Protobuf-over-HTTP first (S2.1 endpoint), MQTT later. Keeps `/api/traccar/position` working until every device is migrated.
 - [ ] **S2.4.** Backpressure: drop QoS-0 messages when the ingest path is over `MQTT_INGEST_HIGH_WATERMARK` (configurable, default 5,000 in-flight).
 
@@ -65,7 +65,7 @@ This document plans the migration without breaking the 500-vehicle deployment th
 ## Phase S7 — Observability at scale (weeks 9–10)
 
 - [ ] **S7.1.** Per-device metrics in Sentry: device-id tag, firmware-version tag, last-seen-at, dropped-frame count.
-- [ ] **S7.2.** Grafana dashboard: writes/sec, p95 ingest latency, Redis Geo lookup p99, TimescaleDB chunk size.
+- [x] **S7.2.** Grafana dashboard (starter) — Prometheus + Grafana in `docker-compose.scale.yml`, provisioned datasource + dashboard `monitoring/grafana/dashboards/dam-overview.json` (request rate, p95 latency, 5xx error rate, telemetry ingest rate). API exposes `/metrics` when `METRICS_ENABLED=true`. _Redis Geo p99 + TimescaleDB chunk-size panels follow once S3.4/S4 land._ _(2026-06-02)_
 - [ ] **S7.3.** Synthetic-load tool — extends `tests/load_sse.js` to publish 10k–100k synthetic MQTT clients via `mqtt-bench`.
 
 ## Phase S8 — Cutover (week 11)
@@ -99,3 +99,4 @@ The 100-step revival roadmap (`ROADMAP_100.md`) stands. Anything completed there
 | Date | Items | Notes |
 |---|---|---|
 | 2026-05-24 | S1.1–S1.4, S2.1, S3.1–S3.2, S6.1 | First wave: ADR-004, protobuf, hypertable migration, Redis Geo cache, EMA, MQTT-bridge endpoint, firmware spec. |
+| 2026-06-02 | S2.2, S7.2 | MQTT dev broker (mosquitto) + async consumer worker (`api/workers/mqtt_consumer.py`) reusing `_ingest`; sim publisher (`scripts/mqtt_sim_publish.py`); optional Prometheus `/metrics` + Grafana stack (`docker-compose.scale.yml`, `monitoring/`) with starter dashboard. Also closed ROADMAP_100 #72 + #80. See `PROJECT_STATUS.md`. |

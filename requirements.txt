@@ -16,3 +16,7 @@ gtfs-realtime-bindings>=1.0.0,<2.0.0  # 2.0 on its own branch
 protobuf>=4.25.0
 sentry-sdk[fastapi]>=2.58.0,<3.0.0
 pywebpush>=2.3.0
+
+# Scale track (Scale_100k_Roadmap.md)
+aiomqtt>=2.0.0,<3.0.0                  # S2.2 — async MQTT consumer (api/workers/mqtt_consumer.py)
+prometheus-fastapi-instrumentator>=7.0.0  # S7.2 — optional /metrics (enable with METRICS_ENABLED=true)

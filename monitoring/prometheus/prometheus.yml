@@ -1,0 +1,24 @@
+# Prometheus scrape config — Phase S7.2 (Scale_100k_Roadmap.md).
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # DamascusTransit FastAPI backend.
+  # The API exposes /metrics only when METRICS_ENABLED=true (see api/index.py).
+  #
+  # Target notes:
+  #   - host.docker.internal:8000  → API running on the host / another compose
+  #     (works on Docker Desktop for Mac/Windows).
+  #   - api:8000                   → use this instead when the API container is
+  #     attached to the same Docker network as this stack.
+  - job_name: "damascustransit-api"
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["host.docker.internal:8000"]
+        labels:
+          service: "api"
+
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]

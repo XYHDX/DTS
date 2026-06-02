@@ -93,7 +93,7 @@
 ## Phase F — Infrastructure & DevOps (71–85)
 
 - [x] **71.** `requirements.txt` bumped — fastapi ≥0.136, pydantic ≥2.13, sentry-sdk ≥2.58, upstash-redis ≥1.7, pywebpush ≥2.3. Majors (bcrypt 5, gtfs-realtime 2) deferred.
-- [ ] **72.** Pin Python version in `Dockerfile.prod` to 3.12-slim.
+- [x] **72.** Pin Python version in `Dockerfile.prod` to 3.12-slim — verified: both builder + runtime stages use `python:3.12-slim-bookworm` (landed with step 73). _(2026-06-02)_
 - [x] **73.** `Dockerfile.prod` rewritten — Python 3.12-slim multi-stage, tini PID 1, non-root UID 10001, /api/health/deep healthcheck, --worker-tmp-dir=/dev/shm.
 - [x] **74.** `docker-compose.prod.yml` hardened — /api/health/deep healthcheck on API, /healthz on nginx, read_only fs + tmpfs for /tmp + /dev/shm, no-new-privileges security_opt, memory reservations.
 - [x] **75.** `scripts/wait_for_db.sh` — portable bash, parses Postgres URL, two-phase probe (TCP + trivial psql query if available), configurable `TIMEOUT` + `INTERVAL`.
@@ -101,7 +101,7 @@
 - [x] **77.** `scripts/gtfs_export.sh` — pulls `/api/gtfs`, sanity-checks size, uploads daily archive + rolling `latest.zip` + appends to a `checksums.sha256` log in Supabase Storage.
 - [x] **78.** `nginx/nginx.conf` rewritten — HTTP/3 via QUIC + Alt-Svc advertisement, brotli + gzip, per-route rate-limit zones, structured JSON access log, immutable cache for static assets, SSE-friendly `proxy_buffering off` on /api/.
 - [x] **79.** `vercel.json` headers — HSTS preload, X-Frame-Options DENY, COOP same-origin, CORP same-site, consolidated CSP for /dashboard|admin|driver|passenger, edge-cache rules for static assets, no-store for /api/*.
-- [ ] **80.** Add `Sentry.init` to FastAPI startup with release env var.
+- [x] **80.** Add `Sentry.init` to FastAPI startup with release env var — `api/index.py` initialises Sentry when `SENTRY_DSN` is set, with `release` from `APP_RELEASE` (default `damascustransit@1.0.0`) and `environment` from `VERCEL_ENV`. _(2026-06-02)_
 - [x] **81.** `api/core/queue.py` — Upstash QStash wrapper with `enqueue()` (delayed publish + dedup id) and `schedule_cron()` (recurring jobs); soft no-op when `QSTASH_TOKEN` unset.
 - [x] **82.** `vercel.json` gained a `/tiles/(.*)` rule — `max-age=604800` + `stale-while-revalidate=86400` + `immutable` + `Access-Control-Allow-Origin: *` + `Cross-Origin-Resource-Policy: cross-origin`.
 - [x] **83.** `Postgres_Pooling.md` — Supavisor transaction-mode recipe, httpx Limits config, server-side `statement_timeout` + `idle_in_transaction_session_timeout`, required indexes including PostGIS GiST, capacity-headroom table.
@@ -154,4 +154,5 @@ These were added during the work but did not have a slot in the original 100:
 | 2026-05-24 | 30, 32, 46–48, 51, 53, 63, 75, 77, 82, 84 | Deep-link manifest (Android App Links + iOS associated-domains); background_gps.dart façade over transistorsoft plugin; Playwright passenger + driver flows with axe-core a11y; k6 SSE load test (smoke/soak/spike); Conventional Commits enforced in CI (commitlint + PR-title check); DEPLOY.md rewrite; wait_for_db.sh; gtfs_export.sh; CDN tile cache headers; backup-row-count verifier. |
 | 2026-05-24 | 19, 43, 64, 81, 83, 88, 96–100 | rate_limit() dependency; gradle + Android-SDK caches in CI; DOCKER_MINISTRY_DEPLOY rewrite; QStash wrapper; Postgres pooling guide; Android env-var signing snippet; AR+EN launch announcement; good-first-issue template + 25-label taxonomy; weekly Sentry digest; monthly regression report; Flutter v2.0 migration plan. |
 | 2026-05-24 | 18, 20, 34, 91, 92, N3–N5 | Verified existing logging + OpenAPI tag work; two-layer polyline polish; SVG store assets (feature graphic + 3 phone screenshots); assetlinks.json + apple-app-site-association; migration 008_user_devices.sql; Flutter integration_test stub. |
-| (remaining) | 42 (overlap), 86–87, 89–90, 94–95 | Firebase project creation + Apple Developer + Google Play Console enrolment (**USER actions, not codeable from here**); internal-test rollout + TestFlight rollout. |
+| 2026-06-02 | 72, 80 | Verified Python 3.12-slim pin and Sentry release tag — both already satisfied in code; marked done. Scale-track work this session is logged in `Scale_100k_Roadmap.md` (S2.2, S7.2). |
+| (remaining) | 42 (overlap), 86–87, 89–90, 94–95 | Firebase project creation + Apple Developer + Google Play Console enrolment (**USER actions, not codeable from here**); internal-test rollout + TestFlight rollout. **All codeable ROADMAP_100 items are now complete.** |

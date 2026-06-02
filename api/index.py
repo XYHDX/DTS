@@ -38,6 +38,7 @@ if _SENTRY_DSN:
         traces_sample_rate=0.1,
         profiles_sample_rate=0.0,
         environment=os.getenv("VERCEL_ENV", "development"),
+        release=os.getenv("APP_RELEASE") or "damascustransit@1.0.0",
         send_default_pii=False,
     )
     logger.info("Sentry error tracking initialised")
@@ -329,6 +330,22 @@ for _router in [
     mqtt_ingest.router,
 ]:
     app.include_router(_router)
+
+
+# ── Prometheus metrics (optional; self-hosted / Docker deployment) ────────────
+# Phase S7.2 of Scale_100k_Roadmap.md. Disabled on serverless (Vercel), where a
+# scraped /metrics endpoint has no persistent process to scrape; enable it on
+# the Docker deployment with METRICS_ENABLED=true. See docker-compose.scale.yml.
+if os.getenv("METRICS_ENABLED", "").lower() in {"1", "true", "yes"}:
+    try:
+        from prometheus_fastapi_instrumentator import Instrumentator
+
+        Instrumentator(
+            excluded_handlers=["/metrics", "/api/health", "/api/health/deep"],
+        ).instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
+        logger.info("Prometheus metrics enabled at /metrics")
+    except Exception as _metrics_exc:  # never let metrics break startup
+        logger.warning(f"metrics_init_failed: {_metrics_exc}")
 
 
 # ── Startup event ─────────────────────────────────────────────────────────────

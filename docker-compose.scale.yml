@@ -1,0 +1,85 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# OPT-IN scale / observability stack — Phases S2.2 + S7.2 (Scale_100k_Roadmap.md)
+#
+# This is ADDITIVE. It does NOT replace docker-compose.prod.yml and does not
+# touch the working 500-vehicle deployment. Bring it up alongside the API:
+#
+#     docker compose -f docker-compose.scale.yml up -d
+#
+# Services:
+#   mosquitto      — dev MQTT broker (1883 TCP, 9001 WebSocket)
+#   mqtt-consumer  — subscribes to vehicles/+/status|event → existing ingest pipeline
+#   prometheus     — scrapes the API /metrics endpoint (enable with METRICS_ENABLED=true)
+#   grafana        — dashboards (provisioned: "DamascusTransit — API Overview")
+#
+# Grafana:   http://localhost:3001   (admin / admin — change on first login)
+# Prometheus: http://localhost:9090
+# ─────────────────────────────────────────────────────────────────────────────
+services:
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./monitoring/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto-data:/mosquitto/data
+    networks: [scale]
+
+  mqtt-consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    restart: unless-stopped
+    command: ["python", "-m", "api.workers.mqtt_consumer"]
+    environment:
+      MQTT_BROKER_HOST: mosquitto
+      MQTT_BROKER_PORT: "1883"
+      # Optional cloud services — the worker soft-fails (no-ops) when unset.
+      UPSTASH_REDIS_REST_URL: ${UPSTASH_REDIS_REST_URL:-}
+      UPSTASH_REDIS_REST_TOKEN: ${UPSTASH_REDIS_REST_TOKEN:-}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-}
+    depends_on:
+      - mosquitto
+    networks: [scale]
+
+  prometheus:
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks: [scale]
+
+  grafana:
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks: [scale]
+
+volumes:
+  mosquitto-data:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  scale:
+    driver: bridge
