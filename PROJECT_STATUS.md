@@ -1,7 +1,15 @@
 # DamascusTransit — Project Status
 
-**Last updated:** 2026-06-02
+**Last updated:** 2026-06-11 (evening — post-restructure)
 **Purpose:** Single source of truth for what is **done** and what **remains**, across both roadmaps.
+
+> **2026-06-11 RESTRUCTURE:** the repo was consolidated to a single canonical tree
+> (legacy `source/` + `dts-push/` archived into `archives/`), 10 security findings
+> fixed, 7 broken integrations repaired, the **vehicle approval workflow**
+> (operator provisions → admin approves, migration 019) and the **Sham Cash payment
+> scaffold** (migration 020) shipped, and the admin console completed (9 linked
+> pages incl. `/admin/approvals.html`). Details: `RESTRUCTURE_REPORT_2026-06-11.md`
+> and `docs/ARCHITECTURE_DECISIONS.md`. **Run migrations 010–020 before deploying.**
 
 This project tracks two roadmaps:
 
@@ -15,7 +23,7 @@ This project tracks two roadmaps:
 | Track | Status |
 |---|---|
 | **Revival (ROADMAP_100)** | ✅ **All codeable items complete.** Only **user actions** remain (Firebase, Apple/Google enrolment, store rollout). |
-| **Scale-to-100k** | 🟡 In progress. Foundations + protocol bridge + hot-path cache + **MQTT dev broker + observability** done. Cold path (TimescaleDB), Kafka shim, and cutover remain. |
+| **Scale-to-100k** | 🟡 In progress. Foundations + protocol bridge + hot-path cache + MQTT dev broker + observability + **live SSE pub/sub (S3.4)** done. Cold path (TimescaleDB), Kafka shim, and cutover remain. |
 
 The customer-facing system (passenger PWA, driver PWA, admin dashboard, Flutter app, 8 CI workflows) is **live and unchanged** — all scale work is additive and invisible to users.
 
@@ -50,7 +58,7 @@ The target is a 200× jump (500 → 100,000 vehicles), crossing ingest protocol 
 |---|---|---|
 | **S1 — Decision + schema freeze** | ADR-004, Protobuf schema, hypertable migration, firmware spec | ✅ Done (S1.5 capacity-ADR, S1.6 cost-model **remain**) |
 | **S2 — Protocol bridge** | HTTP Protobuf bridge (S2.1) + **MQTT dev broker & consumer (S2.2)** | 🟢 S2.1 + S2.2 done · S2.3 (device migration), S2.4 (backpressure) remain |
-| **S3 — Hot path** | Redis Geo cache (S3.1), EMA (S3.2) | 🟢 S3.1/S3.2 done · S3.3 (bbox pre-filter), S3.4 (SSE→Redis pub/sub) remain |
+| **S3 — Hot path** | Redis Geo cache (S3.1), EMA (S3.2), SSE pub/sub (S3.4) | 🟢 S3.1/S3.2/S3.4 done · S3.3 (bbox pre-filter) remains |
 | **S4 — Cold path** | TimescaleDB hypertable, continuous aggregates, compression, archive | 🔴 Not started (migration 009 lays the foundation) |
 | **S5 — Kafka shim** | Redpanda + producer + consumer + replay | 🔴 Not started |
 | **S6 — Edge firmware** | Spec (S6.1) done · reference C++ firmware + BOM | 🟡 Spec done · S6.2/S6.3 remain |
@@ -114,12 +122,14 @@ python -m api.workers.mqtt_consumer
 
 ## 5. Recommended next steps (priority order)
 
-1. **S3.4 — SSE off the web process** onto a Redis pub/sub consumer (removes sticky-session limit; unblocks horizontal scaling). High value, self-contained.
-2. **S4.1 — Provision the TimescaleDB hypertable** (migration 009 is ready) + continuous aggregates (S4.2). Unlocks the historical-analytics and the remaining Grafana panels (Redis Geo p99, chunk size).
+1. **S4.1 — Provision the TimescaleDB hypertable** (migration 009 is ready) + continuous aggregates (S4.2). Unlocks historical analytics and the remaining Grafana panels (Redis Geo p99, chunk size).
+2. **S3.3 — bbox pre-filter** before PostGIS `ST_Contains` in `/api/stops/nearest` (last open hot-path item; small and self-contained).
 3. **S2.3 / S2.4** — device migration to Protobuf-over-HTTP + ingest backpressure.
 4. **S5 — Kafka shim** (Redpanda) once sustained load justifies it (decision gate: 25,000 vehicles per ADR-005).
 5. **S6.2 — Reference C++ firmware** for the custom GPS unit (the no-smartphone path).
 6. **Docs:** S1.5 capacity-planning ADR-005 + S1.6 cost model.
+
+> **Done 2026-06-11 — S3.4 (live SSE pub/sub):** `/api/stream` now fans out via a Redis pub/sub live bus (`api/core/live_bus.py`) instead of polling Supabase per client; one snapshot query per connection then push. Removes the sticky-session limit and unblocks horizontal web scaling. Off by default (legacy poll) until `REDIS_PUBSUB_URL` is set; a `redis` service is wired into `docker-compose.scale.yml`.
 
 ---
 

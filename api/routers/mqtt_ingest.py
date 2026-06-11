@@ -43,11 +43,12 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from fastapi.responses import Response
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from api.core.cache import RATE_LIMIT_DRIVER_POS, rate_limit
 from api.core.ema import EMAFilter, classify_fuel_step
 from api.core.geo_cache import update_position as geo_update
+from api.core import live_bus
 from api.core.logging import logger
 
 router = APIRouter(prefix="/api/v1/telemetry", tags=["telemetry"])
@@ -97,25 +98,26 @@ def _verify_signature(body: bytes, header_value: Optional[str]) -> bool:
 class _PartialDecode(BaseModel):
     """JSON shape that mirrors telematics.proto VehicleStatus 1:1.
     Names are snake_case to match the proto field names."""
+
     vehicle_id: str
-    timestamp: int                                  # ms since epoch
+    timestamp: int  # ms since epoch
     latitude: float
     longitude: float
-    speed_kph: float                                = 0.0
-    heading: float                                  = 0.0
-    engine_state: bool                              = False
-    fuel_level: Optional[float]                     = None
-    trigger_event: int                              = 0
-    operator_id: Optional[str]                      = None
-    route_id: Optional[str]                         = None
-    driver_id: Optional[str]                        = None
-    trip_id: Optional[str]                          = None
-    satellite_count: Optional[int]                  = None
-    hdop: Optional[float]                           = None
-    cell_signal_dbm: Optional[int]                  = None
-    firmware_version: Optional[int]                 = None
-    battery_mv: Optional[int]                       = None
-    is_replay: bool                                 = False
+    speed_kph: float = 0.0
+    heading: float = 0.0
+    engine_state: bool = False
+    fuel_level: Optional[float] = None
+    trigger_event: int = 0
+    operator_id: Optional[str] = None
+    route_id: Optional[str] = None
+    driver_id: Optional[str] = None
+    trip_id: Optional[str] = None
+    satellite_count: Optional[int] = None
+    hdop: Optional[float] = None
+    cell_signal_dbm: Optional[int] = None
+    firmware_version: Optional[int] = None
+    battery_mv: Optional[int] = None
+    is_replay: bool = False
 
 
 def _smooth_fuel(vehicle_id: str, raw: Optional[float]) -> Optional[float]:
@@ -135,25 +137,25 @@ async def _persist(decoded: _PartialDecode, *, fuel_smoothed: Optional[float]) -
     from api.core.database import _service_post  # type: ignore
 
     row = {
-        "vehicle_id":       decoded.vehicle_id,
-        "operator_id":      decoded.operator_id,
-        "route_id":         decoded.route_id,
-        "ts":               # ms → ISO 8601 UTC
-            time.strftime("%Y-%m-%dT%H:%M:%S",
-                          time.gmtime(decoded.timestamp / 1000.0)) + "Z",
-        "lat":              decoded.latitude,
-        "lon":               decoded.longitude,
-        "speed":            decoded.speed_kph,
-        "heading":          decoded.heading,
-        "engine_state":     decoded.engine_state,
-        "fuel_level":       fuel_smoothed,
-        "trigger_event":    decoded.trigger_event,
-        "satellite_count":  decoded.satellite_count,
-        "hdop":             decoded.hdop,
-        "cell_signal_dbm":  decoded.cell_signal_dbm,
+        "vehicle_id": decoded.vehicle_id,
+        "operator_id": decoded.operator_id,
+        "route_id": decoded.route_id,
+        "ts":  # ms → ISO 8601 UTC
+        time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(decoded.timestamp / 1000.0))
+        + "Z",
+        "lat": decoded.latitude,
+        "lon": decoded.longitude,
+        "speed": decoded.speed_kph,
+        "heading": decoded.heading,
+        "engine_state": decoded.engine_state,
+        "fuel_level": fuel_smoothed,
+        "trigger_event": decoded.trigger_event,
+        "satellite_count": decoded.satellite_count,
+        "hdop": decoded.hdop,
+        "cell_signal_dbm": decoded.cell_signal_dbm,
         "firmware_version": decoded.firmware_version,
-        "battery_mv":       decoded.battery_mv,
-        "is_replay":        decoded.is_replay,
+        "battery_mv": decoded.battery_mv,
+        "is_replay": decoded.is_replay,
     }
     try:
         await _service_post("vehicle_positions", row)
@@ -161,22 +163,30 @@ async def _persist(decoded: _PartialDecode, *, fuel_smoothed: Optional[float]) -
         # The MQTT path will move this into a background consumer; until
         # then a Postgres blip drops the frame on the floor. We log,
         # never crash.
-        logger.warning("telemetry_persist_failed",
-                       extra={"vehicle_id": decoded.vehicle_id, "err": str(e)[:200]})
+        logger.warning(
+            "telemetry_persist_failed",
+            extra={"vehicle_id": decoded.vehicle_id, "err": str(e)[:200]},
+        )
 
 
-def _maybe_fuel_event(vehicle_id: str, before: Optional[float], after: Optional[float],
-                      engine_state: bool) -> None:
+def _maybe_fuel_event(
+    vehicle_id: str, before: Optional[float], after: Optional[float], engine_state: bool
+) -> None:
     if before is None or after is None:
         return
     ev = classify_fuel_step(before, after, engine_state=engine_state)
     if ev is None:
         return
-    logger.info("fuel_event",
-                extra={"vehicle_id": vehicle_id, "kind": ev.kind,
-                       "delta_pct": ev.delta_pct,
-                       "before": ev.smoothed_before,
-                       "after":  ev.smoothed_after})
+    logger.info(
+        "fuel_event",
+        extra={
+            "vehicle_id": vehicle_id,
+            "kind": ev.kind,
+            "delta_pct": ev.delta_pct,
+            "before": ev.smoothed_before,
+            "after": ev.smoothed_after,
+        },
+    )
     # TODO when /api/admin/alerts has a kind="refuel"/"theft", emit there.
 
 
@@ -193,14 +203,17 @@ async def telemetry_json(
 ) -> Response:
     """JSON variant — handy for dev + integration tests. In production the
     Protobuf endpoint is preferred for the 80% bandwidth saving."""
-    if os.getenv("DEV_INGEST_ENABLED", "").lower() not in {"1", "true", "yes"} \
-       and os.getenv("VERCEL_ENV", "").lower() == "production":
+    if (
+        os.getenv("DEV_INGEST_ENABLED", "").lower() not in {"1", "true", "yes"}
+        and os.getenv("VERCEL_ENV", "").lower() == "production"
+    ):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
     body = await request.body()
     if not _verify_signature(body, x_device_signature):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                            detail="Invalid device signature")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid device signature"
+        )
     await _ingest(payload)
     return Response(status_code=204)
 
@@ -224,16 +237,54 @@ async def telemetry_protobuf(
     """
     body = await request.body()
     if not _verify_signature(body, x_device_signature):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                            detail="Invalid device signature")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid device signature"
+        )
     # Placeholder: count frame, log size, no decode yet.
-    logger.info("telemetry_protobuf_received",
-                extra={"bytes": len(body)})
+    logger.info("telemetry_protobuf_received", extra={"bytes": len(body)})
     return Response(status_code=204)
 
 
+# ── Approval gate (migration 019) ───────────────────────────────────────
+# 60-second in-process TTL cache so the 100k-vehicle hot path costs at most
+# one approval lookup per vehicle per minute, not one per frame.
+_approval_cache: dict[str, tuple[float, bool]] = {}
+_APPROVAL_TTL = 60.0
+
+
+async def _vehicle_approved(vehicle_id: str) -> bool:
+    cached = _approval_cache.get(vehicle_id)
+    now = time.monotonic()
+    if cached is not None and (now - cached[0]) < _APPROVAL_TTL:
+        return cached[1]
+    approved = True  # fail-open for transport errors / pre-migration DBs
+    try:
+        from api.core.database import _service_get  # type: ignore
+
+        rows = await _service_get(
+            f"vehicles?id=eq.{vehicle_id}&select=approval_status,is_active"
+        )
+        if rows:
+            v = rows[0]
+            approved = v.get("is_active") is not False and (
+                v.get("approval_status") is None or v["approval_status"] == "approved"
+            )
+        else:
+            approved = False  # definitive answer: unknown vehicle
+    except Exception:
+        approved = True
+    _approval_cache[vehicle_id] = (now, approved)
+    return approved
+
+
 async def _ingest(decoded: _PartialDecode) -> None:
-    """Hot path: geo cache → EMA → persist."""
+    """Hot path: approval gate → geo cache → EMA → persist."""
+    if not await _vehicle_approved(decoded.vehicle_id):
+        logger.info(
+            "telemetry_dropped_unapproved",
+            extra={"vehicle_id": decoded.vehicle_id},
+        )
+        return
     if decoded.operator_id:
         await geo_update(
             operator_id=decoded.operator_id,
@@ -247,3 +298,26 @@ async def _ingest(decoded: _PartialDecode) -> None:
         _last_fuel_smoothed[decoded.vehicle_id] = smoothed
     _maybe_fuel_event(decoded.vehicle_id, before, smoothed, decoded.engine_state)
     await _persist(decoded, fuel_smoothed=smoothed)
+
+    # S3.4 — fan the accepted frame out to /api/stream subscribers via the live
+    # bus (no-op unless a pub/sub backend is configured). Best-effort.
+    try:
+        ts_iso = (
+            time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(decoded.timestamp / 1000.0))
+            + "Z"
+        )
+        await live_bus.publish(
+            operator_id=decoded.operator_id,
+            payload={
+                "vehicle_id": decoded.vehicle_id,
+                "vehicle_name": "",
+                "vehicle_name_ar": "",
+                "latitude": decoded.latitude,
+                "longitude": decoded.longitude,
+                "speed_kmh": decoded.speed_kph,
+                "occupancy_pct": None,
+                "timestamp": ts_iso,
+            },
+        )
+    except Exception:
+        pass

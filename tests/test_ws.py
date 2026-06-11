@@ -17,7 +17,7 @@ class TestConnectionManager:
             pass
 
         ws = FakeWS()
-        mgr.connect(ws)
+        mgr.connect(ws, operator_id="op-001")
         assert mgr.count == 1
 
     def test_disconnect_removes_connection(self):
@@ -27,7 +27,7 @@ class TestConnectionManager:
             pass
 
         ws = FakeWS()
-        mgr.connect(ws)
+        mgr.connect(ws, operator_id="op-001")
         mgr.disconnect(ws)
         assert mgr.count == 0
 
@@ -46,9 +46,10 @@ class TestConnectionManager:
             pass
 
         ws = FakeWS()
-        mgr.connect(ws)
+        mgr.connect(ws, operator_id="op-001")
         mgr.subscribe(ws, "route-123")
-        assert mgr._connections[ws] == "route-123"
+        assert mgr._connections[ws]["route_id"] == "route-123"
+        assert mgr._connections[ws]["operator_id"] == "op-001"
 
     def test_subscribe_unknown_ws_is_safe(self):
         mgr = ConnectionManager()
@@ -73,14 +74,15 @@ class TestConnectionManager:
 
         ws_a = FakeWS(received_a)
         ws_b = FakeWS(received_b)
-        mgr.connect(ws_a, route_id="route-001")
-        mgr.connect(ws_b, route_id=None)
+        mgr.connect(ws_a, operator_id="op-001")
+        mgr.subscribe(ws_a, "route-001")
+        mgr.connect(ws_b, operator_id="op-001")
 
         positions = [
             {"vehicle_id": "v1", "route_id": "route-001", "latitude": 33.5},
             {"vehicle_id": "v2", "route_id": "route-002", "latitude": 33.6},
         ]
-        await mgr.broadcast_positions(positions)
+        await mgr.broadcast_positions("op-001", positions)
 
         assert len(received_a) == 1
         assert len(received_a[0]["data"]) == 1
@@ -98,10 +100,10 @@ class TestConnectionManager:
                 raise RuntimeError("connection closed")
 
         ws = DeadWS()
-        mgr.connect(ws)
+        mgr.connect(ws, operator_id="op-001")
         assert mgr.count == 1
 
-        await mgr.broadcast_positions([])
+        await mgr.broadcast_positions("op-001", [])
         assert mgr.count == 0
 
     @pytest.mark.anyio
@@ -117,8 +119,8 @@ class TestConnectionManager:
             async def send_text(self, text):
                 self._store.append(json.loads(text))
 
-        mgr.connect(FakeWS(received_a), route_id="route-001")
-        mgr.connect(FakeWS(received_b), route_id="route-002")
+        mgr.connect(FakeWS(received_a), operator_id="op-001")
+        mgr.connect(FakeWS(received_b), operator_id="op-001")
 
         await mgr.broadcast_alert({"alert_id": "a1", "message": "Geofence exit"})
 

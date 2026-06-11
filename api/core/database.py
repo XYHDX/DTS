@@ -134,6 +134,38 @@ async def _service_get(path: str) -> list:
         return data if isinstance(data, list) else [data] if data else []
 
 
+async def _service_post(path: str, data: dict) -> dict:
+    """INSERT with the service-role key (bypasses RLS — server-trusted paths).
+
+    Bug fix (2026-06-11): api/routers/mqtt_ingest.py lazily imported this
+    helper but it was never defined, so every telemetry persist raised
+    ImportError and the frame was dropped. Defined now; also used by the
+    Sham Cash payments scaffold.
+    """
+    headers = _supabase_headers(use_service_key=True)
+    headers["Prefer"] = "return=representation"
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.post(_supabase_url(path), headers=headers, json=data)
+        resp.raise_for_status()
+        if not resp.content:
+            return {}
+        result = resp.json()
+        return result[0] if isinstance(result, list) and result else result
+
+
+async def _service_patch(path: str, data: dict) -> list:
+    """UPDATE with the service-role key (bypasses RLS — server-trusted paths)."""
+    headers = _supabase_headers(use_service_key=True)
+    headers["Prefer"] = "return=representation"
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.patch(_supabase_url(path), headers=headers, json=data)
+        resp.raise_for_status()
+        if not resp.content:
+            return []
+        result = resp.json()
+        return result if isinstance(result, list) else [result]
+
+
 async def _service_rpc(func_name: str, params: dict):
     async with httpx.AsyncClient(timeout=10.0) as client:
         resp = await client.post(

@@ -144,11 +144,26 @@ async def subscribe_push(
     if current_user and current_user.role in ("driver", "admin", "dispatcher"):
         role = current_user.role
 
+    # Tenant scoping (2026-06-11): subscriptions are tagged with the
+    # subscriber's operator so an admin broadcast never crosses tenants.
+    from api.core.tenancy import DEFAULT_OPERATOR_SLUG, _resolve_operator_id
+
+    if current_user and current_user.operator_id:
+        operator_id = current_user.operator_id
+    else:
+        try:
+            operator_id = await _resolve_operator_id(
+                req.operator or DEFAULT_OPERATOR_SLUG
+            )
+        except Exception:
+            operator_id = None
+
     endpoint = req.subscription.endpoint
     _push_subscriptions[endpoint] = {
         "subscription": req.subscription.model_dump(),
         "stopIds": req.stopIds or [],
         "role": role,
+        "operatorId": operator_id,
         "userId": current_user.user_id if current_user else None,
         "createdAt": datetime.utcnow().isoformat(),
     }
@@ -186,7 +201,7 @@ async def unsubscribe_push(req: dict):
 @router.post("/api/push/broadcast", response_model=PushBroadcastResponse, tags=["push"])
 async def broadcast_push(
     req: PushBroadcastRequest,
-    current_user: CurrentUser = Depends(require_role("admin")),
+    current_user: CurrentUser = Depends(require_role("admin", "super_admin")),
 ):
     """Broadcast a push notification to all matching subscribers (admin only).
 
@@ -204,6 +219,15 @@ async def broadcast_push(
     skipped = 0
 
     for ep, record in list(_push_subscriptions.items()):
+        # Tenant filter (2026-06-11): admins broadcast only to their own
+        # operator's subscribers. super_admin may broadcast to all.
+        if (
+            current_user.role != "super_admin"
+            and current_user.operator_id
+            and record.get("operatorId") not in (None, current_user.operator_id)
+        ):
+            skipped += 1
+            continue
         # Role filter
         if req.role and record.get("role") != req.role:
             skipped += 1

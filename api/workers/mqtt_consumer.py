@@ -77,7 +77,9 @@ async def _handle(topic: str, payload: bytes) -> None:
     try:
         frames = _frames(payload)
     except Exception as exc:  # malformed JSON — log and drop, never crash
-        logger.warning("mqtt_payload_decode_failed", extra={"topic": topic, "err": str(exc)[:200]})
+        logger.warning(
+            "mqtt_payload_decode_failed", extra={"topic": topic, "err": str(exc)[:200]}
+        )
         return
 
     is_event = topic.endswith("/event")
@@ -85,7 +87,9 @@ async def _handle(topic: str, payload: bytes) -> None:
         try:
             decoded = _PartialDecode(**frame)
         except Exception as exc:
-            logger.warning("mqtt_frame_invalid", extra={"topic": topic, "err": str(exc)[:200]})
+            logger.warning(
+                "mqtt_frame_invalid", extra={"topic": topic, "err": str(exc)[:200]}
+            )
             continue
 
         await _ingest(decoded)
@@ -110,7 +114,11 @@ async def _run_once() -> None:
     ) as client:
         logger.info(
             "mqtt_consumer_connected",
-            extra={"host": BROKER_HOST, "port": BROKER_PORT, "redis": geo_cache.configured()},
+            extra={
+                "host": BROKER_HOST,
+                "port": BROKER_PORT,
+                "redis": geo_cache.configured(),
+            },
         )
         await client.subscribe(STATUS_TOPIC, qos=0)
         await client.subscribe(EVENT_TOPIC, qos=1)

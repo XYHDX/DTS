@@ -539,3 +539,39 @@ $$ LANGUAGE plpgsql;
 -- Run in Supabase SQL editor:
 -- ALTER PUBLICATION supabase_realtime ADD TABLE vehicle_positions_latest;
 -- ALTER PUBLICATION supabase_realtime ADD TABLE alerts;
+
+-- ============================================================
+-- CONSOLIDATION BLOCK (2026-06-11)
+-- schema.sql alone used to lag the migration chain (stopped at the
+-- base schema); a fresh deploy from this file then silently broke
+-- JWT revocation, multi-tenancy RLS and the approval workflow.
+-- These idempotent statements bring a FRESH database to the same
+-- minimum state migrations 005/006/007/019 produce. Existing
+-- databases are unaffected (IF NOT EXISTS everywhere).
+-- The full feature set still comes from db/migrations/ — run them.
+-- ============================================================
+
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS password_changed_at TIMESTAMPTZ;
+
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used_at    TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_prt_token_hash ON password_reset_tokens (token_hash);
+
+ALTER TABLE vehicles
+  ADD COLUMN IF NOT EXISTS approval_status TEXT NOT NULL DEFAULT 'pending',
+  ADD COLUMN IF NOT EXISTS approved_by UUID REFERENCES users(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS approval_note TEXT,
+  ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES users(id) ON DELETE SET NULL;
+-- (operator_id only exists after migration 002 — index on approval_status
+-- alone here; migration 019 creates the composite index on migrated DBs.)
+CREATE INDEX IF NOT EXISTS idx_vehicles_approval_status
+    ON vehicles (approval_status);

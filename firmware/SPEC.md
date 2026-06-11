@@ -1,6 +1,6 @@
 # DamascusTransit — edge firmware specification
 
-> Step S6.1 of `Scale_100k_Roadmap.md`. Companion to `transit_architecture_guide.md` §1 + §5. This document is **for firmware authors**. The reference C++ implementation will live under `firmware/sim900a-reference/` once written.
+> Step S6.1 of `Scale_100k_Roadmap.md`. Companion to `docs/transit_architecture_guide.md` §1 + §5. This document is **for firmware authors**. The reference C++ implementation will live under `firmware/sim900a-reference/` once written.
 
 ## Target hardware
 
@@ -72,8 +72,9 @@ Populate fields 20–24 of `VehicleStatus` on **every** frame. They're cheap (un
 
 ## SIM900A MVP — AT command sequence
 
-Lift directly from §5 of the architecture guide. The full reference is in
-`mobile/BUILD.md` for the device's MQTT broker entry point. Verbatim:
+Lift directly from §5 of the architecture guide
+(`docs/transit_architecture_guide.md`). Broker host/port and topic layout:
+`instructions/HARDWARE_SETUP.md` §2. Verbatim:
 
 ```
 AT

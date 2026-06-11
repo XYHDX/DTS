@@ -104,6 +104,15 @@ _OPENAPI_TAGS = [
     {"name": "push", "description": "Web Push notification subscriptions."},
     {"name": "cron", "description": "Scheduled background jobs. Bearer-token secured."},
     {
+        "name": "feedback",
+        "description": "Passenger feedback submission and driver rating summaries.",
+    },
+    {
+        "name": "payments",
+        "description": "Sham Cash fare payments — signed vehicle QR, initiate/status, "
+        "HMAC-verified webhook, sandbox simulator. See docs/ARCHITECTURE_DECISIONS.md §10.",
+    },
+    {
         "name": "telemetry",
         "description": (
             "Protobuf-over-HTTP bridge endpoints that accept the same wire format "
@@ -302,6 +311,7 @@ from api.routers import (  # noqa: E402
     schedules,
     stats,
     stops,
+    payments,
     stream,
     traccar,
     vehicles,
@@ -328,6 +338,7 @@ for _router in [
     push.router,
     operators.router,
     mqtt_ingest.router,
+    payments.router,
 ]:
     app.include_router(_router)
 
@@ -411,7 +422,7 @@ async def generic_exception_handler(request, exc):
     )
 
 
-@app.get("/")
+@app.get("/", tags=["health"])
 async def root():
     return {"message": "DamascusTransit API", "docs": "/docs", "health": "/api/health"}
 

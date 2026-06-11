@@ -1,6 +1,6 @@
 """Exponential moving average — for fuel level smoothing and similar.
 
-Per §4.B of transit_architecture_guide.md, the recommended formula is:
+Per §4.B of docs/transit_architecture_guide.md, the recommended formula is:
 
     S_t = α * Y_t + (1 - α) * S_{t-1}
 
@@ -27,7 +27,9 @@ from typing import Iterable, Iterator, Optional
 DEFAULT_ALPHA = 0.10
 
 
-def ema_step(previous: Optional[float], sample: float, alpha: float = DEFAULT_ALPHA) -> float:
+def ema_step(
+    previous: Optional[float], sample: float, alpha: float = DEFAULT_ALPHA
+) -> float:
     """One step of the EMA recurrence. Returns the sample itself when
     `previous` is None — i.e. the filter is seeded with the first reading."""
     if previous is None:
@@ -35,7 +37,9 @@ def ema_step(previous: Optional[float], sample: float, alpha: float = DEFAULT_AL
     return alpha * sample + (1.0 - alpha) * previous
 
 
-def ema_series(samples: Iterable[float], alpha: float = DEFAULT_ALPHA) -> Iterator[float]:
+def ema_series(
+    samples: Iterable[float], alpha: float = DEFAULT_ALPHA
+) -> Iterator[float]:
     """Yield the smoothed series in lockstep with an input iterable."""
     state: Optional[float] = None
     for s in samples:
@@ -48,6 +52,7 @@ def ema_series(samples: Iterable[float], alpha: float = DEFAULT_ALPHA) -> Iterat
 class EMAFilter:
     """Stateful smoother — one instance per (vehicle_id, signal). Keep them
     in a small dict keyed on `(vehicle_id, "fuel")` inside the consumer."""
+
     alpha: float = DEFAULT_ALPHA
     state: Optional[float] = None
 
@@ -62,8 +67,8 @@ class EMAFilter:
 # ── Refuel / theft detection ──────────────────────────────────────────────
 @dataclass
 class FuelEvent:
-    kind: str           # 'refuel' | 'theft' | 'unknown_step'
-    delta_pct: float    # +N for fill, -N for drain
+    kind: str  # 'refuel' | 'theft' | 'unknown_step'
+    delta_pct: float  # +N for fill, -N for drain
     smoothed_before: float
     smoothed_after: float
 

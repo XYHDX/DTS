@@ -260,12 +260,14 @@ async function loadNearest(lat, lon) {
     wrap.innerHTML = '<div class="stop-card muted">لا توجد محطات قريبة ضمن ١.٥ كم.</div>';
     return;
   }
+  // XSS fix (2026-06-11): API fields are escaped before HTML insertion.
+  const escH = (x) => String(x==null?'':x).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   wrap.innerHTML = stops.slice(0, 6).map(s => `
     <div class="stop-card">
       <span class="dist">${arDigit(Math.round(s.distance_m ?? 0))} م</span>
       <div>
-        <div class="font-bold">${s.name_ar || s.name || 'محطة'}</div>
-        <div class="text-xs muted">${s.route_code || s.routes?.join('، ') || ''}</div>
+        <div class="font-bold">${escH(s.name_ar || s.name || 'محطة')}</div>
+        <div class="text-xs muted">${escH(s.route_code || (s.routes && s.routes.join('، ')) || '')}</div>
       </div>
       <span class="eta">${s.eta_min != null ? '~ '+arDigit(s.eta_min)+' د' : ''}</span>
     </div>
@@ -280,12 +282,14 @@ async function loadPopularRoutes() {
     wrap.innerHTML = '<div class="stop-card muted">لا توجد خطوط متاحة.</div>';
     return;
   }
+  // XSS fix (2026-06-11): API fields are escaped before HTML insertion.
+  const escH = (x) => String(x==null?'':x).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   wrap.innerHTML = routes.slice(0, 6).map(r => `
     <a class="stop-card" style="text-decoration:none" href="/passenger/?route=${encodeURIComponent(r.id)}">
-      <span class="dist" style="background:var(--gold-100);color:var(--gold-700)">${r.code || r.short_name || (r.id+'').slice(0,3)}</span>
+      <span class="dist" style="background:var(--gold-100);color:var(--gold-700)">${escH(r.code || r.short_name || (r.id+'').slice(0,3))}</span>
       <div>
-        <div class="font-bold" style="color:var(--color-text)">${r.name_ar || r.name || 'خط'}</div>
-        <div class="text-xs muted">${r.from || ''} ↔ ${r.to || r.name_en || ''}</div>
+        <div class="font-bold" style="color:var(--color-text)">${escH(r.name_ar || r.name || 'خط')}</div>
+        <div class="text-xs muted">${escH(r.from || '')} ↔ ${escH(r.to || r.name_en || '')}</div>
       </div>
       <span class="badge badge--brand">${arDigit(r.stops_count || 0)} محطة</span>
     </a>

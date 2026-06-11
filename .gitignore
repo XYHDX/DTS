@@ -75,3 +75,7 @@ coverage/
 .idea/
 .vscode/
 
+
+# Legacy snapshots consolidated 2026-06-11 (source/, dts-push/, old bundles).
+# Kept out of git history — move off-repo or to cold storage when convenient.
+archives/

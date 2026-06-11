@@ -7,6 +7,7 @@
 #     docker compose -f docker-compose.scale.yml up -d
 #
 # Services:
+#   redis          — pub/sub backend for the live position bus (S3.4) + geo cache
 #   mosquitto      — dev MQTT broker (1883 TCP, 9001 WebSocket)
 #   mqtt-consumer  — subscribes to vehicles/+/status|event → existing ingest pipeline
 #   prometheus     — scrapes the API /metrics endpoint (enable with METRICS_ENABLED=true)
@@ -14,8 +15,17 @@
 #
 # Grafana:   http://localhost:3001   (admin / admin — change on first login)
 # Prometheus: http://localhost:9090
+# Redis:      redis://localhost:6379/0   (point the API at it with REDIS_PUBSUB_URL)
 # ─────────────────────────────────────────────────────────────────────────────
 services:
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+    networks: [scale]
 
   mosquitto:
     image: eclipse-mosquitto:2
@@ -37,6 +47,9 @@ services:
     environment:
       MQTT_BROKER_HOST: mosquitto
       MQTT_BROKER_PORT: "1883"
+      # Live position bus (S3.4) — every MQTT-ingested frame is published here so
+      # /api/stream subscribers get it without polling the database.
+      REDIS_PUBSUB_URL: ${REDIS_PUBSUB_URL:-redis://redis:6379/0}
       # Optional cloud services — the worker soft-fails (no-ops) when unset.
       UPSTASH_REDIS_REST_URL: ${UPSTASH_REDIS_REST_URL:-}
       UPSTASH_REDIS_REST_TOKEN: ${UPSTASH_REDIS_REST_TOKEN:-}
@@ -44,6 +57,7 @@ services:
       SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-}
     depends_on:
       - mosquitto
+      - redis
     networks: [scale]
 
   prometheus:

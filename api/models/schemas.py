@@ -164,6 +164,25 @@ class VehicleResponse(BaseModel):
     speed_kmh: Optional[float] = None
     occupancy_pct: Optional[int] = None
     recorded_at: Optional[str] = None
+    # Approval workflow (migration 019)
+    approval_status: Optional[str] = None
+    approved_at: Optional[str] = None
+    approval_note: Optional[str] = None
+    driver_name: Optional[str] = None
+    driver_email: Optional[str] = None
+    created_at: Optional[str] = None
+
+
+class VehicleApprovalRequest(BaseModel):
+    """Admin decision on whether a vehicle may operate."""
+
+    action: Literal["approve", "reject", "suspend", "resubmit"]
+    note: Optional[str] = Field(None, max_length=500)
+
+    @field_validator("note", mode="before")
+    @classmethod
+    def sanitize_note(cls, v):
+        return _strip_html(v)
 
 
 class PositionUpdate(BaseModel):
@@ -204,8 +223,32 @@ class VehicleUpdate(BaseModel):
 
 
 class VehicleAssign(BaseModel):
-    route_id: str
-    driver_id: str
+    """Either field may be omitted to leave it unchanged; explicit empty
+    string clears the assignment."""
+
+    route_id: Optional[str] = None
+    driver_id: Optional[str] = None
+
+
+class RouteCreate(BaseModel):
+    route_id: str = Field(..., min_length=1, max_length=20)
+    name: str = Field(..., min_length=1, max_length=120)
+    name_ar: str = Field(..., min_length=1, max_length=120)
+    route_type: Literal["bus", "microbus", "taxi"] = "bus"
+    color: Optional[str] = Field(None, pattern=r"^#[0-9a-fA-F]{6}$")
+    distance_km: Optional[float] = Field(None, ge=0, le=500)
+    avg_duration_min: Optional[int] = Field(None, ge=0, le=1440)
+    fare_syp: Optional[int] = Field(None, ge=0, le=1_000_000)
+
+
+class RouteUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=120)
+    name_ar: Optional[str] = Field(None, min_length=1, max_length=120)
+    color: Optional[str] = Field(None, pattern=r"^#[0-9a-fA-F]{6}$")
+    distance_km: Optional[float] = Field(None, ge=0, le=500)
+    avg_duration_min: Optional[int] = Field(None, ge=0, le=1440)
+    fare_syp: Optional[int] = Field(None, ge=0, le=1_000_000)
+    is_active: Optional[bool] = None
 
 
 class AlertResponse(BaseModel):
@@ -224,6 +267,44 @@ class AlertResolve(BaseModel):
     resolved: bool = True
 
 
+# ── Payments (Sham Cash) ──────────────────────────────────────────────────────
+
+
+class PaymentInitiateRequest(BaseModel):
+    """Passenger scanned a vehicle QR and wants to pay the fare."""
+
+    qr: str = Field(..., min_length=16, max_length=1024)  # signed QR payload
+    amount_syp: int = Field(..., gt=0, le=1_000_000)
+
+
+class PaymentInitiateResponse(BaseModel):
+    payment_id: str
+    status: str
+    amount_syp: int
+    vehicle_code: Optional[str] = None
+    deeplink: Optional[str] = None  # shamcash:// link or sandbox hint
+    sandbox: bool = True
+    expires_at: Optional[str] = None
+
+
+class PaymentStatusResponse(BaseModel):
+    payment_id: str
+    status: str
+    amount_syp: int
+    confirmed_at: Optional[str] = None
+    sandbox: bool = True
+
+
+class ShamCashWebhookPayload(BaseModel):
+    """Callback body from Sham Cash (or the sandbox simulator)."""
+
+    payment_id: str = Field(..., min_length=8, max_length=64)
+    provider_ref: str = Field(..., min_length=4, max_length=128)
+    result: Literal["success", "failure"]
+    amount_syp: int = Field(..., gt=0)
+    payer_hint: Optional[str] = Field(None, max_length=32)
+
+
 class ScheduleResponse(BaseModel):
     id: str
     route_id: str
@@ -237,6 +318,11 @@ class AnalyticsOverview(BaseModel):
     total_vehicles: int
     active_vehicles: int
     idle_vehicles: int
+    # Fix 2026-06-11: the admin dashboard read trips_today/open_alerts/
+    # pending_vehicles but the API never returned them (KPIs showed "—").
+    trips_today: Optional[int] = None
+    open_alerts: Optional[int] = None
+    pending_vehicles: Optional[int] = None
     maintenance_vehicles: int
     total_routes: int
     active_routes: int
@@ -326,6 +412,9 @@ class PushSubscribeRequest(BaseModel):
     role: Optional[str] = (
         None  # "passenger" | "driver" — overridden by JWT role if present
     )
+    operator: Optional[str] = Field(
+        None, max_length=64
+    )  # operator slug for tenant-scoped notifications
 
 
 class PushBroadcastRequest(BaseModel):

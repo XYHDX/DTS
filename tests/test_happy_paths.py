@@ -206,7 +206,7 @@ class TestRoutesHappyPath:
                 "api.routers.routes._supabase_get", new_callable=AsyncMock
             ) as mock_get,
             patch(
-                "api.routers.routes._resolve_operator_id",
+                "api.routers.routes.resolve_read_scope",
                 new_callable=AsyncMock,
                 return_value="op-001",
             ),
@@ -228,7 +228,7 @@ class TestRoutesHappyPath:
                 "api.routers.routes._supabase_get", new_callable=AsyncMock
             ) as mock_get,
             patch(
-                "api.routers.routes._resolve_operator_id",
+                "api.routers.routes.resolve_read_scope",
                 new_callable=AsyncMock,
                 return_value="op-001",
             ),
@@ -248,7 +248,7 @@ class TestRoutesHappyPath:
                 "api.routers.routes._supabase_get", new_callable=AsyncMock
             ) as mock_get,
             patch(
-                "api.routers.routes._resolve_operator_id",
+                "api.routers.routes.resolve_read_scope",
                 new_callable=AsyncMock,
                 return_value="op-001",
             ),
@@ -271,7 +271,7 @@ class TestStopsHappyPath:
                 "api.routers.stops._supabase_get", new_callable=AsyncMock
             ) as mock_get,
             patch(
-                "api.routers.stops._resolve_operator_id",
+                "api.routers.stops.resolve_read_scope",
                 new_callable=AsyncMock,
                 return_value="op-001",
             ),
@@ -289,7 +289,7 @@ class TestStopsHappyPath:
                 "api.routers.stops._supabase_rpc", new_callable=AsyncMock
             ) as mock_rpc,
             patch(
-                "api.routers.stops._resolve_operator_id",
+                "api.routers.stops.resolve_read_scope",
                 new_callable=AsyncMock,
                 return_value="op-001",
             ),
@@ -330,7 +330,7 @@ class TestVehiclesHappyPath:
                 "api.routers.vehicles._supabase_get", new_callable=AsyncMock
             ) as mock_get,
             patch(
-                "api.routers.vehicles._resolve_operator_id",
+                "api.routers.vehicles.resolve_read_scope",
                 new_callable=AsyncMock,
                 return_value="op-001",
             ),
@@ -347,7 +347,7 @@ class TestVehiclesHappyPath:
                 "api.routers.vehicles._supabase_get", new_callable=AsyncMock
             ) as mock_get,
             patch(
-                "api.routers.vehicles._resolve_operator_id",
+                "api.routers.vehicles.resolve_read_scope",
                 new_callable=AsyncMock,
                 return_value="op-001",
             ),
@@ -380,7 +380,7 @@ class TestVehiclesHappyPath:
                 "api.routers.vehicles._supabase_get", new_callable=AsyncMock
             ) as mock_get,
             patch(
-                "api.routers.vehicles._resolve_operator_id",
+                "api.routers.vehicles.resolve_read_scope",
                 new_callable=AsyncMock,
                 return_value="op-001",
             ),
@@ -403,7 +403,7 @@ class TestStatsHappyPath:
                 "api.routers.stats._supabase_get", new_callable=AsyncMock
             ) as mock_get,
             patch(
-                "api.routers.stats._resolve_operator_id",
+                "api.routers.stats.resolve_read_scope",
                 new_callable=AsyncMock,
                 return_value="op-001",
             ),
@@ -435,7 +435,7 @@ class TestSchedulesHappyPath:
                 "api.routers.schedules._supabase_get", new_callable=AsyncMock
             ) as mock_get,
             patch(
-                "api.routers.schedules._resolve_operator_id",
+                "api.routers.schedules.resolve_read_scope",
                 new_callable=AsyncMock,
                 return_value="op-001",
             ),
@@ -460,7 +460,7 @@ class TestAlertsHappyPath:
                 "api.routers.alerts._supabase_get", new_callable=AsyncMock
             ) as mock_get,
             patch(
-                "api.routers.alerts._resolve_operator_id",
+                "api.routers.alerts.resolve_read_scope",
                 new_callable=AsyncMock,
                 return_value="op-001",
             ),
@@ -602,10 +602,11 @@ class TestAdminWithAuth:
             mock_get.side_effect = [
                 MOCK_VEHICLE_STATUS,  # vehicles
                 [{"id": "r-001"}],  # active routes
-                [{"id": "r-001"}],  # routes total
                 [MOCK_STOP],  # stops
-                [{"id": "d-001", "is_active": True}],  # active drivers
-                [{"id": "d-001"}],  # total drivers
+                [{"id": "d-001", "is_active": True}],  # drivers
+                [{"id": "t-001"}],  # trips today (2026-06-11 KPI fix)
+                [{"id": "a-001"}],  # open alerts
+                [],  # pending vehicles
                 [{"occupancy_pct": 55}],  # occupancy
             ]
             r = client.get(
@@ -646,11 +647,52 @@ class TestDriverWithAuth:
     def test_driver_position_fast_path_uses_jwt_vehicle(
         self, client, driver_token_with_vehicle
     ):
-        """JWT with vehicle_id: no DB lookup, only the RPC call is made."""
+        """2026-06-11: the vehicle_id claim is now VERIFIED against the
+        approval workflow (single indexed lookup) instead of being trusted
+        blindly — an unapproved/suspended vehicle must not report positions."""
         with (
             patch(
                 "api.routers.driver._supabase_get", new_callable=AsyncMock
             ) as mock_get,
+            patch(
+                "api.routers.driver._supabase_rpc", new_callable=AsyncMock
+            ) as mock_rpc,
+        ):
+            mock_get.return_value = [{
+                "id": "v-cached-001",
+                "assigned_route_id": "route-001",
+                "approval_status": "approved",
+                "is_active": True,
+            }]
+            mock_rpc.return_value = {}
+            r = client.post(
+                "/api/driver/position",
+                json={"latitude": 33.5, "longitude": 36.3},
+                headers={"Authorization": f"Bearer {driver_token_with_vehicle}"},
+            )
+        assert r.status_code == 200
+        assert r.json()["status"] == "success"
+        mock_get.assert_called_once()  # approval gate lookup
+        assert mock_rpc.call_args[0][1]["p_vehicle_id"] == "v-cached-001"
+        assert mock_rpc.call_args[0][1]["p_route_id"] == "route-001"
+
+    def test_driver_position_stale_jwt_vehicle_falls_back(
+        self, client, driver_token_with_vehicle
+    ):
+        """2026-06-11: a stale vehicle_id claim no longer hard-fails — the
+        gate falls back to the driver's live assignment."""
+        async def fake_get(query):
+            if "vehicles?id=eq." in query:
+                return []  # token's vehicle is gone
+            return [{
+                "id": "v-live-002",
+                "assigned_route_id": "route-002",
+                "approval_status": "approved",
+                "is_active": True,
+            }]
+
+        with (
+            patch("api.routers.driver._supabase_get", side_effect=fake_get),
             patch(
                 "api.routers.driver._supabase_rpc", new_callable=AsyncMock
             ) as mock_rpc,
@@ -662,34 +704,7 @@ class TestDriverWithAuth:
                 headers={"Authorization": f"Bearer {driver_token_with_vehicle}"},
             )
         assert r.status_code == 200
-        assert r.json()["status"] == "success"
-        mock_get.assert_not_called()
-        assert mock_rpc.call_args[0][1]["p_vehicle_id"] == "v-cached-001"
-        assert mock_rpc.call_args[0][1]["p_route_id"] == "route-001"
-
-    def test_driver_position_stale_jwt_vehicle_returns_401(
-        self, client, driver_token_with_vehicle
-    ):
-        """FK violation on stale JWT vehicle_id triggers 401 forcing re-login."""
-        from fastapi import HTTPException as FastAPIHTTPException
-
-        fk_error = FastAPIHTTPException(
-            status_code=500,
-            detail="RPC call failed: 23503 foreign key constraint violation",
-        )
-        with (
-            patch(
-                "api.routers.driver._supabase_rpc", new_callable=AsyncMock
-            ) as mock_rpc,
-        ):
-            mock_rpc.side_effect = fk_error
-            r = client.post(
-                "/api/driver/position",
-                json={"latitude": 33.5, "longitude": 36.3},
-                headers={"Authorization": f"Bearer {driver_token_with_vehicle}"},
-            )
-        assert r.status_code == 401
-        assert "log in again" in r.json()["detail"].lower()
+        assert mock_rpc.call_args[0][1]["p_vehicle_id"] == "v-live-002"
 
     def test_driver_position_no_vehicle(self, client, driver_token):
         with (

@@ -39,9 +39,7 @@ async def verify_turnstile(
     if not secret:
         return True
 
-    token = (token
-             or request.headers.get("x-turnstile-token", "").strip()
-             or None)
+    token = token or request.headers.get("x-turnstile-token", "").strip() or None
     if not token:
         if raise_on_failure:
             raise HTTPException(

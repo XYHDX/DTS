@@ -17,6 +17,7 @@ from api.core.database import (
     _supabase_post,
     _supabase_rpc,
 )
+from api.core import live_bus
 import logging
 
 from api.models.schemas import (
@@ -32,6 +33,133 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+APPROVAL_BLOCKED_DETAIL = (
+    "Vehicle is not approved to operate. "
+    "المركبة غير معتمدة للعمل بعد — بانتظار موافقة الإدارة."
+)
+
+
+async def _require_approved_vehicle(driver_user_id: str, vehicle_id: str = None):
+    """Approval-workflow gate (migration 019).
+
+    Looks up the driver's vehicle and rejects with 403 unless
+    approval_status == 'approved' AND is_active. Returns
+    (vehicle_uuid, assigned_route_id). Missing approval_status column
+    (migration not applied yet) counts as approved for backward compat.
+    """
+    vehicles = None
+    if vehicle_id:
+        vehicles = await _supabase_get(
+            f"vehicles?id=eq.{vehicle_id}&select=id,assigned_route_id,approval_status,is_active"
+        )
+    if not vehicles:
+        # No vehicle_id claim, or the token's vehicle was deleted/reassigned —
+        # fall back to the live assignment instead of failing on a stale token.
+        vehicles = await _supabase_get(
+            f"vehicles?assigned_driver_id=eq.{driver_user_id}"
+            f"&select=id,assigned_route_id,approval_status,is_active"
+        )
+    if not vehicles:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No vehicle assigned"
+        )
+    v = vehicles[0]
+    if v.get("is_active") is False or (
+        v.get("approval_status") is not None and v["approval_status"] != "approved"
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail=APPROVAL_BLOCKED_DETAIL
+        )
+    return v["id"], v.get("assigned_route_id")
+
+
+@router.get("/api/driver/me", tags=["driver"])
+async def driver_me(
+    current_user: CurrentUser = Depends(require_role("driver")),
+):
+    """Driver session bootstrap: my vehicle, its approval state, and route.
+
+    Added 2026-06-11 — the driver console previously had no way to learn
+    its vehicle code / route, so the header showed em-dashes forever.
+    """
+    try:
+        vehicles = await _supabase_get(
+            f"vehicles?assigned_driver_id=eq.{current_user.user_id}"
+            f"&select=id,vehicle_id,name,name_ar,vehicle_type,approval_status,is_active,assigned_route_id"
+        )
+        if not vehicles:
+            return {"vehicle": None, "route": None}
+        v = vehicles[0]
+        route = None
+        if v.get("assigned_route_id"):
+            routes = await _supabase_get(
+                f"routes?id=eq.{v['assigned_route_id']}&select=id,route_id,name,name_ar,fare_syp"
+            )
+            route = routes[0] if routes else None
+        return {
+            "vehicle": {
+                "id": v["id"],
+                "code": v.get("vehicle_id"),
+                "name": v.get("name"),
+                "name_ar": v.get("name_ar"),
+                "type": v.get("vehicle_type"),
+                "approval_status": v.get("approval_status") or "approved",
+                "is_active": v.get("is_active", True),
+            },
+            "route": route,
+        }
+    except Exception:
+        logger.error("driver_me failed", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.post(
+    "/api/driver/incident", response_model=StatusTimestampResponse, tags=["driver"]
+)
+async def report_incident(
+    body: dict,
+    current_user: CurrentUser = Depends(require_role("driver")),
+):
+    """Driver SOS / incident report → creates a critical alert for dispatch.
+
+    Added 2026-06-11 — the driver console and Flutter app both POSTed here
+    but the endpoint never existed (silent failure). Uses the existing
+    alerts pipeline so incidents appear on the admin dashboard immediately.
+    Photo payloads are accepted but only persisted when storage is
+    configured (see migration 018 / incident photos bucket).
+    """
+    try:
+        vehicle_uuid, _ = await _require_approved_vehicle(
+            current_user.user_id, current_user.vehicle_id
+        )
+        kind = str(body.get("kind") or "sos")
+        if kind not in ("sos", "breakdown", "delay"):
+            kind = "sos"
+        note = str(body.get("note") or "")[:300]
+        lat, lon = body.get("lat"), body.get("lon")
+        loc_txt = (
+            f" @({float(lat):.5f},{float(lon):.5f})"
+            if isinstance(lat, (int, float)) and isinstance(lon, (int, float))
+            else ""
+        )
+        alert = {
+            "vehicle_id": vehicle_uuid,
+            "alert_type": kind,
+            "severity": "critical",
+            "title": f"Driver incident report ({kind})",
+            "title_ar": "بلاغ سائق — حادث" if kind == "sos" else "بلاغ سائق",
+            "description": (note + loc_txt).strip() or None,
+            "is_resolved": False,
+            "operator_id": current_user.operator_id,
+        }
+        await _supabase_post("alerts", alert)
+        return {"status": "success", "timestamp": datetime.utcnow().isoformat()}
+    except HTTPException:
+        raise
+    except Exception:
+        logger.error("report_incident failed", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 
 @router.post(
     "/api/driver/position", response_model=StatusTimestampResponse, tags=["driver"]
@@ -40,7 +168,7 @@ async def report_driver_position(
     position: PositionUpdate,
     current_user: CurrentUser = Depends(require_role("driver")),
 ):
-    """Report driver's current position."""
+    """Report driver's current position (vehicle must be admin-approved)."""
     max_req, window = RATE_LIMIT_DRIVER_POS
     if not await _rate_limit_check(f"drvpos:{current_user.user_id}", max_req, window):
         raise HTTPException(
@@ -48,19 +176,9 @@ async def report_driver_position(
             detail="Position update rate limit exceeded.",
         )
     try:
-        if current_user.vehicle_id:
-            db_vehicle_id = current_user.vehicle_id
-            route_id = current_user.vehicle_route_id
-        else:
-            vehicles = await _supabase_get(
-                f"vehicles?assigned_driver_id=eq.{current_user.user_id}&select=id,assigned_route_id"
-            )
-            if not vehicles:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, detail="No vehicle assigned"
-                )
-            db_vehicle_id = vehicles[0]["id"]
-            route_id = vehicles[0].get("assigned_route_id")
+        db_vehicle_id, route_id = await _require_approved_vehicle(
+            current_user.user_id, current_user.vehicle_id
+        )
 
         try:
             await _supabase_rpc(
@@ -97,6 +215,26 @@ async def report_driver_position(
         else:
             await _cache_delete(CACHE_KEY_VEHICLES_LIST, CACHE_KEY_VEHICLES_POSITIONS)
 
+        # S3.4 — fan this update out to /api/stream subscribers via the live bus
+        # (no-op unless a pub/sub backend is configured). Best-effort: a bus
+        # failure must never fail a driver's position report.
+        try:
+            await live_bus.publish(
+                operator_id=current_user.operator_id,
+                payload={
+                    "vehicle_id": db_vehicle_id,
+                    "vehicle_name": "",
+                    "vehicle_name_ar": "",
+                    "latitude": position.latitude,
+                    "longitude": position.longitude,
+                    "speed_kmh": position.speed_kmh,
+                    "occupancy_pct": None,
+                    "timestamp": datetime.utcnow().isoformat(),
+                },
+            )
+        except Exception:
+            pass
+
         return {"status": "success", "timestamp": datetime.utcnow().isoformat()}
 
     except HTTPException:
@@ -115,17 +253,9 @@ async def start_trip(
     trip: TripStart,
     current_user: CurrentUser = Depends(require_role("driver")),
 ):
-    """Start a new trip for the driver."""
+    """Start a new trip for the driver (vehicle must be admin-approved)."""
     try:
-        vehicles = await _supabase_get(
-            f"vehicles?assigned_driver_id=eq.{current_user.user_id}&select=id"
-        )
-        if not vehicles:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="No vehicle assigned"
-            )
-
-        vehicle_id = vehicles[0]["id"]
+        vehicle_id, _ = await _require_approved_vehicle(current_user.user_id)
         trip_data = {
             "vehicle_id": vehicle_id,
             "route_id": trip.route_id,

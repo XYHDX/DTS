@@ -53,7 +53,7 @@
   description: flutter_app/ Dart codebase.
 - name: area/capacitor
   color: 119EFF
-  description: mobile/ Capacitor wrapper.
+  description: flutter_app/ mobile app.
 - name: area/ci
   color: 0052cc
   description: GitHub Actions, pre-commit, automation.

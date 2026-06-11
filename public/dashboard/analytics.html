@@ -103,11 +103,16 @@
 const $ = (s,r=document) => r.querySelector(s);
 const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:8000' : '';
 const token = localStorage.getItem('dt_token') || sessionStorage.getItem('dt_token');
+// Auth guard (2026-06-11): analytics is staff-only; previously this page
+// rendered fabricated Math.random() numbers to anonymous visitors.
+if (!token) { location.replace('/admin/login.html'); }
 const arDigit = (n) => (n==null || isNaN(n)) ? '—' : Number(n).toLocaleString('ar-EG');
+const escH = (x) => String(x==null?'':x).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 async function api(path) {
   try {
     const r = await fetch(API_BASE + path, { headers: token ? {'Authorization':'Bearer '+token} : {} });
+    if (r.status === 401) { location.replace('/admin/login.html'); return null; }
     if (!r.ok) throw new Error();
     return await r.json();
   } catch (_) { return null; }
@@ -196,41 +201,46 @@ async function loadAll(range='7d') {
   $('#m-ontime').textContent = overview.on_time_pct != null ? Math.round(overview.on_time_pct)+'٪' : '—';
   $('#m-speed').textContent = arDigit(overview.speed_violations);
 
-  // Trips per day — fall back to mock distribution if no data
+  // Honest data (2026-06-11): charts show real API data or an explicit
+  // empty state — never invented numbers.
   const labels = ['س','ح','إ','ث','أ','خ','ج'];
-  const series = overview.trips_by_day || [120,140,180,160,210,190,205];
-  drawBars($('#trips-chart'), series, labels);
+  if (Array.isArray(overview.trips_by_day) && overview.trips_by_day.length) {
+    drawBars($('#trips-chart'), overview.trips_by_day, labels);
+  } else {
+    $('#trips-chart').innerHTML = '<text x="300" y="110" text-anchor="middle" fill="var(--color-text-mute)" font-size="14">لا بيانات بعد — تظهر الرسوم عند توفر رحلات مسجلة</text>';
+  }
+  if (Array.isArray(overview.occupancy_buckets) && overview.occupancy_buckets.length) {
+    drawDonut($('#occ-chart'), overview.occupancy_buckets);
+  } else {
+    $('#occ-chart').innerHTML = '<text x="110" y="110" text-anchor="middle" fill="var(--color-text-mute)" font-size="13">لا بيانات إشغال بعد</text>';
+  }
 
-  drawDonut($('#occ-chart'), overview.occupancy_buckets || [
-    { label: 'فارغ <٢٠٪', value: 18, color: '#aedccc' },
-    { label: 'متوسط', value: 52, color: '#00876f' },
-    { label: 'ممتلئ >٨٠٪', value: 30, color: '#b97a14' },
-  ]);
-
-  const routes = await api('/api/routes') || [];
-  $('#route-table').innerHTML = `
+  // Real per-route performance (was: /api/routes + Math.random fillers)
+  const perfRaw = await api('/api/admin/analytics/route-performance') || [];
+  const routesPub = await api('/api/routes') || [];
+  const codeById = {}; (Array.isArray(routesPub)?routesPub:[]).forEach(r => { codeById[r.id] = r.code || r.route_id || r.short_name; });
+  const perf = (Array.isArray(perfRaw)?perfRaw:[]).map(r => ({ code: codeById[r.route_id] || '', name: r.name, trip_count: r.trip_count, on_time_pct: r.on_time_pct, avg_delay_min: r.avg_delay_min }));
+  $('#route-table').innerHTML = perf.length === 0 ? '<div class="muted" style="padding:14px">لا بيانات أداء بعد — تظهر بعد اكتمال رحلات.</div>' : `
     <table style="width:100%;border-collapse:collapse">
       <thead><tr style="text-align:start;color:var(--color-text-mute);font-size:var(--fs-xs);text-transform:uppercase">
-        <th style="padding:8px 4px">الخط</th><th style="padding:8px 4px">رحلات</th><th style="padding:8px 4px">دقة</th><th style="padding:8px 4px">إشغال</th>
+        <th style="padding:8px 4px">الخط</th><th style="padding:8px 4px">رحلات</th><th style="padding:8px 4px">الالتزام</th><th style="padding:8px 4px">متوسط التأخير</th>
       </tr></thead>
       <tbody>
-      ${routes.slice(0,8).map(r => `
+      ${perf.slice(0,8).map(r => `
         <tr style="border-top:1px solid var(--color-border)">
-          <td style="padding:10px 4px"><span class="badge badge--brand">${r.code || r.short_name || (r.id+'').slice(0,3)}</span> ${r.name_ar || r.name || ''}</td>
-          <td style="padding:10px 4px">${arDigit(r.trips || Math.floor(Math.random()*80)+40)}</td>
-          <td style="padding:10px 4px">${arDigit(r.on_time || Math.floor(Math.random()*15)+80)}٪</td>
-          <td style="padding:10px 4px">${arDigit(r.occupancy || Math.floor(Math.random()*30)+40)}٪</td>
+          <td style="padding:10px 4px"><span class="badge badge--brand">${escH(r.code || '')}</span> ${escH(r.name || '')}</td>
+          <td style="padding:10px 4px">${arDigit(r.trip_count)}</td>
+          <td style="padding:10px 4px">${r.on_time_pct != null ? arDigit(r.on_time_pct)+'٪' : '—'}</td>
+          <td style="padding:10px 4px">${r.avg_delay_min != null ? arDigit(r.avg_delay_min)+' د' : '—'}</td>
         </tr>`).join('')}
       </tbody>
     </table>
   `;
 
-  $('#incident-list').innerHTML = (overview.incidents || [
-    { type:'تأخر',     count: 12 },
-    { type:'انحراف',   count: 7 },
-    { type:'كثافة',    count: 4 },
-    { type:'صيانة',    count: 2 },
-  ]).map(x => `<li>${x.type} — <strong>${arDigit(x.count)}</strong></li>`).join('');
+  const incidents = Array.isArray(overview.incidents) ? overview.incidents : [];
+  $('#incident-list').innerHTML = incidents.length
+    ? incidents.map(x => `<li>${escH(x.type)} — <strong>${arDigit(x.count)}</strong></li>`).join('')
+    : '<li class="muted">لا حوادث مسجلة في هذه الفترة.</li>';
 }
 
 window.addEventListener('DOMContentLoaded', () => loadAll('7d'));

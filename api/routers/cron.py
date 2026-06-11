@@ -1,3 +1,4 @@
+import hmac
 import os
 
 from fastapi import APIRouter, HTTPException, Request
@@ -15,9 +16,11 @@ async def cron_simulate_positions(request: Request):
     """Vercel Cron endpoint — generates simulated GPS positions on schedule.
 
     Secured by CRON_SECRET env var. Add to vercel.json crons config.
+    The comparison is constant-time (hmac.compare_digest) to prevent a
+    byte-by-byte timing oracle on the secret.
     """
     auth = request.headers.get("authorization", "")
-    if not CRON_SECRET or auth != f"Bearer {CRON_SECRET}":
+    if not CRON_SECRET or not hmac.compare_digest(auth, f"Bearer {CRON_SECRET}"):
         raise HTTPException(status_code=401, detail="Invalid cron secret")
     try:
         return await _run_simulation()

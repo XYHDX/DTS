@@ -202,6 +202,10 @@
 <!-- Trip pane -->
 <section id="trip-pane" class="trip-pane hidden">
 
+  <div id="approval-banner" class="hidden" style="background:#fef3c7;color:#92400e;border:1px solid #d97706;border-radius:var(--r-md);padding:var(--s-3) var(--s-4);margin-bottom:var(--s-4);font-weight:600">
+    ⏳ مركبتك بانتظار اعتماد الإدارة — لا يمكن بدء الرحلات أو استقبال الدفعات قبل الموافقة.
+  </div>
+
   <div class="trip-header">
     <div class="text-xs" style="color:rgba(255,255,255,.7);text-transform:uppercase">الخط الحالي</div>
     <div class="route-name" id="route-name">—</div>
@@ -244,11 +248,20 @@
       🚨 الإبلاغ عن حادث
     </button>
   </div>
+
+  <!-- Sham Cash fare QR (passengers scan this to pay) -->
+  <div id="pay-qr-box" class="hidden" style="margin-top:var(--s-5);background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--r-lg);padding:var(--s-4);text-align:center">
+    <div style="font-weight:700;margin-bottom:var(--s-2)">ادفع بمسح الرمز — شام كاش</div>
+    <div id="pay-qr-img" style="display:grid;place-items:center;min-height:120px;word-break:break-all;font-family:var(--font-mono);font-size:var(--fs-xs);color:var(--color-text-mute)"></div>
+    <div style="margin-top:var(--s-2);color:var(--color-text-mute);font-size:var(--fs-sm)">الأجرة: <b id="fare-display">حسب الخط</b></div>
+    <div id="pay-qr-sandbox" class="hidden" style="margin-top:var(--s-2);font-size:var(--fs-xs);background:#fef3c7;color:#92400e;border-radius:6px;padding:4px 8px;display:inline-block">وضع التجربة — لا أموال حقيقية</div>
+  </div>
 </section>
 
 </div>
 
 <!-- Capacitor bridge for native plugins -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
 <script src="/lib/capacitor-bridge.js"></script>
 <script src="/lib/i18n.js" defer></script>
 <script>
@@ -260,6 +273,8 @@ const arDigit = (n) => Number(n).toLocaleString('ar-EG');
 let token = sessionStorage.getItem('dt_token') || null;
 let user  = JSON.parse(sessionStorage.getItem('dt_user') || 'null');
 let tripId = null;
+let myRouteId = null;
+let myVehicleUuid = null;
 let pax = 0;
 let positionWatchStop = null;
 let tripStartedAt = null;
@@ -276,6 +291,69 @@ function showTrip() {
   $('#trip-pane').classList.remove('hidden');
   $('#bar-vehicle').textContent = user?.vehicle_code || user?.vehicle_id || '—';
   $('#route-name').textContent = user?.route_name || 'بانتظار تخصيص الخط';
+  bootstrapSession();
+}
+
+function showApprovalBlock() {
+  const el = $('#approval-banner');
+  if (el) el.classList.remove('hidden');
+}
+
+// Session bootstrap (2026-06-11): pull my vehicle + route + approval state
+// so the header is real and trip-start can send the required route_id.
+async function bootstrapSession() {
+  if (!token) return;
+  try {
+    const r = await fetch(API_BASE + '/api/driver/me', { headers: { 'Authorization': 'Bearer ' + token } });
+    if (!r.ok) return;
+    const me = await r.json();
+    if (me.vehicle) {
+      myVehicleUuid = me.vehicle.id;
+      $('#bar-vehicle').textContent = me.vehicle.code || '—';
+      if (me.vehicle.approval_status !== 'approved' || me.vehicle.is_active === false) {
+        showApprovalBlock();
+        $('#start-trip').disabled = true;
+      } else {
+        $('#approval-banner')?.classList.add('hidden');
+        $('#start-trip').disabled = false;
+        loadPayQr();
+      }
+    }
+    if (me.route) {
+      myRouteId = me.route.id;
+      $('#route-name').textContent = me.route.name_ar || me.route.name || '—';
+      if (me.route.fare_syp) {
+        const fareEl = $('#fare-display');
+        if (fareEl) fareEl.textContent = Number(me.route.fare_syp).toLocaleString('ar-EG') + ' ل.س';
+      }
+    }
+  } catch (_) {}
+}
+
+// ----- Sham Cash payment QR (scaffold) -----
+async function loadPayQr() {
+  if (!myVehicleUuid || !token) return;
+  try {
+    const r = await fetch(API_BASE + '/api/pay/qr/' + encodeURIComponent(myVehicleUuid), {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!r.ok) return;
+    const data = await r.json();
+    const box = $('#pay-qr-box');
+    const img = $('#pay-qr-img');
+    if (box && img && data.payload) {
+      // Render via QR image API-free: use a tiny inline QR painter (qrjs)
+      // fallback to text if the library is unavailable.
+      if (window.QRCode) {
+        img.innerHTML = '';
+        new window.QRCode(img, { text: data.payload, width: 168, height: 168, correctLevel: window.QRCode.CorrectLevel.M });
+      } else {
+        img.textContent = data.payload;
+      }
+      $('#pay-qr-sandbox').classList.toggle('hidden', !data.sandbox);
+      box.classList.remove('hidden');
+    }
+  } catch (_) {}
 }
 
 function setOnline(on) {
@@ -375,11 +453,19 @@ function onPosition(c) {
   lastPos = c;
 
   if (tripId && token) {
+    // Contract fix (2026-06-11): the API expects latitude/longitude/speed_kmh
+    // — the old lat/lon/speed payload failed validation on every report.
     fetch(API_BASE + '/api/driver/position', {
       method: 'POST',
       headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
-      body: JSON.stringify({ lat: c.latitude, lon: c.longitude, speed, heading: c.heading })
-    }).catch(()=>{ /* queue offline-tolerant */ });
+      body: JSON.stringify({
+        latitude: c.latitude,
+        longitude: c.longitude,
+        speed_kmh: speed,
+        heading: c.heading != null ? Math.round(c.heading) % 361 : null,
+      })
+    }).then(r => { if (r.status === 403) showApprovalBlock(); })
+      .catch(()=>{ /* queue offline-tolerant */ });
   }
 }
 
@@ -393,17 +479,25 @@ function haversineKm(lat1,lon1,lat2,lon2){
 // ----- Trip controls -----
 $('#start-trip').addEventListener('click', async () => {
   if (!token) return;
+  // Contract fix (2026-06-11): trip/start REQUIRES route_id; the old empty
+  // body failed silently and trips were never recorded server-side.
+  if (!myRouteId) {
+    alert('لا يوجد خط معيّن لمركبتك بعد — اطلب من المشغّل تعيين الخط.');
+    return;
+  }
   try {
     const r = await fetch(API_BASE + '/api/driver/trip/start', {
       method: 'POST',
       headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
-      body: '{}'
+      body: JSON.stringify({ route_id: myRouteId })
     });
+    if (r.status === 403) { showApprovalBlock(); return; }
     if (!r.ok) throw new Error('start');
     const data = await r.json();
-    tripId = data.trip_id || data.id || 'local-' + Date.now();
+    tripId = data.trip_id || data.id;
   } catch (_) {
-    tripId = 'local-' + Date.now();
+    alert('تعذر بدء الرحلة — تحقق من الاتصال');
+    return;
   }
   tripStartedAt = Date.now();
   totalKm = 0; pax = 0; lastPos = null;
@@ -421,7 +515,7 @@ $('#end-trip').addEventListener('click', async () => {
     await fetch(API_BASE + '/api/driver/trip/end', {
       method: 'POST',
       headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
-      body: JSON.stringify({ trip_id: tripId, passengers: pax, distance_km: totalKm })
+      body: JSON.stringify({ passenger_count: pax })
     });
   } catch (_) {}
   tripId = null; tripStartedAt = null;
@@ -456,7 +550,7 @@ function syncPax() {
   fetch(API_BASE + '/api/driver/trip/passenger-count', {
     method: 'POST',
     headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
-    body: JSON.stringify({ trip_id: tripId, count: pax })
+    body: JSON.stringify({ passenger_count: pax })
   }).catch(()=>{});
 }
 
@@ -466,17 +560,25 @@ $('#incident-btn').addEventListener('click', async () => {
     try {
       const photo = await cap.captureIncidentPhoto();
       // POST photo to backend; backend uploads to storage
-      if (token && photo?.dataUrl) {
+      if (token) {
         await fetch(API_BASE + '/api/driver/incident', {
           method: 'POST',
           headers: {'Content-Type':'application/json','Authorization':'Bearer '+token},
-          body: JSON.stringify({ photo: photo.dataUrl, lat: lastPos?.latitude, lon: lastPos?.longitude })
+          body: JSON.stringify({ kind: 'sos', lat: lastPos?.latitude, lon: lastPos?.longitude })
         });
       }
-      alert('تم الإبلاغ');
-    } catch (_) {}
-  } else {
-    alert('الإبلاغ يتطلب التطبيق الأصلي. سيتم الإرسال نصياً.');
+      alert('تم الإبلاغ — وصل البلاغ لغرفة العمليات');
+    } catch (_) { alert('تعذر إرسال البلاغ'); }
+  } else if (token) {
+    // Web fallback: send the SOS without a photo.
+    try {
+      const r = await fetch(API_BASE + '/api/driver/incident', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json','Authorization':'Bearer '+token},
+        body: JSON.stringify({ kind: 'sos', lat: lastPos?.latitude, lon: lastPos?.longitude })
+      });
+      alert(r.ok ? 'تم الإبلاغ — وصل البلاغ لغرفة العمليات' : 'تعذر إرسال البلاغ');
+    } catch (_) { alert('تعذر إرسال البلاغ'); }
   }
 });
 

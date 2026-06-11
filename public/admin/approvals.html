@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0E5650">
+<title>الموافقات — لوحة الإدارة — نقل دمشق</title>
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200;300;400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/lib/design-system.css">
+<link rel="stylesheet" href="/admin/_layout.css">
+<script src="/admin/_gate.js"></script>
+<style>
+  .filters { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .filters button {
+    padding:8px 16px; border-radius:999px; border:1px solid var(--color-border);
+    background:var(--color-surface); color:var(--color-text-soft); cursor:pointer;
+    font:inherit; font-size:var(--fs-sm);
+  }
+  .filters button.is-on { background:var(--national-green); color:#fff; border-color:var(--national-green); }
+  .filters button .n { font-weight:700; margin-inline-start:4px; }
+
+  .approval-grid { display:grid; gap:14px; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); }
+  .vcard {
+    background:var(--color-surface); border:1px solid var(--color-border);
+    border-radius:var(--r-lg); padding:18px; display:flex; flex-direction:column; gap:10px;
+  }
+  .vcard__head { display:flex; align-items:center; gap:10px; }
+  .vcard__type {
+    width:42px;height:42px;border-radius:10px;display:grid;place-items:center;flex:none;
+    background:var(--national-green-50); color:var(--national-green);
+  }
+  [data-theme="dark"] .vcard__type { background:var(--national-green-800); color:var(--national-green-200); }
+  .vcard__title { font-weight:700; }
+  .vcard__code { font-family:var(--font-mono); font-size:var(--fs-xs); color:var(--color-text-mute); }
+  .vcard dl { margin:0; display:grid; grid-template-columns:auto 1fr; gap:3px 12px; font-size:var(--fs-sm); }
+  .vcard dt { color:var(--color-text-mute); }
+  .vcard dd { margin:0; }
+  .vcard__actions { display:flex; gap:8px; margin-top:auto; padding-top:8px; flex-wrap:wrap; }
+  .vcard__actions button {
+    flex:1; min-width:110px; padding:10px 12px; border-radius:8px; border:0; cursor:pointer;
+    font:inherit; font-size:var(--fs-sm); font-weight:600;
+  }
+  .act-approve { background:var(--national-green); color:#fff; }
+  .act-reject  { background:transparent; color:var(--national-red-700); border:1px solid var(--national-red-500) !important; }
+  .act-suspend { background:transparent; color:#92400e; border:1px solid #d97706 !important; }
+  .act-resubmit{ background:transparent; color:var(--color-text-soft); border:1px solid var(--color-border) !important; }
+  .pill { display:inline-block; padding:2px 10px; border-radius:999px; font-size:var(--fs-xs); font-weight:600; }
+  .pill--pending  { background:#fef3c7; color:#92400e; }
+  .pill--approved { background:var(--national-green-100); color:var(--national-green-800); }
+  .pill--rejected { background:var(--national-red-100); color:var(--national-red-900); }
+  .pill--suspended{ background:#e2e8f0; color:#334155; }
+  .note { font-size:var(--fs-xs); color:var(--color-text-mute); background:var(--color-surface-2); border-radius:8px; padding:8px 10px; }
+  .empty-state { padding:48px 16px; text-align:center; color:var(--color-text-mute); }
+</style>
+</head>
+<body data-page="approvals">
+
+<div class="utility-bar">
+  <div class="container">
+    <span class="gov" data-i18n="hero.eyebrow">الجمهورية العربية السورية</span>
+    <span class="right">
+      <a href="/" data-i18n="header.home">الرئيسية</a>
+      <span class="sep"></span>
+      <a href="/passenger/" data-i18n="header.passenger">للركاب</a>
+      <span class="sep"></span>
+      <a href="/driver/" data-i18n="header.driver">للسائقين</a>
+    </span>
+  </div>
+</div>
+
+<div class="admin-shell">
+
+  <aside class="sidebar" aria-label="القائمة الجانبية">
+    <a href="/" class="sidebar__brand">
+      <span class="sidebar__brand-mark" aria-hidden="true">
+        <picture>
+          <source srcset="/assets/identity/sy-emblem-eagle.avif" type="image/avif">
+          <img src="/assets/identity/sy-emblem-eagle.png" alt="">
+        </picture>
+      </span>
+      <span class="sidebar__brand-text">
+        <b data-i18n="admin.brand">نقل دمشق</b>
+        <small data-i18n="admin.brandSub">لوحة الإدارة</small>
+      </span>
+    </a>
+
+    <nav data-shell-nav></nav>
+
+    <div class="sidebar__footer">
+      <div class="sidebar__user">
+        <div class="avatar-circle" id="user-initial">؟</div>
+        <div>
+          <div class="name" id="user-name">—</div>
+          <div class="role" id="user-role">—</div>
+        </div>
+      </div>
+      <button class="sidebar__logout" id="logout-btn" data-i18n="admin.logout">تسجيل الخروج</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="pagetitle">
+        <h1 data-i18n="admin.approvals.title">موافقات تشغيل المركبات</h1>
+        <p data-i18n="admin.approvals.sub">راجع طلبات المشغّلين واعتمد المركبات المسموح لها بالعمل. لا تعمل أي مركبة قبل موافقة الإدارة.</p>
+      </div>
+      <div class="cluster">
+        <button class="lang-toggle" id="lang-toggle" data-i18n-toggle aria-label="Toggle language">EN</button>
+      </div>
+    </div>
+
+    <div class="filters" id="filters" role="tablist">
+      <button data-f="pending"   class="is-on">قيد الانتظار <span class="n" id="n-pending">·</span></button>
+      <button data-f="approved">معتمدة <span class="n" id="n-approved">·</span></button>
+      <button data-f="rejected">مرفوضة <span class="n" id="n-rejected">·</span></button>
+      <button data-f="suspended">معلّقة <span class="n" id="n-suspended">·</span></button>
+    </div>
+
+    <section class="approval-grid" id="grid">
+      <div class="vcard"><div class="skeleton" style="height:120px"></div></div>
+      <div class="vcard"><div class="skeleton" style="height:120px"></div></div>
+      <div class="vcard"><div class="skeleton" style="height:120px"></div></div>
+    </section>
+  </main>
+
+</div>
+
+<script src="/lib/i18n.js"></script>
+<script src="/lib/error-handler.js"></script>
+<script src="/admin/_shell.js" defer></script>
+<script>
+(function () {
+  'use strict';
+  let FILTER = 'pending';
+  let ALL = [];
+
+  const TYPE_ICONS = {
+    bus: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H4zM4 16v3h3v-3M17 16v3h3v-3M4 9h16"/><circle cx="8" cy="13" r="1"/><circle cx="16" cy="13" r="1"/></svg>',
+    microbus: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h13l5 5v5h-2M3 7v10h2M3 7l1-2h11M7 17h8"/><circle cx="6" cy="17" r="1.6"/><circle cx="16" cy="17" r="1.6"/></svg>',
+    taxi: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 11l1.5-4.5h11L19 11M5 11h14v5h-2M5 16h2M9 6V4h6v2"/><circle cx="7" cy="16" r="1.6"/><circle cx="17" cy="16" r="1.6"/></svg>'
+  };
+  const TYPE_AR = { bus: 'حافلة', microbus: 'ميكروباص', taxi: 'تكسي' };
+
+  function isAr() { return (document.documentElement.lang || 'ar').slice(0,2) === 'ar'; }
+  function t(k, fb) { return window.I18N && window.I18N.t(k) !== k ? window.I18N.t(k) : fb; }
+
+  function fmtDate(s) {
+    if (!s) return '—';
+    try { return new Date(s).toLocaleString(isAr() ? 'ar-SY' : 'en-GB', { dateStyle:'medium', timeStyle:'short' }); }
+    catch (_) { return s; }
+  }
+
+  function counts() {
+    const c = { pending:0, approved:0, rejected:0, suspended:0 };
+    ALL.forEach(v => { const k = v.approval_status || 'approved'; if (c[k] != null) c[k]++; });
+    ['pending','approved','rejected','suspended'].forEach(k => {
+      const el = document.getElementById('n-' + k);
+      if (el) el.textContent = String(c[k]);
+    });
+  }
+
+  function render() {
+    const esc = window.ADMIN_AUTH.esc;
+    const grid = document.getElementById('grid');
+    const rows = ALL.filter(v => (v.approval_status || 'approved') === FILTER);
+    counts();
+    if (!rows.length) {
+      grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1">' +
+        esc(t('admin.approvals.empty', isAr() ? 'لا توجد طلبات بانتظار الموافقة.' : 'No vehicles awaiting approval.')) + '</div>';
+      return;
+    }
+    grid.innerHTML = rows.map(v => {
+      const tp = TYPE_ICONS[v.vehicle_type] ? v.vehicle_type : 'bus';
+      const name = isAr() ? (v.name_ar || v.name) : (v.name || v.name_ar);
+      const st = v.approval_status || 'approved';
+      const driver = v.driver_name
+        ? esc(v.driver_name) + (v.driver_email ? ' <span class="vcard__code">' + esc(v.driver_email) + '</span>' : '')
+        : '<span style="color:var(--national-red-700)">' + (isAr() ? 'لا يوجد سائق معيّن' : 'No driver assigned') + '</span>';
+      let actions = '';
+      if (st === 'pending') {
+        actions = '<button class="act-approve" data-a="approve" data-id="' + esc(v.id) + '">' + esc(t('admin.approvals.approve','اعتماد')) + '</button>' +
+                  '<button class="act-reject" data-a="reject" data-id="' + esc(v.id) + '">' + esc(t('admin.approvals.reject','رفض')) + '</button>';
+      } else if (st === 'approved') {
+        actions = '<button class="act-suspend" data-a="suspend" data-id="' + esc(v.id) + '">' + esc(t('admin.approvals.suspend','تعليق')) + '</button>';
+      } else {
+        actions = '<button class="act-resubmit" data-a="resubmit" data-id="' + esc(v.id) + '">' + esc(t('admin.approvals.resubmit','إعادة للانتظار')) + '</button>';
+        if (st === 'suspended') {
+          actions = '<button class="act-approve" data-a="approve" data-id="' + esc(v.id) + '">' + esc(t('admin.approvals.approve','اعتماد')) + '</button>' + actions;
+        }
+      }
+      return '<article class="vcard">' +
+        '<div class="vcard__head">' +
+          '<span class="vcard__type">' + TYPE_ICONS[tp] + '</span>' +
+          '<div><div class="vcard__title">' + esc(name || '—') + ' <span class="pill pill--' + esc(st) + '">' + esc(stLabel(st)) + '</span></div>' +
+          '<div class="vcard__code">' + esc(v.vehicle_id || '') + ' · ' + esc(isAr() ? (TYPE_AR[tp] || tp) : tp) + '</div></div>' +
+        '</div>' +
+        '<dl>' +
+          '<dt>' + (isAr() ? 'السائق' : 'Driver') + '</dt><dd>' + driver + '</dd>' +
+          '<dt>' + (isAr() ? 'السعة' : 'Capacity') + '</dt><dd>' + (v.capacity != null ? esc(v.capacity) : '—') + '</dd>' +
+          '<dt>' + (isAr() ? 'تاريخ التسجيل' : 'Registered') + '</dt><dd>' + esc(fmtDate(v.created_at)) + '</dd>' +
+          (v.approved_at ? '<dt>' + (isAr() ? 'تاريخ القرار' : 'Decided') + '</dt><dd>' + esc(fmtDate(v.approved_at)) + '</dd>' : '') +
+        '</dl>' +
+        (v.approval_note ? '<div class="note">' + esc(v.approval_note) + '</div>' : '') +
+        '<div class="vcard__actions">' + actions + '</div>' +
+      '</article>';
+    }).join('');
+
+    grid.querySelectorAll('button[data-a]').forEach(b => b.addEventListener('click', onAction));
+  }
+
+  function stLabel(st) {
+    const map_ar = { pending:'قيد الانتظار', approved:'معتمدة', rejected:'مرفوضة', suspended:'معلّقة' };
+    const map_en = { pending:'Pending', approved:'Approved', rejected:'Rejected', suspended:'Suspended' };
+    return (isAr() ? map_ar : map_en)[st] || st;
+  }
+
+  function onAction(ev) {
+    const id = ev.currentTarget.dataset.id;
+    const action = ev.currentTarget.dataset.a;
+    const needsNote = action === 'reject' || action === 'suspend';
+    let note = null;
+    if (needsNote) {
+      note = prompt(isAr()
+        ? (action === 'reject' ? 'سبب الرفض (سيظهر للمشغّل):' : 'سبب التعليق:')
+        : (action === 'reject' ? 'Rejection reason (shown to the operator):' : 'Suspension reason:'));
+      if (note === null) return; // cancelled
+    } else if (action === 'approve') {
+      const v = ALL.find(x => x.id === id);
+      const label = v ? (v.vehicle_id || v.name || id) : id;
+      if (!confirm(isAr()
+        ? 'اعتماد المركبة "' + label + '" للعمل في الشبكة؟'
+        : 'Approve vehicle "' + label + '" to operate?')) return;
+    }
+    ev.currentTarget.disabled = true;
+    window.ADMIN_AUTH.fetch('/api/admin/vehicles/' + encodeURIComponent(id) + '/approval', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: action, note: note || null }),
+    }).then(r => {
+      if (!r.ok) return r.json().then(j => { throw new Error(j.detail || 'Failed'); });
+      window.ADMIN_AUTH.toast(
+        action === 'approve' ? 'تم اعتماد المركبة' : action === 'reject' ? 'تم رفض المركبة' : 'تم تحديث الحالة',
+        action === 'approve' ? 'Vehicle approved' : action === 'reject' ? 'Vehicle rejected' : 'Status updated',
+        'success');
+      load();
+    }).catch(e => {
+      window.ADMIN_AUTH.toast(e.message || 'فشل الإجراء', e.message || 'Action failed', 'error');
+      load();
+    });
+  }
+
+  function load() {
+    window.ADMIN_AUTH.fetch('/api/admin/vehicles')
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+      .then(rows => { ALL = Array.isArray(rows) ? rows : []; render(); })
+      .catch(e => {
+        if (String(e.message) !== 'unauthorized') {
+          document.getElementById('grid').innerHTML =
+            '<div class="empty-state" style="grid-column:1/-1">' + window.ADMIN_AUTH.esc(e.message || 'Error') + '</div>';
+        }
+      });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    load();
+    setInterval(load, 60000);
+    document.getElementById('filters').addEventListener('click', function (ev) {
+      const b = ev.target.closest('button[data-f]');
+      if (!b) return;
+      FILTER = b.dataset.f;
+      document.querySelectorAll('#filters button').forEach(x => x.classList.toggle('is-on', x === b));
+      render();
+    });
+    // Bilingual filter labels
+    document.addEventListener('i18n:change', function () {
+      const lab = isAr()
+        ? { pending:'قيد الانتظار', approved:'معتمدة', rejected:'مرفوضة', suspended:'معلّقة' }
+        : { pending:'Pending', approved:'Approved', rejected:'Rejected', suspended:'Suspended' };
+      document.querySelectorAll('#filters button').forEach(b => {
+        const f = b.dataset.f;
+        b.innerHTML = lab[f] + ' <span class="n" id="n-' + f + '">·</span>';
+      });
+      render();
+    });
+  });
+})();
+</script>
+</body>
+</html>

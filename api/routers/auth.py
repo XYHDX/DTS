@@ -16,6 +16,7 @@ from api.core.auth import (
 )
 from api.core.cache import RATE_LIMIT_LOGIN, _rate_limit_check
 from api.core.database import _supabase_get, _supabase_patch, _supabase_post
+from api.core.turnstile import verify_turnstile
 from api.models.schemas import (
     ChangePasswordRequest,
     ForgotPasswordRequest,
@@ -44,9 +45,13 @@ async def login(request: LoginRequest, raw_request: Request):
             detail="Too many login attempts. Try again later.",
             headers={"Retry-After": str(window)},
         )
+    # Captcha (Cloudflare Turnstile) — no-op unless TURNSTILE_SECRET is set.
+    # Security fix (2026-06-11): this helper existed but was never called,
+    # leaving login brute-force protection to the IP rate limit alone.
+    await verify_turnstile(raw_request)
     try:
         users = await _supabase_get(
-            f"users?email=eq.{urllib.parse.quote(request.email, safe='')}&select=id,email,password_hash,role,operator_id"
+            f"users?email=eq.{urllib.parse.quote(request.email, safe='')}&select=id,email,password_hash,role,operator_id,is_active"
         )
 
         if not users:
@@ -59,6 +64,14 @@ async def login(request: LoginRequest, raw_request: Request):
         if not verify_password(request.password, user["password_hash"]):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
+            )
+
+        # Security fix (2026-06-11): deactivated accounts could previously
+        # still log in — is_active was never checked at login time.
+        if user.get("is_active") is False:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Account is deactivated. Contact your administrator.",
             )
 
         operator_id = user.get("operator_id")
@@ -207,7 +220,9 @@ async def forgot_password(request: ForgotPasswordRequest, raw_request: Request):
         )
 
         base_url = os.getenv("APP_BASE_URL", "https://damascustransit.sy")
-        reset_url = f"{base_url}/reset-password?token={raw_token}"
+        # /admin/reset.html is the real page that consumes the token
+        # (the old /reset-password path never existed — dead link in emails).
+        reset_url = f"{base_url}/admin/reset.html?token={raw_token}"
 
         try:
             import sys
@@ -273,9 +288,15 @@ async def reset_password(request: ResetPasswordRequest, raw_request: Request):
         )
 
         hashed = hash_password(request.new_password)
+        # Set password_changed_at explicitly so JWT revocation works even on
+        # databases where the migration-007 trigger is missing (fail-open gap).
         await _supabase_patch(
             f"users?id=eq.{token_row['user_id']}",
-            {"password_hash": hashed, "must_change_password": False},
+            {
+                "password_hash": hashed,
+                "must_change_password": False,
+                "password_changed_at": now,
+            },
         )
 
         return {"message": "Password has been reset successfully. You can now log in."}
@@ -397,9 +418,14 @@ async def change_password(
             )
 
         hashed = hash_password(request.new_password)
+        # Explicit password_changed_at write — see reset_password note.
         await _supabase_patch(
             f"users?id=eq.{current_user.user_id}",
-            {"password_hash": hashed, "must_change_password": False},
+            {
+                "password_hash": hashed,
+                "must_change_password": False,
+                "password_changed_at": datetime.now(timezone.utc).isoformat(),
+            },
         )
 
         return {"message": "Password changed successfully."}

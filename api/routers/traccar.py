@@ -63,12 +63,20 @@ async def traccar_position_webhook(
     try:
         quoted_id = urllib.parse.quote(position.deviceId, safe="")
         devices = await _supabase_get(
-            f"vehicles?gps_device_id=eq.{quoted_id}&select=id,vehicle_id"
+            f"vehicles?gps_device_id=eq.{quoted_id}&select=id,vehicle_id,approval_status,is_active"
         )
         if not devices:
             return {"status": "ignored", "reason": "device_not_found"}
 
         vehicle = devices[0]
+
+        # Approval workflow (migration 019): positions from vehicles that an
+        # admin has not approved (or has suspended) are dropped at the edge.
+        if vehicle.get("is_active") is False or (
+            vehicle.get("approval_status") is not None
+            and vehicle["approval_status"] != "approved"
+        ):
+            return {"status": "ignored", "reason": "vehicle_not_approved"}
 
         await _supabase_rpc(
             "upsert_vehicle_position",
@@ -88,7 +96,8 @@ async def traccar_position_webhook(
 
     except Exception as e:
         logger.error("Traccar position webhook error", extra={"error": str(e)})
-        return {"status": "error", "detail": str(e)}
+        # Do not leak internal exception details to the caller.
+        return {"status": "error", "detail": "internal error"}
 
 
 @router.post("/api/traccar/event", response_model=WebhookResponse, tags=["traccar"])
@@ -108,8 +117,16 @@ async def traccar_event_webhook(
     try:
         quoted_id = urllib.parse.quote(event.deviceId, safe="")
         devices = await _supabase_get(
-            f"vehicles?gps_device_id=eq.{quoted_id}&select=id"
+            f"vehicles?gps_device_id=eq.{quoted_id}&select=id,approval_status,is_active"
         )
+        if devices and (
+            devices[0].get("is_active") is False
+            or (
+                devices[0].get("approval_status") is not None
+                and devices[0]["approval_status"] != "approved"
+            )
+        ):
+            return {"status": "ignored", "reason": "vehicle_not_approved"}
         if not devices:
             return {"status": "ignored", "reason": "device_not_found"}
 
@@ -158,4 +175,5 @@ async def traccar_event_webhook(
 
     except Exception as e:
         logger.error("Traccar event webhook error", extra={"error": str(e)})
-        return {"status": "error", "detail": str(e)}
+        # Do not leak internal exception details to the caller.
+        return {"status": "error", "detail": "internal error"}

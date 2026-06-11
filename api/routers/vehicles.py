@@ -16,7 +16,7 @@ from api.core.cache import (
 )
 from api.core.database import _supabase_get
 from api.core.geo import parse_location
-from api.core.tenancy import _op_filter, _resolve_operator_id
+from api.core.tenancy import _op_filter, resolve_read_scope
 from api.models.schemas import VehicleResponse
 import logging
 
@@ -41,12 +41,8 @@ async def list_vehicles(
             headers={"Retry-After": str(window)},
         )
     try:
-        if current_user and current_user.role == "super_admin":
-            op_id = await _resolve_operator_id(operator) if operator else None
-        elif current_user and current_user.operator_id:
-            op_id = current_user.operator_id
-        else:
-            op_id = await _resolve_operator_id(operator) if operator else None
+        # Always scoped to exactly one operator (cross-tenant leak fix).
+        op_id = await resolve_read_scope(operator, current_user)
 
         cache_key = _tenant_cache_key(CACHE_KEY_VEHICLES_LIST, op_id or "all")
         cached = await _cache_get(cache_key)
@@ -60,6 +56,8 @@ async def list_vehicles(
             "vehicles?select=id,vehicle_id,name,name_ar,vehicle_type,"
             "capacity,status,assigned_route_id"
             "&status=neq.decommissioned"
+            # Approval workflow: the public never sees unapproved vehicles.
+            "&or=(approval_status.is.null,approval_status.eq.approved)"
         )
         if op_id:
             vehicles_query += f"&{_op_filter(op_id)}"
@@ -121,12 +119,8 @@ async def get_vehicle_positions(
 ):
     """Get latest vehicle positions only (lightweight endpoint)."""
     try:
-        if current_user and current_user.role == "super_admin":
-            op_id = await _resolve_operator_id(operator) if operator else None
-        elif current_user and current_user.operator_id:
-            op_id = current_user.operator_id
-        else:
-            op_id = await _resolve_operator_id(operator) if operator else None
+        # Always scoped to exactly one operator (cross-tenant leak fix).
+        op_id = await resolve_read_scope(operator, current_user)
 
         cache_key = _tenant_cache_key(CACHE_KEY_VEHICLES_POSITIONS, op_id or "all")
         cached = await _cache_get(cache_key)
@@ -139,6 +133,7 @@ async def get_vehicle_positions(
         veh_query = (
             "vehicles?select=id,vehicle_id,vehicle_type,name,name_ar,assigned_route_id"
             "&status=neq.decommissioned"
+            "&or=(approval_status.is.null,approval_status.eq.approved)"
         )
         if op_id:
             veh_query += f"&{_op_filter(op_id)}"

@@ -1,6 +1,6 @@
 # Scale-to-100k Roadmap
 
-> Authored 24 May 2026, derived from `transit_architecture_guide.md`. Maps the enterprise architecture onto the existing DamascusTransit codebase. The 100-step revival roadmap (`ROADMAP_100.md`) is now **complete on the codeable items**; this document is the next phase.
+> Authored 24 May 2026, derived from `docs/transit_architecture_guide.md`. Maps the enterprise architecture onto the existing DamascusTransit codebase. The 100-step revival roadmap (`ROADMAP_100.md`) is now **complete on the codeable items**; this document is the next phase.
 
 ## Why a new phase
 
@@ -21,7 +21,7 @@ This document plans the migration without breaking the 500-vehicle deployment th
 
 ## Phase S1 — Decision + schema freeze (week 1)
 
-- [x] **S1.1.** ADR-004 — lock the ingestion stack choice (MQTT + Kafka + TimescaleDB). See `markdown-files/adr/ADR-004-ingestion-stack.md`.
+- [x] **S1.1.** ADR-004 — lock the ingestion stack choice (MQTT + Kafka + TimescaleDB). See `docs/adr/ADR-004-ingestion-stack.md`.
 - [x] **S1.2.** Production-ready Protobuf schema published at `schemas/telematics.proto`. Includes `VehicleStatus` with adaptive `EventType`, ignition state, fuel level.
 - [x] **S1.3.** Edge firmware spec at `firmware/SPEC.md` — covers SIM900A AT-sequence MVP, adaptive heartbeat tiers, FIFO offline queue, hardware watchdog, ignition sense via optocoupler.
 - [x] **S1.4.** Database migration `009_telemetry_hypertable.sql` — promotes `vehicle_positions` to a TimescaleDB hypertable, adds `engine_state`, `fuel_level`, `trigger_event` columns.
@@ -40,7 +40,7 @@ This document plans the migration without breaking the 500-vehicle deployment th
 - [x] **S3.1.** Redis Geo cache helper at `api/core/geo_cache.py` — `GEOADD` on every successful ingest, `GEOSEARCH` for nearest-vehicle queries, less than 1 ms.
 - [x] **S3.2.** Edge-side EMA helper at `api/core/ema.py` — referenced by the ingest path to smooth fuel level when devices haven't done it themselves yet.
 - [ ] **S3.3.** Bounding-box pre-filter before PostGIS `ST_Contains` in `/api/stops/nearest` — already partly done by the GiST index, but explicitly gate complex polygons on a bbox match.
-- [ ] **S3.4.** Move `/api/stream` SSE generation off the FastAPI process onto a Redis pub-sub consumer (scales horizontally without sticky sessions).
+- [x] **S3.4.** Move `/api/stream` SSE generation off the FastAPI process onto a Redis pub-sub consumer (scales horizontally without sticky sessions). Live bus at `api/core/live_bus.py` (Redis pub/sub over `REDIS_PUBSUB_URL`; in-memory backend for one-box/dev; disabled default → legacy poll, so Vercel is unchanged). Ingest paths (`driver.report_driver_position`, `mqtt_ingest._ingest`) publish each accepted frame; `/api/stream` sends one snapshot per connection then relays bus updates — one DB query per *connection* instead of per client every 2 s, and no in-process state to pin a client to a worker. `redis` service added to `docker-compose.scale.yml`; tests in `tests/test_live_bus.py`. _(2026-06-11)_
 
 ## Phase S4 — Cold path (weeks 6–7)
 
@@ -80,7 +80,7 @@ This document plans the migration without breaking the 500-vehicle deployment th
 
 | File | Purpose |
 |---|---|
-| `markdown-files/adr/ADR-004-ingestion-stack.md` | Locks MQTT + Kafka + TimescaleDB as the long-term ingestion stack. |
+| `docs/adr/ADR-004-ingestion-stack.md` | Locks MQTT + Kafka + TimescaleDB as the long-term ingestion stack. |
 | `schemas/telematics.proto` | Production-ready Protobuf schema with adaptive `EventType`. |
 | `db/migrations/009_telemetry_hypertable.sql` | Promotes `vehicle_positions` to TimescaleDB hypertable, adds telemetry-rich columns. |
 | `api/core/geo_cache.py` | Redis Geo (`GEOADD` / `GEOSEARCH`) wrapper, sub-millisecond nearest-vehicle. |
@@ -100,3 +100,4 @@ The 100-step revival roadmap (`ROADMAP_100.md`) stands. Anything completed there
 |---|---|---|
 | 2026-05-24 | S1.1–S1.4, S2.1, S3.1–S3.2, S6.1 | First wave: ADR-004, protobuf, hypertable migration, Redis Geo cache, EMA, MQTT-bridge endpoint, firmware spec. |
 | 2026-06-02 | S2.2, S7.2 | MQTT dev broker (mosquitto) + async consumer worker (`api/workers/mqtt_consumer.py`) reusing `_ingest`; sim publisher (`scripts/mqtt_sim_publish.py`); optional Prometheus `/metrics` + Grafana stack (`docker-compose.scale.yml`, `monitoring/`) with starter dashboard. Also closed ROADMAP_100 #72 + #80. See `PROJECT_STATUS.md`. |
+| 2026-06-11 | S3.4 | Live position bus (`api/core/live_bus.py`): Redis pub/sub fan-out for `/api/stream`, removing per-client DB polling and the sticky-session limit. Ingest paths publish; stream subscribes (snapshot-on-connect + relay). `redis` service in `docker-compose.scale.yml`; `redis>=5` dep; env `REDIS_PUBSUB_URL` / `LIVE_BUS_BACKEND`; `tests/test_live_bus.py`. |

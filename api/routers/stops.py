@@ -17,7 +17,7 @@ from api.core.cache import (
 )
 from api.core.database import _supabase_get, _supabase_rpc
 from api.core.geo import parse_location
-from api.core.tenancy import _op_filter, _resolve_operator_id
+from api.core.tenancy import _op_filter, resolve_read_scope
 from api.models.schemas import ETAArrival, NearestStop, StopETAResponse, StopResponse
 import logging
 
@@ -49,12 +49,8 @@ async def list_stops(
 ):
     """List all active stops."""
     try:
-        if current_user and current_user.role == "super_admin":
-            op_id = await _resolve_operator_id(operator) if operator else None
-        elif current_user and current_user.operator_id:
-            op_id = current_user.operator_id
-        else:
-            op_id = await _resolve_operator_id(operator) if operator else None
+        # Always scoped to exactly one operator (cross-tenant leak fix).
+        op_id = await resolve_read_scope(operator, current_user)
 
         cache_key = _tenant_cache_key(CACHE_KEY_STOPS_LIST, op_id or "all")
         cached = await _cache_get(cache_key)
@@ -156,12 +152,8 @@ async def get_stop_eta(
     vehicle is stationary or speed data is unavailable.
     """
     try:
-        if current_user and current_user.role == "super_admin":
-            op_id = await _resolve_operator_id(operator) if operator else None
-        elif current_user and current_user.operator_id:
-            op_id = current_user.operator_id
-        else:
-            op_id = await _resolve_operator_id(operator) if operator else None
+        # Always scoped to exactly one operator (cross-tenant leak fix).
+        op_id = await resolve_read_scope(operator, current_user)
 
         # 1. Resolve the stop — accept UUID (id) or stop_id string
         stop_query = f"stops?id=eq.{stop_id}&select=*"

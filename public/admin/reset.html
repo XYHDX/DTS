@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0E5650">
+<title>استعادة كلمة المرور — نقل دمشق</title>
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200;300;400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/lib/design-system.css">
+<style>
+  .reset-shell { min-height: 100vh; display: grid; place-items: center; padding: 40px 16px; }
+  .reset-card  { width: 100%; max-width: 520px; background: var(--color-surface,#fff); border: 1px solid var(--color-border); border-radius: 12px; padding: 32px; box-shadow: 0 4px 24px rgba(0,0,0,.04); }
+  .reset-card h1 { margin: 0 0 8px; font-size: 22px; }
+  .reset-card p  { color: var(--color-text-soft); font-size: 14px; line-height: 1.7; }
+  .reset-card .actions { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
+  .field { margin-top: 14px; }
+  .field label { display:block; font-size:13px; color:var(--color-text-soft); margin-bottom:6px; }
+  .field input { width: 100%; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 8px; font: inherit; background:var(--color-surface,#fff); color:inherit; }
+  .err { color: #b91c1c; font-size: 13px; margin-top: 12px; min-height: 18px; }
+  .ok  { color: #047857; font-size: 13px; margin-top: 12px; min-height: 18px; }
+  .hint { color: var(--color-text-mute); font-size: 12px; margin-top: 4px; }
+  .btn { display:inline-block; padding:10px 18px; border-radius:8px; border:0; cursor:pointer; font:inherit; text-decoration:none; }
+  .btn--primary { background: var(--national-green); color:#fff; }
+  .btn--ghost { background:transparent; color:var(--color-text-soft); border:1px solid var(--color-border); }
+</style>
+</head>
+<body>
+
+<div class="utility-bar">
+  <div class="container">
+    <span class="gov">الجمهورية العربية السورية</span>
+    <span class="right">
+      <a href="/passenger/">للركاب</a>
+      <span class="sep"></span>
+      <a href="/driver/">للسائقين</a>
+      <span class="sep"></span>
+      <a href="/admin/login.html">الإدارة</a>
+    </span>
+  </div>
+</div>
+
+<main class="reset-shell">
+
+  <!-- Mode 1: forced rotation (logged in, must_change_password) -->
+  <div class="reset-card" id="forced" hidden>
+    <h1>تغيير كلمة المرور مطلوب — Password change required</h1>
+    <p>يجب تغيير كلمة المرور المسلَّمة لك قبل المتابعة. — You must rotate your issued password before continuing.</p>
+    <form id="form-change">
+      <div class="field">
+        <label for="cur">كلمة المرور الحالية — Current password</label>
+        <input id="cur" type="password" autocomplete="current-password" required minlength="6">
+      </div>
+      <div class="field">
+        <label for="new">كلمة المرور الجديدة — New password</label>
+        <input id="new" type="password" autocomplete="new-password" required minlength="8">
+        <div class="hint">8 خانات على الأقل، ولا تُعِد استخدام كلمة مرور قديمة. — 8+ chars, never reuse.</div>
+      </div>
+      <div class="field">
+        <label for="new2">تأكيد كلمة المرور الجديدة — Confirm new password</label>
+        <input id="new2" type="password" autocomplete="new-password" required minlength="8">
+      </div>
+      <div class="err" id="err-change"></div>
+      <div class="ok"  id="ok-change"></div>
+      <div class="actions">
+        <button class="btn btn--primary" type="submit">تغيير — Change</button>
+        <a class="btn btn--ghost" href="/admin/login.html">إلغاء — Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Mode 2: consume an emailed reset token (?token=...) -->
+  <div class="reset-card" id="consume" hidden>
+    <h1>تعيين كلمة مرور جديدة</h1>
+    <p>أدخل كلمة المرور الجديدة لحسابك. — Choose a new password for your account.</p>
+    <form id="form-consume">
+      <div class="field">
+        <label for="t-new">كلمة المرور الجديدة — New password</label>
+        <input id="t-new" type="password" autocomplete="new-password" required minlength="8">
+      </div>
+      <div class="field">
+        <label for="t-new2">تأكيد كلمة المرور — Confirm password</label>
+        <input id="t-new2" type="password" autocomplete="new-password" required minlength="8">
+      </div>
+      <div class="err" id="err-consume"></div>
+      <div class="ok"  id="ok-consume"></div>
+      <div class="actions">
+        <button class="btn btn--primary" type="submit">حفظ — Save</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Mode 3 (default): request a reset email -->
+  <div class="reset-card" id="request" hidden>
+    <h1>استعادة كلمة المرور</h1>
+    <p>أدخل بريدك الإلكتروني المسجَّل وسنرسل لك رابط إعادة التعيين إن كان الحساب موجوداً. الرابط صالح لمدة ٣٠ دقيقة.</p>
+    <form id="form-request">
+      <div class="field">
+        <label for="email">البريد الإلكتروني — Email</label>
+        <input id="email" type="email" autocomplete="email" required placeholder="name@example.sy">
+      </div>
+      <div class="err" id="err-request"></div>
+      <div class="ok"  id="ok-request"></div>
+      <div class="actions">
+        <button class="btn btn--primary" type="submit">إرسال الرابط — Send link</button>
+        <a class="btn btn--ghost" href="/admin/login.html">العودة لتسجيل الدخول</a>
+      </div>
+    </form>
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  const params = new URLSearchParams(location.search);
+  const force = params.get('force') === '1';
+  const token = params.get('token');
+
+  const mode = force ? 'forced' : (token ? 'consume' : 'request');
+  document.getElementById(mode).hidden = false;
+
+  // ── Mode 1: forced change (authenticated) ──────────────────────────────
+  if (mode === 'forced') {
+    document.getElementById('form-change').addEventListener('submit', async function (ev) {
+      ev.preventDefault();
+      const err = document.getElementById('err-change'), ok = document.getElementById('ok-change');
+      err.textContent = ''; ok.textContent = '';
+      const cur = document.getElementById('cur').value;
+      const np1 = document.getElementById('new').value;
+      const np2 = document.getElementById('new2').value;
+      if (np1 !== np2) { err.textContent = 'كلمتا المرور غير متطابقتين — passwords do not match'; return; }
+      if (np1 === cur) { err.textContent = 'كلمة المرور الجديدة يجب أن تختلف — must differ from current'; return; }
+      const tk = localStorage.getItem('dt_token') || sessionStorage.getItem('dt_token');
+      if (!tk) { location.replace('/admin/login.html'); return; }
+      try {
+        const r = await fetch('/api/auth/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tk },
+          body: JSON.stringify({ current_password: cur, new_password: np1 }),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) { err.textContent = (data && data.detail) || 'فشل التغيير — change failed'; return; }
+        // Changing the password revokes the old token by design — sign in again.
+        try { localStorage.removeItem('dt_token'); sessionStorage.removeItem('dt_token'); } catch (_) {}
+        ok.textContent = 'تم التغيير — سجّل الدخول بكلمة المرور الجديدة. Redirecting…';
+        setTimeout(() => { location.href = '/admin/login.html'; }, 1200);
+      } catch (_) { err.textContent = 'تعذر الاتصال بالخادم — network error'; }
+    });
+  }
+
+  // ── Mode 2: consume token from the reset email ─────────────────────────
+  if (mode === 'consume') {
+    document.getElementById('form-consume').addEventListener('submit', async function (ev) {
+      ev.preventDefault();
+      const err = document.getElementById('err-consume'), ok = document.getElementById('ok-consume');
+      err.textContent = ''; ok.textContent = '';
+      const np1 = document.getElementById('t-new').value;
+      const np2 = document.getElementById('t-new2').value;
+      if (np1 !== np2) { err.textContent = 'كلمتا المرور غير متطابقتين — passwords do not match'; return; }
+      try {
+        const r = await fetch('/api/auth/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: token, new_password: np1 }),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) { err.textContent = (data && data.detail) || 'انتهت صلاحية الرابط — link invalid or expired'; return; }
+        ok.textContent = 'تم — يمكنك الآن تسجيل الدخول. Redirecting…';
+        setTimeout(() => { location.href = '/admin/login.html'; }, 1200);
+      } catch (_) { err.textContent = 'تعذر الاتصال بالخادم — network error'; }
+    });
+  }
+
+  // ── Mode 3: request a reset email ──────────────────────────────────────
+  if (mode === 'request') {
+    document.getElementById('form-request').addEventListener('submit', async function (ev) {
+      ev.preventDefault();
+      const err = document.getElementById('err-request'), ok = document.getElementById('ok-request');
+      err.textContent = ''; ok.textContent = '';
+      try {
+        const r = await fetch('/api/auth/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: document.getElementById('email').value }),
+        });
+        if (r.status === 429) { err.textContent = 'محاولات كثيرة — حاول لاحقاً. Too many attempts.'; return; }
+        ok.textContent = 'إن كان البريد مسجلاً فستصلك رسالة خلال دقائق. — If registered, an email is on its way.';
+      } catch (_) { err.textContent = 'تعذر الاتصال بالخادم — network error'; }
+    });
+  }
+})();
+</script>
+</body>
+</html>

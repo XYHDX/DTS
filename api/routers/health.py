@@ -61,8 +61,10 @@ async def health_deep():
         if last_pos:
             from datetime import datetime as _dt, timezone
 
-            ts = last_pos if isinstance(last_pos, _dt) else _dt.fromisoformat(
-                str(last_pos).replace("Z", "+00:00")
+            ts = (
+                last_pos
+                if isinstance(last_pos, _dt)
+                else _dt.fromisoformat(str(last_pos).replace("Z", "+00:00"))
             )
             if ts.tzinfo is None:
                 ts = ts.replace(tzinfo=timezone.utc)

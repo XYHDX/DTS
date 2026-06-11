@@ -345,7 +345,8 @@ class TestLocationSharing:
     def test_position_update_fast_path_uses_jwt_vehicle(
         self, client, driver_token_with_vehicle
     ):
-        """JWT with embedded vehicle_id skips DB lookup."""
+        """2026-06-11: the vehicle_id claim is verified against the
+        approval workflow (one indexed lookup) instead of trusted blindly."""
         with (
             patch(
                 "api.routers.driver._supabase_get", new_callable=AsyncMock
@@ -354,6 +355,12 @@ class TestLocationSharing:
                 "api.routers.driver._supabase_rpc", new_callable=AsyncMock
             ) as mock_rpc,
         ):
+            mock_get.return_value = [{
+                "id": "v-bus-001",
+                "assigned_route_id": "route-line-a",
+                "approval_status": "approved",
+                "is_active": True,
+            }]
             mock_rpc.return_value = {}
             r = client.post(
                 "/api/driver/position",
@@ -361,7 +368,7 @@ class TestLocationSharing:
                 headers={"Authorization": f"Bearer {driver_token_with_vehicle}"},
             )
         assert r.status_code == 200
-        mock_get.assert_not_called()
+        mock_get.assert_called_once()
         rpc_args = mock_rpc.call_args[0][1]
         assert rpc_args["p_vehicle_id"] == "v-bus-001"
         assert rpc_args["p_route_id"] == "route-line-a"
@@ -372,9 +379,18 @@ class TestLocationSharing:
         """Speed and heading values are forwarded to the RPC correctly."""
         with (
             patch(
+                "api.routers.driver._supabase_get", new_callable=AsyncMock
+            ) as mock_get,
+            patch(
                 "api.routers.driver._supabase_rpc", new_callable=AsyncMock
             ) as mock_rpc,
         ):
+            mock_get.return_value = [{
+                "id": "v-bus-001",
+                "assigned_route_id": "route-line-a",
+                "approval_status": "approved",
+                "is_active": True,
+            }]
             mock_rpc.return_value = {}
             r = client.post(
                 "/api/driver/position",
@@ -414,9 +430,20 @@ class TestLocationSharing:
             status_code=500,
             detail="RPC call failed: 23503 foreign key constraint violation",
         )
-        with patch(
-            "api.routers.driver._supabase_rpc", new_callable=AsyncMock
-        ) as mock_rpc:
+        with (
+            patch(
+                "api.routers.driver._supabase_get", new_callable=AsyncMock
+            ) as mock_get,
+            patch(
+                "api.routers.driver._supabase_rpc", new_callable=AsyncMock
+            ) as mock_rpc,
+        ):
+            mock_get.return_value = [{
+                "id": "v-bus-001",
+                "assigned_route_id": "route-line-a",
+                "approval_status": "approved",
+                "is_active": True,
+            }]
             mock_rpc.side_effect = fk_error
             r = client.post(
                 "/api/driver/position",

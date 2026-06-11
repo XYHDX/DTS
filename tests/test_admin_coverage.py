@@ -108,14 +108,16 @@ class TestAdminCreateUser:
             )
         assert r.status_code == 409
 
-    def test_create_user_requires_admin(self, client, dispatcher_token):
+    def test_dispatcher_cannot_create_admin(self, client, dispatcher_token):
+        """2026-06-11: dispatchers may create DRIVER accounts (operator
+        provisioning flow) but never elevated roles."""
         r = client.post(
             "/api/admin/users",
             json={
                 "email": "test@transit.sy",
-                "password": "pass123",
+                "password": "password123",
                 "full_name": "Test",
-                "role": "driver",
+                "role": "admin",
             },
             headers={"Authorization": f"Bearer {dispatcher_token}"},
         )
@@ -190,9 +192,15 @@ class TestAdminCreateVehicle:
             "status": "idle",
             "is_active": True,
         }
-        with patch(
-            "api.routers.admin._supabase_post", new_callable=AsyncMock
-        ) as mock_post:
+        with (
+            patch(
+                "api.routers.admin._supabase_get", new_callable=AsyncMock
+            ) as mock_get,
+            patch(
+                "api.routers.admin._supabase_post", new_callable=AsyncMock
+            ) as mock_post,
+        ):
+            mock_get.return_value = []  # duplicate fleet-code check
             mock_post.return_value = mock_result
             r = client.post(
                 "/api/admin/vehicles",
@@ -280,12 +288,16 @@ class TestAdminAssignVehicle:
         mock_vehicle = [{"id": "v-001", "vehicle_id": "VH-001"}]
         with (
             patch(
+                "api.routers.admin._supabase_get", new_callable=AsyncMock
+            ) as mock_get,
+            patch(
                 "api.routers.admin._supabase_patch", new_callable=AsyncMock
             ) as mock_patch,
             patch(
                 "api.routers.admin._supabase_post", new_callable=AsyncMock
             ) as mock_post,
         ):
+            mock_get.return_value = [{"id": "driver-001"}]  # tenant driver check
             mock_patch.return_value = mock_vehicle
             mock_post.return_value = {"id": "audit-001"}
             r = client.post(
@@ -297,9 +309,15 @@ class TestAdminAssignVehicle:
         assert r.json()["status"] == "success"
 
     def test_assign_vehicle_not_found(self, client, admin_token):
-        with patch(
-            "api.routers.admin._supabase_patch", new_callable=AsyncMock
-        ) as mock_patch:
+        with (
+            patch(
+                "api.routers.admin._supabase_get", new_callable=AsyncMock
+            ) as mock_get,
+            patch(
+                "api.routers.admin._supabase_patch", new_callable=AsyncMock
+            ) as mock_patch,
+        ):
+            mock_get.return_value = [{"id": "driver-001"}]
             mock_patch.return_value = []
             r = client.post(
                 "/api/admin/vehicles/nonexistent/assign",
@@ -810,13 +828,37 @@ class TestFormValidation:
         )
         assert r.status_code == 422
 
-    def test_assign_vehicle_missing_route(self, client, admin_token):
+    def test_assign_vehicle_empty_body_rejected(self, client, admin_token):
+        """2026-06-11: route_id/driver_id are individually optional (operator
+        may link just the driver first); an empty assignment is rejected."""
         r = client.post(
             "/api/admin/vehicles/v-001/assign",
-            json={"driver_id": "driver-001"},
+            json={},
             headers={"Authorization": f"Bearer {admin_token}"},
         )
-        assert r.status_code == 422
+        assert r.status_code == 400
+
+    def test_assign_vehicle_driver_only_is_valid(self, client, admin_token):
+        with (
+            patch(
+                "api.routers.admin._supabase_get", new_callable=AsyncMock
+            ) as mock_get,
+            patch(
+                "api.routers.admin._supabase_patch", new_callable=AsyncMock
+            ) as mock_patch,
+            patch(
+                "api.routers.admin._supabase_post", new_callable=AsyncMock
+            ) as mock_post,
+        ):
+            mock_get.return_value = [{"id": "driver-001"}]
+            mock_patch.return_value = [{"id": "v-001"}]
+            mock_post.return_value = {"id": "audit-001"}
+            r = client.post(
+                "/api/admin/vehicles/v-001/assign",
+                json={"driver_id": "driver-001"},
+                headers={"Authorization": f"Bearer {admin_token}"},
+            )
+        assert r.status_code == 200
 
     def test_driver_trip_start_missing_route(self, client):
         from api.core.auth import create_access_token

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "DamascusTransit API",
-    "description": "Real-time transit tracking and fleet management \u2014 multi-tenant SaaS edition.\n\n## Authentication\n\nMost read endpoints are public but require an `?operator=<slug>` query parameter.\n1. **POST /api/v1/auth/login** \u2014 exchange email/password for a JWT token\n2. Include the token as `Authorization: Bearer <token>` on protected endpoints\n\nRoles: `super_admin` \u00b7 `admin` \u00b7 `dispatcher` \u00b7 `driver` \u00b7 `viewer`\n\nTokens expire after 24 hours.",
+    "description": "Real-time transit tracking and fleet management — multi-tenant SaaS edition.\n\n## Authentication\n\nMost read endpoints are public but require an `?operator=<slug>` query parameter.\n1. **POST /api/v1/auth/login** — exchange email/password for a JWT token\n2. Include the token as `Authorization: Bearer <token>` on protected endpoints\n\nRoles: `super_admin` · `admin` · `dispatcher` · `driver` · `viewer`\n\nTokens expire after 24 hours.",
     "contact": {
       "name": "Damascus Transit System",
       "email": "support@damascustransit.com"
@@ -28,6 +28,61 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/health/deep": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Health Deep",
+        "description": "Step 17 — verbose probe used by uptime monitors and load balancers.\n\nReturns 200 only when DB and Redis are both reachable AND a position has\nbeen received in the last 6 hours (overnight tolerance for Damascus).\nBody always returns timing breakdowns regardless of status.",
+        "operationId": "health_deep_api_health_deep_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/log-client-error": {
+      "post": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Log Client Error",
+        "description": "Receive and record an uncaught JS error from a browser client.",
+        "operationId": "log_client_error_api_log_client_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -132,6 +187,48 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ForgotPasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/reset-password": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Reset Password",
+        "description": "Consume a time-limited reset token and set a new password.",
+        "operationId": "reset_password_api_auth_reset_password_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordRequest"
               }
             }
           },
@@ -761,7 +858,7 @@
           "stream"
         ],
         "summary": "Stream Positions",
-        "description": "Server-sent events (SSE) stream of vehicle position updates.",
+        "description": "Server-sent events (SSE) stream of vehicle position updates.\n\nTwo delivery modes, transparent to the client:\n\n* **Pub/sub (S3.4)** — when a live-bus backend is configured\n  (``REDIS_PUBSUB_URL`` / ``LIVE_BUS_BACKEND``), the connection sends one\n  snapshot then relays updates pushed by the ingest path. No per-client\n  database polling and no in-process state, so any web process can serve any\n  client and the service scales horizontally without sticky sessions.\n* **Poll (legacy)** — with no backend configured (e.g. serverless without a\n  TCP Redis), it falls back to the original 2-second Supabase poll, so the\n  existing deployment is unchanged.",
         "operationId": "stream_positions_api_stream_get",
         "security": [
           {
@@ -874,6 +971,147 @@
                   "type": "object",
                   "additionalProperties": true,
                   "title": "Response Get Fleet Stats Api Stats Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stats/drivers": {
+      "get": {
+        "tags": [
+          "stats"
+        ],
+        "summary": "Get Driver Stats",
+        "description": "Get per-driver performance metrics (public read access).",
+        "operationId": "get_driver_stats_api_stats_drivers_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "operator",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Operator slug",
+              "title": "Operator"
+            },
+            "description": "Operator slug"
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 90,
+              "minimum": 1,
+              "description": "Lookback window in days",
+              "default": 30,
+              "title": "Days"
+            },
+            "description": "Lookback window in days"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {},
+                  "title": "Response Get Driver Stats Api Stats Drivers Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stats/drivers/{driver_id}": {
+      "get": {
+        "tags": [
+          "stats"
+        ],
+        "summary": "Get Driver Detail",
+        "description": "Get detailed performance metrics for a single driver.",
+        "operationId": "get_driver_detail_api_stats_drivers__driver_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "driver_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Driver Id"
+            }
+          },
+          {
+            "name": "operator",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Operator slug",
+              "title": "Operator"
+            },
+            "description": "Operator slug"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Driver Detail Api Stats Drivers  Driver Id  Get"
                 }
               }
             }
@@ -1022,13 +1260,87 @@
         }
       }
     },
+    "/api/driver/me": {
+      "get": {
+        "tags": [
+          "driver"
+        ],
+        "summary": "Driver Me",
+        "description": "Driver session bootstrap: my vehicle, its approval state, and route.\n\nAdded 2026-06-11 — the driver console previously had no way to learn\nits vehicle code / route, so the header showed em-dashes forever.",
+        "operationId": "driver_me_api_driver_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/driver/incident": {
+      "post": {
+        "tags": [
+          "driver"
+        ],
+        "summary": "Report Incident",
+        "description": "Driver SOS / incident report → creates a critical alert for dispatch.\n\nAdded 2026-06-11 — the driver console and Flutter app both POSTed here\nbut the endpoint never existed (silent failure). Uses the existing\nalerts pipeline so incidents appear on the admin dashboard immediately.\nPhoto payloads are accepted but only persisted when storage is\nconfigured (see migration 018 / incident photos bucket).",
+        "operationId": "report_incident_api_driver_incident_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusTimestampResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/driver/position": {
       "post": {
         "tags": [
           "driver"
         ],
         "summary": "Report Driver Position",
-        "description": "Report driver's current position.",
+        "description": "Report driver's current position (vehicle must be admin-approved).",
         "operationId": "report_driver_position_api_driver_position_post",
         "requestBody": {
           "content": {
@@ -1075,7 +1387,7 @@
           "driver"
         ],
         "summary": "Start Trip",
-        "description": "Start a new trip for the driver.",
+        "description": "Start a new trip for the driver (vehicle must be admin-approved).",
         "operationId": "start_trip_api_driver_trip_start_post",
         "requestBody": {
           "content": {
@@ -1245,7 +1557,7 @@
           "admin"
         ],
         "summary": "Create User",
-        "description": "Create a new user (admin only).",
+        "description": "Create a new user.\n\nRoles: admin may create any non-super_admin account. A dispatcher\n(operator staff) may ONLY create driver accounts — this implements the\noperating model where the operator issues each driver's username and\npassword, and the admin later approves the vehicle itself.",
         "operationId": "create_user_api_admin_users_post",
         "requestBody": {
           "content": {
@@ -1350,46 +1662,79 @@
           "admin"
         ],
         "summary": "List All Vehicles",
-        "description": "List all vehicles including inactive ones, scoped to current operator.",
+        "description": "List all vehicles including inactive ones, scoped to current operator.\n\nLogic fix (2026-06-11): this used to inner-join from\nvehicle_positions_latest, so vehicles with no GPS fix yet (e.g. every\nnewly registered vehicle awaiting approval) were invisible to admins.\nIt now reads the vehicles base table and merges positions on top.\n\nOptional `?approval=pending|approved|rejected|suspended` filter feeds\nthe admin approvals queue.",
         "operationId": "list_all_vehicles_api_admin_vehicles_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "approval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Approval"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/VehicleResponse"
                   },
-                  "type": "array",
                   "title": "Response List All Vehicles Api Admin Vehicles Get"
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       },
       "post": {
         "tags": [
           "admin"
         ],
         "summary": "Create Vehicle",
-        "description": "Create a new vehicle.",
+        "description": "Register a new vehicle (bus / microbus / taxi).\n\nApproval workflow (migration 019): vehicles registered by an operator\n(dispatcher) start as `pending` and cannot operate until an admin\napproves them on /admin/approvals.html. Vehicles created directly by an\nadmin are approved immediately (the admin IS the approver).",
         "operationId": "create_vehicle_api_admin_vehicles_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/VehicleCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -1412,12 +1757,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/admin/vehicles/{vehicle_id}": {
@@ -1426,7 +1766,7 @@
           "admin"
         ],
         "summary": "Update Vehicle",
-        "description": "Update vehicle details.",
+        "description": "Update vehicle details (operator staff may maintain their own fleet).",
         "operationId": "update_vehicle_api_admin_vehicles__vehicle_id__put",
         "security": [
           {
@@ -1476,6 +1816,52 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Decommission Vehicle",
+        "description": "Soft-delete: mark a vehicle decommissioned + inactive (audit-logged).\n\nHard deletes would orphan trips/positions history, so the row is kept.",
+        "operationId": "decommission_vehicle_api_admin_vehicles__vehicle_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "vehicle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Vehicle Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusTimestampResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/admin/vehicles/{vehicle_id}/assign": {
@@ -1484,7 +1870,7 @@
           "admin"
         ],
         "summary": "Assign Vehicle",
-        "description": "Assign vehicle to route and driver.",
+        "description": "Assign vehicle to route and/or driver.\n\nAssignment is allowed while the vehicle is still pending — the operator\nlinks the driver (with their issued username/password) FIRST, and the\nadmin's approval afterwards is what authorises the vehicle to operate.\nThe driver must belong to the same operator as the vehicle. Omitted\nfields are left unchanged; empty strings clear the assignment.",
         "operationId": "assign_vehicle_api_admin_vehicles__vehicle_id__assign_post",
         "security": [
           {
@@ -1520,6 +1906,260 @@
                 "schema": {
                   "$ref": "#/components/schemas/StatusTimestampResponse"
                 }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/routes": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin List Routes",
+        "description": "All routes (including inactive), scoped to the operator.",
+        "operationId": "admin_list_routes_api_admin_routes_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Create Route",
+        "description": "Create a route (business fields; geometry added later via GIS).",
+        "operationId": "admin_create_route_api_admin_routes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RouteCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/routes/{route_pk}": {
+      "put": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Update Route",
+        "description": "Update a route's business fields (fare, names, timing, active flag).",
+        "operationId": "admin_update_route_api_admin_routes__route_pk__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "route_pk",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Route Pk"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RouteUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/vehicles/pending-count": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Pending Vehicle Count",
+        "description": "Number of vehicles awaiting approval (drives the sidebar badge).",
+        "operationId": "pending_vehicle_count_api_admin_vehicles_pending_count_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/vehicles/{vehicle_id}/approval": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Decide Vehicle Approval",
+        "description": "ADMIN ONLY — approve / reject / suspend a vehicle, or send it back to\npending (`resubmit`). Operators (dispatchers) cannot call this: the whole\npoint of the workflow is that the operator registers the vehicle + driver\ncredentials and a separate, higher-privileged admin authorises it.\n\nAllowed transitions:\n    pending   -> approved | rejected\n    approved  -> suspended\n    rejected  -> pending   (resubmit)\n    suspended -> approved | pending (resubmit)\nEvery decision is written to audit_log.",
+        "operationId": "decide_vehicle_approval_api_admin_vehicles__vehicle_id__approval_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "vehicle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Vehicle Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VehicleApprovalRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusTimestampResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/audit-log": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "List Audit Log",
+        "description": "Most recent audit-log entries (approvals, assignments, creations).",
+        "operationId": "list_audit_log_api_admin_audit_log_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           },
@@ -2047,7 +2687,7 @@
           "cron"
         ],
         "summary": "Cron Simulate Positions",
-        "description": "Vercel Cron endpoint \u2014 generates simulated GPS positions on schedule.\n\nSecured by CRON_SECRET env var. Add to vercel.json crons config.",
+        "description": "Vercel Cron endpoint — generates simulated GPS positions on schedule.\n\nSecured by CRON_SECRET env var. Add to vercel.json crons config.\nThe comparison is constant-time (hmac.compare_digest) to prevent a\nbyte-by-byte timing oracle on the secret.",
         "operationId": "cron_simulate_positions_api_cron_simulate_get",
         "responses": {
           "200": {
@@ -2238,7 +2878,7 @@
           "gtfs"
         ],
         "summary": "Get Gtfs Realtime",
-        "description": "GTFS-Realtime feed (VehiclePositions + TripUpdates).\n\nReturns a binary protobuf FeedMessage (GTFS-RT 2.0).\nFalls back to JSON when gtfs-realtime-bindings is not installed.",
+        "description": "GTFS-Realtime feed (VehiclePositions + TripUpdates + Alerts).\n\nReturns a binary protobuf FeedMessage (GTFS-RT 2.0).\nCached in-memory for 15 seconds.\nFalls back to JSON when gtfs-realtime-bindings is not installed.",
         "operationId": "get_gtfs_realtime_api_public_gtfs_rt_get",
         "responses": {
           "200": {
@@ -2258,7 +2898,7 @@
           "gtfs"
         ],
         "summary": "Get Gtfs Realtime",
-        "description": "GTFS-Realtime feed (VehiclePositions + TripUpdates).\n\nReturns a binary protobuf FeedMessage (GTFS-RT 2.0).\nFalls back to JSON when gtfs-realtime-bindings is not installed.",
+        "description": "GTFS-Realtime feed (VehiclePositions + TripUpdates + Alerts).\n\nReturns a binary protobuf FeedMessage (GTFS-RT 2.0).\nCached in-memory for 15 seconds.\nFalls back to JSON when gtfs-realtime-bindings is not installed.",
         "operationId": "get_gtfs_realtime_api_gtfs_realtime_get",
         "responses": {
           "200": {
@@ -2618,8 +3258,388 @@
         }
       }
     },
+    "/api/v1/telemetry/json": {
+      "post": {
+        "tags": [
+          "telemetry"
+        ],
+        "summary": "Telemetry frame (JSON form of telematics.proto VehicleStatus)",
+        "description": "JSON variant — handy for dev + integration tests. In production the\nProtobuf endpoint is preferred for the 80% bandwidth saving.",
+        "operationId": "telemetry_json_api_v1_telemetry_json_post",
+        "parameters": [
+          {
+            "name": "x-device-signature",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Device-Signature"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/_PartialDecode"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/telemetry/protobuf": {
+      "post": {
+        "tags": [
+          "telemetry"
+        ],
+        "summary": "Telemetry frame (Protobuf VehicleStatus or VehicleStatusBatch)",
+        "description": "Protobuf variant — production target.\n\nBody decoding is currently a placeholder: we accept any opaque payload,\nverify the HMAC, and return 204. Once the protoc-generated bindings\nland in api/proto/telematics_pb2.py, this handler parses the body,\nruns the same `_ingest` pipeline, and returns the same 204.",
+        "operationId": "telemetry_protobuf_api_v1_telemetry_protobuf_post",
+        "parameters": [
+          {
+            "name": "x-device-signature",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Device-Signature"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pay/qr/{vehicle_id}": {
+      "get": {
+        "tags": [
+          "payments"
+        ],
+        "summary": "Get Vehicle Qr",
+        "description": "Return the signed QR payload for a vehicle (driver/operator/admin).\n\nThe driver app renders this as a QR code; operators may also print it\nas the permanent in-vehicle sticker. Only approved vehicles get a code.",
+        "operationId": "get_vehicle_qr_api_pay_qr__vehicle_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "vehicle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Vehicle Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pay/initiate": {
+      "post": {
+        "tags": [
+          "payments"
+        ],
+        "summary": "Initiate Payment",
+        "description": "Passenger scanned a vehicle QR — create a pending fare payment.\n\nAnti-tamper rules:\n* QR signature must verify (counterfeit stickers rejected).\n* When the vehicle's assigned route has a fixed fare (bus/microbus),\n  the paid amount MUST equal the route fare — the client cannot\n  manipulate the price. Taxis (no fixed fare) pass the metered amount.",
+        "operationId": "initiate_payment_api_pay_initiate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentInitiateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentInitiateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pay/status/{payment_id}": {
+      "get": {
+        "tags": [
+          "payments"
+        ],
+        "summary": "Payment Status",
+        "description": "Poll a payment's state (the UUID itself is the access capability).",
+        "operationId": "payment_status_api_pay_status__payment_id__get",
+        "parameters": [
+          {
+            "name": "payment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Payment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pay/webhook/shamcash": {
+      "post": {
+        "tags": [
+          "payments"
+        ],
+        "summary": "Shamcash Webhook",
+        "description": "Sham Cash server-to-server confirmation callback (live mode).\n\nHMAC-SHA256 over the raw body with SHAM_CASH_WEBHOOK_SECRET,\nconstant-time compared. Fails closed when the secret is unset.",
+        "operationId": "shamcash_webhook_api_pay_webhook_shamcash_post",
+        "parameters": [
+          {
+            "name": "x-shamcash-signature",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Shamcash-Signature"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShamCashWebhookPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pay/sandbox/confirm": {
+      "post": {
+        "tags": [
+          "payments"
+        ],
+        "summary": "Sandbox Confirm",
+        "description": "SANDBOX ONLY — simulate the Sham Cash confirmation callback.\n\nDisabled entirely in live mode. Lets the team demo the full passenger\npayment loop before merchant credentials exist.",
+        "operationId": "sandbox_confirm_api_pay_sandbox_confirm_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShamCashWebhookPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/payments": {
+      "get": {
+        "tags": [
+          "payments"
+        ],
+        "summary": "List Payments",
+        "description": "Operator-scoped payment ledger for the admin dashboard.",
+        "operationId": "list_payments_api_admin_payments_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
+        "tags": [
+          "health"
+        ],
         "summary": "Root",
         "operationId": "root__get",
         "responses": {
@@ -2721,6 +3741,39 @@
             "type": "integer",
             "title": "Idle Vehicles"
           },
+          "trips_today": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trips Today"
+          },
+          "open_alerts": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Open Alerts"
+          },
+          "pending_vehicles": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pending Vehicles"
+          },
           "maintenance_vehicles": {
             "type": "integer",
             "title": "Maintenance Vehicles"
@@ -2792,6 +3845,103 @@
           "new_password"
         ],
         "title": "ChangePasswordRequest"
+      },
+      "ClientErrorPayload": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source",
+            "default": ""
+          },
+          "lineno": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lineno",
+            "default": 0
+          },
+          "colno": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Colno",
+            "default": 0
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type",
+            "default": "Error"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url",
+            "default": ""
+          },
+          "userAgent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Useragent",
+            "default": ""
+          },
+          "timestamp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "ClientErrorPayload"
       },
       "ETAArrival": {
         "properties": {
@@ -3241,6 +4391,129 @@
         ],
         "title": "PassengerCountUpdate"
       },
+      "PaymentInitiateRequest": {
+        "properties": {
+          "qr": {
+            "type": "string",
+            "maxLength": 1024,
+            "minLength": 16,
+            "title": "Qr"
+          },
+          "amount_syp": {
+            "type": "integer",
+            "maximum": 1000000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Amount Syp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "qr",
+          "amount_syp"
+        ],
+        "title": "PaymentInitiateRequest",
+        "description": "Passenger scanned a vehicle QR and wants to pay the fare."
+      },
+      "PaymentInitiateResponse": {
+        "properties": {
+          "payment_id": {
+            "type": "string",
+            "title": "Payment Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "amount_syp": {
+            "type": "integer",
+            "title": "Amount Syp"
+          },
+          "vehicle_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vehicle Code"
+          },
+          "deeplink": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deeplink"
+          },
+          "sandbox": {
+            "type": "boolean",
+            "title": "Sandbox",
+            "default": true
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "payment_id",
+          "status",
+          "amount_syp"
+        ],
+        "title": "PaymentInitiateResponse"
+      },
+      "PaymentStatusResponse": {
+        "properties": {
+          "payment_id": {
+            "type": "string",
+            "title": "Payment Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "amount_syp": {
+            "type": "integer",
+            "title": "Amount Syp"
+          },
+          "confirmed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed At"
+          },
+          "sandbox": {
+            "type": "boolean",
+            "title": "Sandbox",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "payment_id",
+          "status",
+          "amount_syp"
+        ],
+        "title": "PaymentStatusResponse"
+      },
       "PositionUpdate": {
         "properties": {
           "latitude": {
@@ -3438,6 +4711,18 @@
               }
             ],
             "title": "Role"
+          },
+          "operator": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operator"
           }
         },
         "type": "object",
@@ -3590,6 +4875,118 @@
         ],
         "title": "RegisterRequest"
       },
+      "ResetPasswordRequest": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Token"
+          },
+          "new_password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "New Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token",
+          "new_password"
+        ],
+        "title": "ResetPasswordRequest"
+      },
+      "RouteCreate": {
+        "properties": {
+          "route_id": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "Route Id"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "name_ar": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name Ar"
+          },
+          "route_type": {
+            "type": "string",
+            "enum": [
+              "bus",
+              "microbus",
+              "taxi"
+            ],
+            "title": "Route Type",
+            "default": "bus"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^#[0-9a-fA-F]{6}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "distance_km": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 500.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distance Km"
+          },
+          "avg_duration_min": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1440.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Duration Min"
+          },
+          "fare_syp": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fare Syp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "route_id",
+          "name",
+          "name_ar"
+        ],
+        "title": "RouteCreate"
+      },
       "RouteResponse": {
         "properties": {
           "id": {
@@ -3679,6 +5076,100 @@
         ],
         "title": "RouteResponse"
       },
+      "RouteUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "name_ar": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Ar"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^#[0-9a-fA-F]{6}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "distance_km": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 500.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distance Km"
+          },
+          "avg_duration_min": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1440.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Duration Min"
+          },
+          "fare_syp": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fare Syp"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "title": "RouteUpdate"
+      },
       "ScheduleResponse": {
         "properties": {
           "id": {
@@ -3716,6 +5207,56 @@
           "frequency_min"
         ],
         "title": "ScheduleResponse"
+      },
+      "ShamCashWebhookPayload": {
+        "properties": {
+          "payment_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 8,
+            "title": "Payment Id"
+          },
+          "provider_ref": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 4,
+            "title": "Provider Ref"
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "success",
+              "failure"
+            ],
+            "title": "Result"
+          },
+          "amount_syp": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Amount Syp"
+          },
+          "payer_hint": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payer Hint"
+          }
+        },
+        "type": "object",
+        "required": [
+          "payment_id",
+          "provider_ref",
+          "result",
+          "amount_syp"
+        ],
+        "title": "ShamCashWebhookPayload",
+        "description": "Callback body from Sham Cash (or the sandbox simulator)."
       },
       "StatusTimestampResponse": {
         "properties": {
@@ -4289,23 +5830,66 @@
         ],
         "title": "VapidKeyResponse"
       },
-      "VehicleAssign": {
+      "VehicleApprovalRequest": {
         "properties": {
-          "route_id": {
+          "action": {
             "type": "string",
-            "title": "Route Id"
+            "enum": [
+              "approve",
+              "reject",
+              "suspend",
+              "resubmit"
+            ],
+            "title": "Action"
           },
-          "driver_id": {
-            "type": "string",
-            "title": "Driver Id"
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
           }
         },
         "type": "object",
         "required": [
-          "route_id",
-          "driver_id"
+          "action"
         ],
-        "title": "VehicleAssign"
+        "title": "VehicleApprovalRequest",
+        "description": "Admin decision on whether a vehicle may operate."
+      },
+      "VehicleAssign": {
+        "properties": {
+          "route_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route Id"
+          },
+          "driver_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Driver Id"
+          }
+        },
+        "type": "object",
+        "title": "VehicleAssign",
+        "description": "Either field may be omitted to leave it unchanged; explicit empty\nstring clears the assignment."
       },
       "VehicleCreate": {
         "properties": {
@@ -4468,6 +6052,72 @@
               }
             ],
             "title": "Recorded At"
+          },
+          "approval_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approval Status"
+          },
+          "approved_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "approval_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approval Note"
+          },
+          "driver_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Driver Name"
+          },
+          "driver_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Driver Email"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
           }
         },
         "type": "object",
@@ -4596,6 +6246,170 @@
           "active_connections"
         ],
         "title": "WsStatsResponse"
+      },
+      "_PartialDecode": {
+        "properties": {
+          "vehicle_id": {
+            "type": "string",
+            "title": "Vehicle Id"
+          },
+          "timestamp": {
+            "type": "integer",
+            "title": "Timestamp"
+          },
+          "latitude": {
+            "type": "number",
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "title": "Longitude"
+          },
+          "speed_kph": {
+            "type": "number",
+            "title": "Speed Kph",
+            "default": 0.0
+          },
+          "heading": {
+            "type": "number",
+            "title": "Heading",
+            "default": 0.0
+          },
+          "engine_state": {
+            "type": "boolean",
+            "title": "Engine State",
+            "default": false
+          },
+          "fuel_level": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fuel Level"
+          },
+          "trigger_event": {
+            "type": "integer",
+            "title": "Trigger Event",
+            "default": 0
+          },
+          "operator_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operator Id"
+          },
+          "route_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route Id"
+          },
+          "driver_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Driver Id"
+          },
+          "trip_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trip Id"
+          },
+          "satellite_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Satellite Count"
+          },
+          "hdop": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hdop"
+          },
+          "cell_signal_dbm": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cell Signal Dbm"
+          },
+          "firmware_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Firmware Version"
+          },
+          "battery_mv": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Battery Mv"
+          },
+          "is_replay": {
+            "type": "boolean",
+            "title": "Is Replay",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "vehicle_id",
+          "timestamp",
+          "latitude",
+          "longitude"
+        ],
+        "title": "_PartialDecode",
+        "description": "JSON shape that mirrors telematics.proto VehicleStatus 1:1.\nNames are snake_case to match the proto field names."
       }
     },
     "securitySchemes": {
@@ -4673,6 +6487,18 @@
     {
       "name": "cron",
       "description": "Scheduled background jobs. Bearer-token secured."
+    },
+    {
+      "name": "feedback",
+      "description": "Passenger feedback submission and driver rating summaries."
+    },
+    {
+      "name": "payments",
+      "description": "Sham Cash fare payments — signed vehicle QR, initiate/status, HMAC-verified webhook, sandbox simulator. See docs/ARCHITECTURE_DECISIONS.md §10."
+    },
+    {
+      "name": "telemetry",
+      "description": "Protobuf-over-HTTP bridge endpoints that accept the same wire format the MQTT broker will eventually deliver. Phase S2 of Scale_100k_Roadmap.md. Authenticated by HMAC device signature, NOT JWT."
     }
   ]
 }

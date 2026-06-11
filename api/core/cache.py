@@ -3,6 +3,7 @@ import json
 import os
 import threading
 import time
+from typing import Callable
 
 from fastapi import Request
 
@@ -148,7 +149,6 @@ async def _rate_limit_check(
 # The key is the bucket name; the IP is appended automatically so two writers
 # at different addresses don't share the same counter.
 # ---------------------------------------------------------------------------
-from typing import Callable
 
 
 def rate_limit(bucket: str, max_requests: int, window_seconds: int) -> Callable:
@@ -160,9 +160,7 @@ def rate_limit(bucket: str, max_requests: int, window_seconds: int) -> Callable:
 
     async def _gate(request: Request) -> None:
         ip = _get_client_ip(request)
-        ok = await _rate_limit_check(
-            f"rl:{bucket}:{ip}", max_requests, window_seconds
-        )
+        ok = await _rate_limit_check(f"rl:{bucket}:{ip}", max_requests, window_seconds)
         if not ok:
             from fastapi import HTTPException, status
 
@@ -173,7 +171,7 @@ def rate_limit(bucket: str, max_requests: int, window_seconds: int) -> Callable:
             )
 
     # Preserve a stable __name__ so FastAPI's dependency cache can identify it.
-    _gate.__name__ = f"rate_limit_{bucket.replace(':','_')}"
+    _gate.__name__ = f"rate_limit_{bucket.replace(':', '_')}"
     return _gate
 
 

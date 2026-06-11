@@ -2,7 +2,7 @@
 
 > Updated 2026-05-24 to reflect the multi-codebase reality: Python backend + JS/HTML web + Dart/Flutter mobile + Capacitor wrapper. Pick the section that matches your change.
 
-We genuinely want outside contributors. The roadmap is in [ROADMAP_100.md](../ROADMAP_100.md) — pick an unticked step and reference its number in your PR title.
+We genuinely want outside contributors. The roadmap is in [ROADMAP_100.md](ROADMAP_100.md) — pick an unticked step and reference its number in your PR title.
 
 ## First-time setup
 

@@ -355,6 +355,13 @@ class TestRoleBasedAccess:
             expires_delta=timedelta(hours=1),
         )
         with (
+            patch(
+                "api.routers.driver._supabase_get",
+                new=AsyncMock(return_value=[{
+                    "id": "veh-001", "assigned_route_id": "route-001",
+                    "approval_status": "approved", "is_active": True,
+                }]),
+            ),
             patch("api.routers.driver._supabase_rpc", new=AsyncMock(return_value={})),
             patch(
                 "api.routers.driver._rate_limit_check", new=AsyncMock(return_value=True)
@@ -401,19 +408,21 @@ class TestRoleBasedAccess:
             )
         assert resp.status_code == 200
 
-    def test_dispatcher_cannot_create_user(self, client):
+    def test_dispatcher_cannot_create_elevated_roles(self, client):
+        """2026-06-11: dispatchers provision DRIVER accounts only."""
         token = _make_token("dispatcher", user_id="disp-001", email="disp@transit.sy")
-        resp = client.post(
-            "/api/admin/users",
-            headers={"Authorization": f"Bearer {token}"},
-            json={
-                "email": "new@transit.sy",
-                "password": "SomePass123!",
-                "full_name": "New User",
-                "role": "driver",
-            },
-        )
-        assert resp.status_code == 403
+        for role in ("dispatcher", "admin", "viewer"):
+            resp = client.post(
+                "/api/admin/users",
+                headers={"Authorization": f"Bearer {token}"},
+                json={
+                    "email": "new@transit.sy",
+                    "password": "SomePass123!",
+                    "full_name": "New User",
+                    "role": role,
+                },
+            )
+            assert resp.status_code == 403, role
 
 
 # ---------------------------------------------------------------------------

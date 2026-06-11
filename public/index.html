@@ -199,7 +199,7 @@
       <div class="cluster gap-3">
         <a href="https://github.com/actuatorsos/SyrianTransitSystem">GitHub</a>
         <a href="/api/gtfs">GTFS</a>
-        <a href="/api/health">Health</a>
+        <a href="/api/health">Health</a> · <a href="/demo/">عرض تجريبي</a> · <a href="/privacy.html">الخصوصية</a>
       </div>
     </div>
   </footer>
@@ -239,13 +239,15 @@ async function loadRoutes() {
     wrap.innerHTML = '<div class="card muted center">لا توجد خطوط حالياً.</div>';
     return;
   }
+  // XSS fix (2026-06-11): API fields are escaped before HTML insertion.
+  const escH = (x) => String(x==null?'':x).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   wrap.innerHTML = routes.slice(0, 8).map(r => `
     <a class="card card--hover" href="/passenger/?route=${encodeURIComponent(r.id)}">
       <div class="route-card">
-        <span class="route-card__chip">${r.code || r.short_name || (r.id+'').slice(0,3)}</span>
+        <span class="route-card__chip">${escH(r.code || r.short_name || (r.id+'').slice(0,3))}</span>
         <div>
-          <div class="card__title" style="margin:0;font-size:var(--fs-md)">${r.name_ar || r.name || 'خط'}</div>
-          <div class="card__meta">${r.from || ''} ↔ ${r.to || r.name_en || ''}</div>
+          <div class="card__title" style="margin:0;font-size:var(--fs-md)">${escH(r.name_ar || r.name || 'خط')}</div>
+          <div class="card__meta">${escH(r.from || '')} ↔ ${escH(r.to || r.name_en || '')}</div>
         </div>
         <span class="badge badge--brand">${fmt(r.stops_count)} محطة</span>
       </div>

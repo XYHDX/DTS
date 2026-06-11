@@ -134,41 +134,48 @@ def verify_token(token: str) -> TokenPayload:
 
 
 # ---------------------------------------------------------------------------
-# M1 — per-user password_changed_at TTL cache.
+# M1 — per-user revocation-state TTL cache (password_changed_at + is_active).
 #
 # We never want to hit Supabase on every authenticated request, so cache the
-# user's password_changed_at for `_REVOCATION_CACHE_TTL` seconds. The cache is
+# user's revocation state for `_REVOCATION_CACHE_TTL` seconds. The cache is
 # protected by an asyncio lock to coalesce concurrent lookups for the same user.
 # ---------------------------------------------------------------------------
 _REVOCATION_CACHE_TTL = 5  # seconds
-_revocation_cache: dict[str, tuple[float, Optional[datetime]]] = {}
+# user_id -> (cached_at_monotonic, password_changed_at, is_active)
+_revocation_cache: dict[str, tuple[float, Optional[datetime], Optional[bool]]] = {}
 _revocation_lock = asyncio.Lock()
 
 
-async def _lookup_password_changed_at(user_id: str) -> Optional[datetime]:
-    """Best-effort fetch of users.password_changed_at, cached briefly.
+async def _lookup_revocation_state(
+    user_id: str,
+) -> tuple[Optional[datetime], Optional[bool]]:
+    """Best-effort fetch of users.(password_changed_at, is_active), cached briefly.
 
-    Returns None when the database is unreachable or the column does not exist
-    (e.g. before migration 007 is applied). Failing soft here is intentional —
-    the rest of the auth path is unchanged and the only consequence is delayed
-    revocation, not unauthenticated access.
+    Returns (None, None) when the database is unreachable. Transport failures
+    soft-fail (delayed revocation, never unauthenticated access). When the DB
+    answers and the user row is missing, is_active resolves to False so
+    deleted users are rejected (fail-closed on a definitive answer).
     """
     now = time.monotonic()
     cached = _revocation_cache.get(user_id)
     if cached is not None and (now - cached[0]) < _REVOCATION_CACHE_TTL:
-        return cached[1]
+        return cached[1], cached[2]
 
     async with _revocation_lock:
         cached = _revocation_cache.get(user_id)
-        if cached is not None and (time.monotonic() - cached[0]) < _REVOCATION_CACHE_TTL:
-            return cached[1]
+        if (
+            cached is not None
+            and (time.monotonic() - cached[0]) < _REVOCATION_CACHE_TTL
+        ):
+            return cached[1], cached[2]
         password_changed_at: Optional[datetime] = None
+        is_active: Optional[bool] = None
         try:
             # Lazy import to avoid a circular dep at module load time.
             from api.core.database import _service_get  # type: ignore
 
             rows = await _service_get(
-                f"users?id=eq.{user_id}&select=password_changed_at"
+                f"users?id=eq.{user_id}&select=password_changed_at,is_active"
             )
             if rows:
                 raw = rows[0].get("password_changed_at")
@@ -176,11 +183,22 @@ async def _lookup_password_changed_at(user_id: str) -> Optional[datetime]:
                     password_changed_at = datetime.fromisoformat(
                         raw.replace("Z", "+00:00")
                     )
+                is_active = bool(rows[0].get("is_active", True))
+            else:
+                # Definitive DB answer: the user no longer exists.
+                is_active = False
         except Exception:
-            # Soft-fail — return None so the token is treated as not revoked.
+            # Soft-fail on transport errors — treated as not revoked.
             password_changed_at = None
-        _revocation_cache[user_id] = (time.monotonic(), password_changed_at)
-        return password_changed_at
+            is_active = None
+        _revocation_cache[user_id] = (time.monotonic(), password_changed_at, is_active)
+        return password_changed_at, is_active
+
+
+async def _lookup_password_changed_at(user_id: str) -> Optional[datetime]:
+    """Backward-compatible wrapper kept for existing tests/callers."""
+    pwd_changed_at, _ = await _lookup_revocation_state(user_id)
+    return pwd_changed_at
 
 
 async def get_current_user(
@@ -190,14 +208,25 @@ async def get_current_user(
     current_user_token.set(token)
     token_payload = verify_token(token)
 
+    pwd_changed_at, is_active = await _lookup_revocation_state(token_payload.user_id)
+
+    # Security fix (2026-06-11): deactivating an account now revokes its
+    # live tokens within _REVOCATION_CACHE_TTL seconds (previously a disabled
+    # user kept a valid token for up to 24 hours).
+    if is_active is False:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Account is deactivated.",
+        )
+
     # M1 — reject tokens issued before the user's last password change.
-    if token_payload.iat is not None:
-        pwd_changed_at = await _lookup_password_changed_at(token_payload.user_id)
-        if is_token_revoked_by_password_change(token_payload.iat, pwd_changed_at):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token revoked — password was changed after this token was issued",
-            )
+    if token_payload.iat is not None and is_token_revoked_by_password_change(
+        token_payload.iat, pwd_changed_at
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token revoked — password was changed after this token was issued",
+        )
 
     return CurrentUser(
         user_id=token_payload.user_id,

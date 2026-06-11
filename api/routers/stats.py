@@ -13,7 +13,7 @@ from api.core.cache import (
     _tenant_cache_key,
 )
 from api.core.database import _supabase_get
-from api.core.tenancy import _op_filter, _resolve_operator_id
+from api.core.tenancy import _op_filter, resolve_read_scope
 import logging
 
 logger = logging.getLogger(__name__)
@@ -28,12 +28,8 @@ async def get_fleet_stats(
 ):
     """Get fleet statistics and real-time metrics."""
     try:
-        if current_user and current_user.role == "super_admin":
-            op_id = await _resolve_operator_id(operator) if operator else None
-        elif current_user and current_user.operator_id:
-            op_id = current_user.operator_id
-        else:
-            op_id = await _resolve_operator_id(operator) if operator else None
+        # Always scoped to exactly one operator (cross-tenant leak fix).
+        op_id = await resolve_read_scope(operator, current_user)
 
         cache_key = _tenant_cache_key(CACHE_KEY_STATS, op_id or "all")
         cached = await _cache_get(cache_key)
@@ -154,12 +150,8 @@ async def get_driver_stats(
 ):
     """Get per-driver performance metrics (public read access)."""
     try:
-        if current_user and current_user.role == "super_admin":
-            op_id = await _resolve_operator_id(operator) if operator else None
-        elif current_user and current_user.operator_id:
-            op_id = current_user.operator_id
-        else:
-            op_id = await _resolve_operator_id(operator) if operator else None
+        # Always scoped to exactly one operator (cross-tenant leak fix).
+        op_id = await resolve_read_scope(operator, current_user)
 
         op_suffix = f"&{_op_filter(op_id)}" if op_id else ""
         cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
@@ -211,12 +203,8 @@ async def get_driver_detail(
 ):
     """Get detailed performance metrics for a single driver."""
     try:
-        if current_user and current_user.role == "super_admin":
-            op_id = await _resolve_operator_id(operator) if operator else None
-        elif current_user and current_user.operator_id:
-            op_id = current_user.operator_id
-        else:
-            op_id = await _resolve_operator_id(operator) if operator else None
+        # Always scoped to exactly one operator (cross-tenant leak fix).
+        op_id = await resolve_read_scope(operator, current_user)
 
         op_suffix = f"&{_op_filter(op_id)}" if op_id else ""
 

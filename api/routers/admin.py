@@ -23,7 +23,7 @@ from api.core.database import (
     _supabase_post,
 )
 from api.core.geo import parse_location
-from api.core.tenancy import _op_filter
+from api.core.tenancy import _op_filter, ensure_operator_scope
 from api.models.schemas import (
     AlertResponse,
     AlertResolve,
@@ -32,7 +32,10 @@ from api.models.schemas import (
     StatusTimestampResponse,
     UserCreate,
     UserResponse,
+    RouteCreate,
+    RouteUpdate,
     UserUpdate,
+    VehicleApprovalRequest,
     VehicleAssign,
     VehicleCreate,
     VehicleResponse,
@@ -51,6 +54,19 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+def _own_op_filter(current_user: CurrentUser) -> str:
+    """Mutation guard: restrict a PATCH/DELETE to the caller's own tenant.
+
+    Security fix (2026-06-11): admin mutations previously patched rows by
+    bare id (`vehicles?id=eq.X`), letting an admin of operator A modify
+    operator B's rows by UUID. Every mutation now appends this filter
+    (super_admin is exempt).
+    """
+    if current_user.role != "super_admin" and current_user.operator_id:
+        return f"&{_op_filter(current_user.operator_id)}"
+    return ""
 
 
 # ── Users ──────────────────────────────────────────────────────────────────────
@@ -93,10 +109,26 @@ async def list_users(
 @router.post("/api/admin/users", response_model=UserResponse, tags=["admin"])
 async def create_user(
     user_data: UserCreate,
-    current_user: CurrentUser = Depends(require_role("admin")),
+    current_user: CurrentUser = Depends(require_role("admin", "dispatcher")),
 ):
-    """Create a new user (admin only)."""
+    """Create a new user.
+
+    Roles: admin may create any non-super_admin account. A dispatcher
+    (operator staff) may ONLY create driver accounts — this implements the
+    operating model where the operator issues each driver's username and
+    password, and the admin later approves the vehicle itself.
+    """
     try:
+        if current_user.role == "dispatcher" and user_data.role != "driver":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Operators (dispatchers) can only create driver accounts.",
+            )
+        # Defense-in-depth: tie the new account to the caller's tenant.
+        ensure_operator_scope(
+            current_user.operator_id, current_user.operator_id, current_user.role
+        )
+
         existing = await _supabase_get(
             f"users?email=eq.{urllib.parse.quote(user_data.email, safe='')}&select=id"
         )
@@ -114,6 +146,8 @@ async def create_user(
             "phone": user_data.phone,
             "is_active": True,
             "operator_id": current_user.operator_id,
+            # Credentials issued by staff must be rotated on first login.
+            "must_change_password": True,
         }
 
         result = await _supabase_post("users", new_user)
@@ -178,7 +212,9 @@ async def update_user(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="No fields to update"
             )
 
-        result = await _supabase_patch(f"users?id=eq.{user_id}", update_dict)
+        result = await _supabase_patch(
+            f"users?id=eq.{user_id}{_own_op_filter(current_user)}", update_dict
+        )
         if not result:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
@@ -209,42 +245,85 @@ async def update_user(
 
 @router.get("/api/admin/vehicles", response_model=List[VehicleResponse], tags=["admin"])
 async def list_all_vehicles(
+    approval: Optional[str] = None,
     current_user: CurrentUser = Depends(
         require_role("admin", "dispatcher", "super_admin")
     ),
 ):
-    """List all vehicles including inactive ones, scoped to current operator."""
+    """List all vehicles including inactive ones, scoped to current operator.
+
+    Logic fix (2026-06-11): this used to inner-join from
+    vehicle_positions_latest, so vehicles with no GPS fix yet (e.g. every
+    newly registered vehicle awaiting approval) were invisible to admins.
+    It now reads the vehicles base table and merges positions on top.
+
+    Optional `?approval=pending|approved|rejected|suspended` filter feeds
+    the admin approvals queue.
+    """
     try:
-        query = "vehicle_positions_latest?select=*,vehicles(*)"
+        op_suffix = ""
         if current_user.role != "super_admin" and current_user.operator_id:
-            query += f"&{_op_filter(current_user.operator_id)}"
-        positions = await _supabase_get(query)
+            op_suffix = f"&{_op_filter(current_user.operator_id)}"
+
+        veh_query = "vehicles?select=*&order=created_at.desc" + op_suffix
+        if approval in ("pending", "approved", "rejected", "suspended"):
+            veh_query += f"&approval_status=eq.{approval}"
+        vehicles = await _supabase_get(veh_query)
+
+        positions = await _supabase_get(
+            "vehicle_positions_latest?select=vehicle_id,location,speed_kmh,"
+            "occupancy_pct,recorded_at" + op_suffix
+        )
+        pos_by_id = {p["vehicle_id"]: p for p in (positions or [])}
+
+        # Resolve assigned drivers in one query (name + email shown in the
+        # approvals queue so the admin can verify who the operator assigned).
+        driver_ids = [
+            v["assigned_driver_id"]
+            for v in (vehicles or [])
+            if v.get("assigned_driver_id")
+        ]
+        drivers_by_id = {}
+        if driver_ids:
+            uniq = ",".join(sorted(set(driver_ids)))
+            drivers = await _supabase_get(
+                f"users?id=in.({uniq})&select=id,full_name,full_name_ar,email"
+            )
+            drivers_by_id = {d["id"]: d for d in (drivers or [])}
 
         result = []
-        for v in positions or []:
-            if not v.get("vehicles"):
-                continue
-            lat, lon = parse_location(v.get("location"))
+        for v in vehicles or []:
+            pos = pos_by_id.get(v["id"], {})
+            lat, lon = parse_location(pos.get("location")) if pos else (None, None)
+            drv = drivers_by_id.get(v.get("assigned_driver_id"), {})
             result.append(
                 VehicleResponse(
-                    id=v["vehicles"]["id"],
-                    vehicle_id=v["vehicles"]["vehicle_id"],
-                    name=v["vehicles"]["name"],
-                    name_ar=v["vehicles"]["name_ar"],
-                    vehicle_type=v["vehicles"]["vehicle_type"],
-                    capacity=v["vehicles"]["capacity"],
-                    status=v["vehicles"]["status"],
-                    assigned_route_id=v["vehicles"].get("assigned_route_id"),
+                    id=v["id"],
+                    vehicle_id=v["vehicle_id"],
+                    name=v["name"],
+                    name_ar=v.get("name_ar", ""),
+                    vehicle_type=v["vehicle_type"],
+                    capacity=v["capacity"],
+                    status=v["status"],
+                    assigned_route_id=v.get("assigned_route_id"),
+                    assigned_driver_id=v.get("assigned_driver_id"),
                     latitude=lat,
                     longitude=lon,
-                    speed_kmh=v.get("speed_kmh"),
-                    occupancy_pct=v.get("occupancy_pct"),
-                    recorded_at=v.get("recorded_at"),
+                    speed_kmh=pos.get("speed_kmh"),
+                    occupancy_pct=pos.get("occupancy_pct"),
+                    recorded_at=pos.get("recorded_at"),
+                    approval_status=v.get("approval_status"),
+                    approved_at=v.get("approved_at"),
+                    approval_note=v.get("approval_note"),
+                    driver_name=drv.get("full_name_ar") or drv.get("full_name"),
+                    driver_email=drv.get("email"),
+                    created_at=v.get("created_at"),
                 )
             )
         return result
 
     except Exception:
+        logger.error("list_all_vehicles failed", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
@@ -254,10 +333,32 @@ async def list_all_vehicles(
 @router.post("/api/admin/vehicles", response_model=VehicleResponse, tags=["admin"])
 async def create_vehicle(
     vehicle_data: VehicleCreate,
-    current_user: CurrentUser = Depends(require_role("admin")),
+    current_user: CurrentUser = Depends(require_role("admin", "dispatcher")),
 ):
-    """Create a new vehicle."""
+    """Register a new vehicle (bus / microbus / taxi).
+
+    Approval workflow (migration 019): vehicles registered by an operator
+    (dispatcher) start as `pending` and cannot operate until an admin
+    approves them on /admin/approvals.html. Vehicles created directly by an
+    admin are approved immediately (the admin IS the approver).
+    """
     try:
+        ensure_operator_scope(
+            current_user.operator_id, current_user.operator_id, current_user.role
+        )
+
+        # Duplicate fleet code check (was previously a raw 500).
+        existing = await _supabase_get(
+            f"vehicles?vehicle_id=eq.{urllib.parse.quote(vehicle_data.vehicle_id, safe='')}"
+            f"&select=id&{_op_filter(current_user.operator_id)}"
+        )
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="A vehicle with this fleet code already exists.",
+            )
+
+        is_admin = current_user.role in ("admin", "super_admin")
         new_vehicle = {
             "vehicle_id": vehicle_data.vehicle_id,
             "name": vehicle_data.name,
@@ -269,7 +370,12 @@ async def create_vehicle(
             "is_real_gps": vehicle_data.is_real_gps,
             "is_active": True,
             "operator_id": current_user.operator_id,
+            "approval_status": "approved" if is_admin else "pending",
+            "created_by": current_user.user_id,
         }
+        if is_admin:
+            new_vehicle["approved_by"] = current_user.user_id
+            new_vehicle["approved_at"] = datetime.utcnow().isoformat()
 
         result = await _supabase_post("vehicles", new_vehicle)
         if not result:
@@ -279,6 +385,21 @@ async def create_vehicle(
             )
 
         created = result if isinstance(result, dict) else result[0] if result else {}
+
+        await _supabase_post(
+            "audit_log",
+            {
+                "admin_id": current_user.user_id,
+                "action": "vehicle_created",
+                "details": (
+                    f"Vehicle {vehicle_data.vehicle_id} ({vehicle_data.vehicle_type}) "
+                    f"registered by {current_user.role}; approval_status="
+                    f"{new_vehicle['approval_status']}"
+                ),
+                "operator_id": current_user.operator_id,
+            },
+        )
+
         return VehicleResponse(
             id=created.get("id"),
             vehicle_id=created.get("vehicle_id"),
@@ -287,11 +408,14 @@ async def create_vehicle(
             vehicle_type=created.get("vehicle_type"),
             capacity=created.get("capacity"),
             status=created.get("status"),
+            approval_status=created.get("approval_status"),
+            created_at=created.get("created_at"),
         )
 
     except HTTPException:
         raise
     except Exception:
+        logger.error("create_vehicle failed", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
@@ -304,9 +428,9 @@ async def create_vehicle(
 async def update_vehicle(
     vehicle_id: str,
     vehicle_data: VehicleUpdate,
-    current_user: CurrentUser = Depends(require_role("admin")),
+    current_user: CurrentUser = Depends(require_role("admin", "dispatcher")),
 ):
-    """Update vehicle details."""
+    """Update vehicle details (operator staff may maintain their own fleet)."""
     try:
         update_dict = {}
         if vehicle_data.name is not None:
@@ -323,7 +447,9 @@ async def update_vehicle(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="No fields to update"
             )
 
-        result = await _supabase_patch(f"vehicles?id=eq.{vehicle_id}", update_dict)
+        result = await _supabase_patch(
+            f"vehicles?id=eq.{vehicle_id}{_own_op_filter(current_user)}", update_dict
+        )
         if not result:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Vehicle not found"
@@ -359,13 +485,42 @@ async def assign_vehicle(
     assignment: VehicleAssign,
     current_user: CurrentUser = Depends(require_role("admin", "dispatcher")),
 ):
-    """Assign vehicle to route and driver."""
+    """Assign vehicle to route and/or driver.
+
+    Assignment is allowed while the vehicle is still pending — the operator
+    links the driver (with their issued username/password) FIRST, and the
+    admin's approval afterwards is what authorises the vehicle to operate.
+    The driver must belong to the same operator as the vehicle. Omitted
+    fields are left unchanged; empty strings clear the assignment.
+    """
     try:
-        update_data = {
-            "assigned_route_id": assignment.route_id,
-            "assigned_driver_id": assignment.driver_id,
-        }
-        result = await _supabase_patch(f"vehicles?id=eq.{vehicle_id}", update_data)
+        update_data = {}
+        if assignment.driver_id is not None:
+            if assignment.driver_id == "":
+                update_data["assigned_driver_id"] = None
+            else:
+                # The assigned driver must be an active driver of the same tenant.
+                drivers = await _supabase_get(
+                    f"users?id=eq.{urllib.parse.quote(assignment.driver_id, safe='')}"
+                    f"&role=eq.driver&is_active=eq.true&select=id"
+                    f"{_own_op_filter(current_user)}"
+                )
+                if not drivers:
+                    raise HTTPException(
+                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        detail="Driver not found in your operator (must be an active driver account).",
+                    )
+                update_data["assigned_driver_id"] = assignment.driver_id
+        if assignment.route_id is not None:
+            update_data["assigned_route_id"] = assignment.route_id or None
+        if not update_data:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Provide route_id and/or driver_id.",
+            )
+        result = await _supabase_patch(
+            f"vehicles?id=eq.{vehicle_id}{_own_op_filter(current_user)}", update_data
+        )
         if not result:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Vehicle not found"
@@ -375,6 +530,7 @@ async def assign_vehicle(
             "admin_id": current_user.user_id,
             "action": "vehicle_assigned",
             "details": f"Vehicle {vehicle_id} assigned to route {assignment.route_id}, driver {assignment.driver_id}",
+            "operator_id": current_user.operator_id,
         }
         await _supabase_post("audit_log", audit_entry)
 
@@ -387,6 +543,277 @@ async def assign_vehicle(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
         )
+
+
+@router.delete(
+    "/api/admin/vehicles/{vehicle_id}",
+    response_model=StatusTimestampResponse,
+    tags=["admin"],
+)
+async def decommission_vehicle(
+    vehicle_id: str,
+    current_user: CurrentUser = Depends(require_role("admin", "super_admin")),
+):
+    """Soft-delete: mark a vehicle decommissioned + inactive (audit-logged).
+
+    Hard deletes would orphan trips/positions history, so the row is kept.
+    """
+    try:
+        result = await _supabase_patch(
+            f"vehicles?id=eq.{vehicle_id}{_own_op_filter(current_user)}",
+            {
+                "status": "decommissioned",
+                "is_active": False,
+                "assigned_driver_id": None,
+                "assigned_route_id": None,
+            },
+        )
+        if not result:
+            raise HTTPException(status_code=404, detail="Vehicle not found")
+        await _supabase_post(
+            "audit_log",
+            {
+                "admin_id": current_user.user_id,
+                "action": "vehicle_decommissioned",
+                "details": f"Vehicle {vehicle_id} decommissioned",
+                "operator_id": current_user.operator_id,
+            },
+        )
+        return {"status": "success", "timestamp": datetime.utcnow().isoformat()}
+    except HTTPException:
+        raise
+    except Exception:
+        logger.error("decommission_vehicle failed", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+# ── Routes CRUD (admin) ────────────────────────────────────────────────────────
+# Minimal management endpoints for /admin/routes.html. Geometry (the map
+# polyline) is intentionally NOT editable here — it comes from the GTFS
+# pipeline / GIS tooling; these endpoints handle the business fields only.
+
+
+@router.get("/api/admin/routes", tags=["admin"])
+async def admin_list_routes(
+    current_user: CurrentUser = Depends(
+        require_role("admin", "dispatcher", "super_admin")
+    ),
+):
+    """All routes (including inactive), scoped to the operator."""
+    try:
+        op_suffix = ""
+        if current_user.role != "super_admin" and current_user.operator_id:
+            op_suffix = f"&{_op_filter(current_user.operator_id)}"
+        rows = await _supabase_get(
+            "routes?select=id,route_id,name,name_ar,route_type,color,distance_km,"
+            f"avg_duration_min,fare_syp,is_active,created_at&order=route_id.asc{op_suffix}"
+        )
+        return rows or []
+    except Exception:
+        logger.error("admin_list_routes failed", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.post("/api/admin/routes", tags=["admin"])
+async def admin_create_route(
+    body: RouteCreate,
+    current_user: CurrentUser = Depends(require_role("admin", "dispatcher")),
+):
+    """Create a route (business fields; geometry added later via GIS)."""
+    try:
+        existing = await _supabase_get(
+            f"routes?route_id=eq.{urllib.parse.quote(body.route_id, safe='')}&select=id"
+        )
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="A route with this code already exists.",
+            )
+        new_route = {
+            "route_id": body.route_id,
+            "name": body.name,
+            "name_ar": body.name_ar,
+            "route_type": body.route_type,
+            "distance_km": body.distance_km,
+            "avg_duration_min": body.avg_duration_min,
+            "fare_syp": body.fare_syp,
+            "is_active": True,
+            "operator_id": current_user.operator_id,
+        }
+        if body.color:
+            new_route["color"] = body.color
+        created = await _supabase_post("routes", new_route)
+        created = (
+            created if isinstance(created, dict) else (created[0] if created else {})
+        )
+        await _supabase_post(
+            "audit_log",
+            {
+                "admin_id": current_user.user_id,
+                "action": "route_created",
+                "details": f"Route {body.route_id} ({body.route_type}) created",
+                "operator_id": current_user.operator_id,
+            },
+        )
+        return created
+    except HTTPException:
+        raise
+    except Exception:
+        logger.error("admin_create_route failed", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.put("/api/admin/routes/{route_pk}", tags=["admin"])
+async def admin_update_route(
+    route_pk: str,
+    body: RouteUpdate,
+    current_user: CurrentUser = Depends(require_role("admin", "dispatcher")),
+):
+    """Update a route's business fields (fare, names, timing, active flag)."""
+    try:
+        update = {k: v for k, v in body.model_dump().items() if v is not None}
+        if not update:
+            raise HTTPException(status_code=400, detail="No fields to update")
+        result = await _supabase_patch(
+            f"routes?id=eq.{route_pk}{_own_op_filter(current_user)}", update
+        )
+        if not result:
+            raise HTTPException(status_code=404, detail="Route not found")
+        return result[0]
+    except HTTPException:
+        raise
+    except Exception:
+        logger.error("admin_update_route failed", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+# ── Vehicle approval (migration 019) ──────────────────────────────────────────
+
+
+@router.get("/api/admin/vehicles/pending-count", tags=["admin"])
+async def pending_vehicle_count(
+    current_user: CurrentUser = Depends(
+        require_role("admin", "dispatcher", "super_admin")
+    ),
+):
+    """Number of vehicles awaiting approval (drives the sidebar badge)."""
+    try:
+        op_suffix = ""
+        if current_user.role != "super_admin" and current_user.operator_id:
+            op_suffix = f"&{_op_filter(current_user.operator_id)}"
+        rows = await _supabase_get(
+            f"vehicles?approval_status=eq.pending&select=id{op_suffix}"
+        )
+        return {"pending": len(rows or [])}
+    except Exception:
+        logger.error("pending_vehicle_count failed", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.post(
+    "/api/admin/vehicles/{vehicle_id}/approval",
+    response_model=StatusTimestampResponse,
+    tags=["admin"],
+)
+async def decide_vehicle_approval(
+    vehicle_id: str,
+    decision: VehicleApprovalRequest,
+    current_user: CurrentUser = Depends(require_role("admin", "super_admin")),
+):
+    """ADMIN ONLY — approve / reject / suspend a vehicle, or send it back to
+    pending (`resubmit`). Operators (dispatchers) cannot call this: the whole
+    point of the workflow is that the operator registers the vehicle + driver
+    credentials and a separate, higher-privileged admin authorises it.
+
+    Allowed transitions:
+        pending   -> approved | rejected
+        approved  -> suspended
+        rejected  -> pending   (resubmit)
+        suspended -> approved | pending (resubmit)
+    Every decision is written to audit_log.
+    """
+    try:
+        rows = await _supabase_get(
+            f"vehicles?id=eq.{urllib.parse.quote(vehicle_id, safe='')}"
+            f"&select=id,vehicle_id,approval_status{_own_op_filter(current_user)}"
+        )
+        if not rows:
+            raise HTTPException(status_code=404, detail="Vehicle not found")
+        vehicle = rows[0]
+        current = vehicle.get("approval_status") or "pending"
+
+        transitions = {
+            "approve": ({"pending", "suspended"}, "approved"),
+            "reject": ({"pending"}, "rejected"),
+            "suspend": ({"approved"}, "suspended"),
+            "resubmit": ({"rejected", "suspended"}, "pending"),
+        }
+        allowed_from, new_status = transitions[decision.action]
+        if current not in allowed_from:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Cannot {decision.action} a vehicle in state '{current}'.",
+            )
+
+        update = {
+            "approval_status": new_status,
+            "approval_note": decision.note,
+        }
+        if new_status == "approved":
+            update["approved_by"] = current_user.user_id
+            update["approved_at"] = datetime.utcnow().isoformat()
+        else:
+            update["approved_by"] = None
+            update["approved_at"] = None
+
+        result = await _supabase_patch(
+            f"vehicles?id=eq.{vehicle_id}{_own_op_filter(current_user)}", update
+        )
+        if not result:
+            raise HTTPException(status_code=404, detail="Vehicle not found")
+
+        await _supabase_post(
+            "audit_log",
+            {
+                "admin_id": current_user.user_id,
+                "action": f"vehicle_{new_status if decision.action != 'resubmit' else 'resubmitted'}",
+                "details": (
+                    f"Vehicle {vehicle.get('vehicle_id')} ({vehicle_id}): "
+                    f"{current} -> {new_status}"
+                    + (f" — note: {decision.note}" if decision.note else "")
+                ),
+                "operator_id": current_user.operator_id,
+            },
+        )
+
+        return {"status": new_status, "timestamp": datetime.utcnow().isoformat()}
+
+    except HTTPException:
+        raise
+    except Exception:
+        logger.error("decide_vehicle_approval failed", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.get("/api/admin/audit-log", tags=["admin"])
+async def list_audit_log(
+    limit: int = 50,
+    current_user: CurrentUser = Depends(require_role("admin", "super_admin")),
+):
+    """Most recent audit-log entries (approvals, assignments, creations)."""
+    try:
+        limit = max(1, min(limit, 200))
+        op_suffix = ""
+        if current_user.role != "super_admin" and current_user.operator_id:
+            op_suffix = f"&{_op_filter(current_user.operator_id)}"
+        rows = await _supabase_get(
+            f"audit_log?select=id,admin_id,action,details,created_at"
+            f"&order=created_at.desc&limit={limit}{op_suffix}"
+        )
+        return rows or []
+    except Exception:
+        logger.error("list_audit_log failed", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # ── Alerts ─────────────────────────────────────────────────────────────────────
@@ -445,7 +872,9 @@ async def resolve_alert(
             if alert_data.resolved
             else None,
         }
-        result = await _supabase_patch(f"alerts?id=eq.{alert_id}", update_data)
+        result = await _supabase_patch(
+            f"alerts?id=eq.{alert_id}{_own_op_filter(current_user)}", update_data
+        )
         if not result:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Alert not found"
@@ -535,6 +964,17 @@ async def get_analytics_overview(
             len([d for d in drivers if d.get("is_active")]) if drivers else 0
         )
 
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%dT00:00:00+00:00")
+        trips_today_rows = await _supabase_get(
+            f"trips?actual_start=gte.{urllib.parse.quote(today, safe='')}&select=id{op_suffix}"
+        )
+        open_alerts_rows = await _supabase_get(
+            f"alerts?is_resolved=eq.false&select=id{op_suffix}"
+        )
+        pending_rows = await _supabase_get(
+            f"vehicles?approval_status=eq.pending&select=id{op_suffix}"
+        )
+
         positions = await _supabase_get(
             f"vehicle_positions_latest?select=occupancy_pct{op_suffix}"
         )
@@ -556,6 +996,9 @@ async def get_analytics_overview(
             total_drivers=len(drivers),
             active_drivers=active_drivers,
             avg_occupancy_pct=round(avg_occupancy, 1) if avg_occupancy else None,
+            trips_today=len(trips_today_rows or []),
+            open_alerts=len(open_alerts_rows or []),
+            pending_vehicles=len(pending_rows or []),
         )
 
     except Exception:

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from api.core.auth import CurrentUser, optional_auth
 from api.core.database import _supabase_get
-from api.core.tenancy import _op_filter, _resolve_operator_id
+from api.core.tenancy import _op_filter, resolve_read_scope
 from api.models.schemas import AlertResponse
 import logging
 
@@ -20,12 +20,8 @@ async def get_active_alerts(
 ):
     """Get all unresolved alerts."""
     try:
-        if current_user and current_user.role == "super_admin":
-            op_id = await _resolve_operator_id(operator) if operator else None
-        elif current_user and current_user.operator_id:
-            op_id = current_user.operator_id
-        else:
-            op_id = await _resolve_operator_id(operator) if operator else None
+        # Always scoped to exactly one operator (cross-tenant leak fix).
+        op_id = await resolve_read_scope(operator, current_user)
 
         query = "alerts?is_resolved=eq.false&select=*&order=created_at.desc"
         if op_id:

@@ -30,22 +30,9 @@ jobs:
       - name: Run pip-audit
         run: pip-audit -r requirements.txt --strict
 
-  npm-audit:
-    name: Dependency CVE Audit (npm — mobile/Capacitor)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: npm
-          cache-dependency-path: mobile/package-lock.json
-      - name: npm audit (Capacitor)
-        working-directory: mobile
-        run: |
-          # We tolerate moderate findings in transitive Android/iOS toolchains
-          # but fail on anything high or critical.
-          npm audit --audit-level=high
+  # (2026-06-11) npm-audit job removed: the Capacitor wrapper (mobile/) was
+  # archived — Flutter (flutter_app/) is the single official mobile app and is
+  # covered by the flutter-deps job below.
 
   flutter-deps:
     name: Dependency Check (Flutter pub outdated)

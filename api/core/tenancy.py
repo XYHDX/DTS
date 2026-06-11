@@ -1,4 +1,5 @@
 import logging
+import os
 import urllib.parse
 from typing import Optional
 
@@ -88,6 +89,72 @@ def _op_filter(operator_id: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Read-scope resolution for public endpoints.
+#
+# Security fix (2026-06-11): previously, anonymous requests without an
+# `?operator=` parameter resolved to op_id=None and the operator filter was
+# silently skipped — returning EVERY tenant's rows (cross-tenant data leak).
+# Public reads now always resolve to exactly one operator: the caller's
+# tenant, the requested slug, or the configured default operator.
+# ---------------------------------------------------------------------------
+DEFAULT_OPERATOR_SLUG = os.getenv("DEFAULT_OPERATOR_SLUG", "damascus")
+
+# Cache slug -> operator_id so anonymous public reads don't pay an extra
+# DB roundtrip per request. Entries refresh every 5 minutes.
+_SLUG_CACHE_TTL = 300.0
+_slug_cache: dict = {}
+
+
+async def _resolve_operator_id_cached(operator_slug: str) -> str:
+    import time as _time
+
+    cached = _slug_cache.get(operator_slug)
+    now = _time.monotonic()
+    if cached is not None and (now - cached[0]) < _SLUG_CACHE_TTL:
+        return cached[1]
+    try:
+        op_id = await _resolve_operator_id(operator_slug)
+    except Exception as exc:
+        # Unknown slug (404) propagates. On transport/DB errors (500), the
+        # default operator's FIXED id (migration 002 + seed.sql +
+        # _DEFAULT_OPERATORS all agree on it) keeps reads scoped rather
+        # than failing or leaking across tenants.
+        if (
+            isinstance(exc, HTTPException)
+            and exc.status_code == status.HTTP_404_NOT_FOUND
+        ):
+            raise
+        seed = _DEFAULT_OPERATORS.get(operator_slug)
+        if seed:
+            return seed["id"]
+        raise
+    _slug_cache[operator_slug] = (now, op_id)
+    return op_id
+
+
+async def resolve_read_scope(operator_slug, current_user) -> str:
+    """Resolve the single operator_id a read request is allowed to see.
+
+    Rules:
+      - super_admin: may request any operator via ?operator=; defaults to
+        their own tenant, then to the default operator.
+      - any other authenticated user: always their own tenant.
+      - anonymous: the requested slug, else DEFAULT_OPERATOR_SLUG.
+
+    Never returns None — public data is always scoped to one tenant.
+    """
+    if current_user is not None and current_user.role == "super_admin":
+        if operator_slug:
+            return await _resolve_operator_id_cached(operator_slug)
+        if current_user.operator_id:
+            return current_user.operator_id
+        return await _resolve_operator_id_cached(DEFAULT_OPERATOR_SLUG)
+    if current_user is not None and current_user.operator_id:
+        return current_user.operator_id
+    return await _resolve_operator_id_cached(operator_slug or DEFAULT_OPERATOR_SLUG)
+
+
+# ---------------------------------------------------------------------------
 # M3 — operator-scope guard
 # ---------------------------------------------------------------------------
 def ensure_operator_scope(
@@ -111,7 +178,9 @@ def ensure_operator_scope(
     if user_role == SUPER:
         # Super admin may operate across operators. Honour the request value
         # if provided, otherwise fall back to their token's operator_id.
-        return (requested_operator_id or user_operator_id or "").strip() or _raise_missing()
+        return (
+            requested_operator_id or user_operator_id or ""
+        ).strip() or _raise_missing()
 
     if user_operator_id is None or not str(user_operator_id).strip():
         raise HTTPException(

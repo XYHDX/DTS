@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from api.core.auth import CurrentUser, optional_auth
 from api.core.database import _supabase_get
-from api.core.tenancy import _op_filter, _resolve_operator_id
+from api.core.tenancy import _op_filter, resolve_read_scope
 from api.models.schemas import ScheduleResponse
 import logging
 
@@ -25,12 +25,8 @@ async def get_route_schedule(
 ):
     """Get schedule for a route by day of week."""
     try:
-        if current_user and current_user.role == "super_admin":
-            op_id = await _resolve_operator_id(operator) if operator else None
-        elif current_user and current_user.operator_id:
-            op_id = current_user.operator_id
-        else:
-            op_id = await _resolve_operator_id(operator) if operator else None
+        # Always scoped to exactly one operator (cross-tenant leak fix).
+        op_id = await resolve_read_scope(operator, current_user)
 
         query = f"schedules?route_id=eq.{route_id}&select=*"
         if op_id:

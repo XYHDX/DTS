@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0E5650">
+<title>سجل التدقيق — لوحة الإدارة — نقل دمشق</title>
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200;300;400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/lib/design-system.css">
+<link rel="stylesheet" href="/admin/_layout.css">
+<script src="/admin/_gate.js"></script>
+<style>
+  .data-table-card { background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--r-lg); overflow:auto; }
+  .data-table { width:100%; border-collapse:collapse; font-size:var(--fs-sm); }
+  .data-table th { text-align:start; padding:12px 14px; color:var(--color-text-mute); font-weight:600; border-bottom:1px solid var(--color-border); white-space:nowrap; }
+  .data-table td { padding:11px 14px; border-bottom:1px solid var(--color-border); vertical-align:middle; }
+  .data-table tr:last-child td { border-bottom:0; }
+  .cell-mono { font-family:var(--font-mono); font-size:var(--fs-xs); }
+  .cell-muted { color:var(--color-text-mute); }
+  .status-pill { display:inline-block; padding:2px 10px; border-radius:999px; font-size:var(--fs-xs); font-weight:600; background:#e2e8f0; color:#334155; }
+  .status-pill.is-active { background:var(--national-green-100); color:var(--national-green-800); }
+  .status-pill.is-warn { background:#fef3c7; color:#92400e; }
+  .status-pill.is-offline { background:#e2e8f0; color:#334155; }
+  .status-pill.is-danger { background:var(--national-red-100); color:var(--national-red-900); }
+  .empty-state { padding:40px 16px; text-align:center; color:var(--color-text-mute); }
+  .btn-primary { padding:8px 14px; background:var(--national-green); color:#fff; border:0; border-radius:8px; cursor:pointer; font:inherit; font-size:var(--fs-sm); }
+  .btn-row { background:transparent; border:0; cursor:pointer; font-size:13px; font-family:inherit; }
+  .skeleton{position:relative;overflow:hidden;background:var(--color-surface-2);border-radius:6px}
+  .skeleton::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);animation:sk 1.2s infinite}
+  @keyframes sk{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+</style>
+</head>
+<body data-page="audit">
+
+<div class="utility-bar">
+  <div class="container">
+    <span class="gov" data-i18n="hero.eyebrow">الجمهورية العربية السورية</span>
+    <span class="right">
+      <a href="/" data-i18n="header.home">الرئيسية</a>
+      <span class="sep"></span>
+      <a href="/passenger/" data-i18n="header.passenger">للركاب</a>
+      <span class="sep"></span>
+      <a href="/driver/" data-i18n="header.driver">للسائقين</a>
+    </span>
+  </div>
+</div>
+
+<div class="admin-shell">
+
+  <aside class="sidebar" aria-label="القائمة الجانبية">
+    <a href="/" class="sidebar__brand">
+      <span class="sidebar__brand-mark" aria-hidden="true">
+        <picture>
+          <source srcset="/assets/identity/sy-emblem-eagle.avif" type="image/avif">
+          <img src="/assets/identity/sy-emblem-eagle.png" alt="">
+        </picture>
+      </span>
+      <span class="sidebar__brand-text">
+        <b data-i18n="admin.brand">نقل دمشق</b>
+        <small data-i18n="admin.brandSub">لوحة الإدارة</small>
+      </span>
+    </a>
+
+    <nav data-shell-nav></nav>
+
+    <div class="sidebar__footer">
+      <div class="sidebar__user">
+        <div class="avatar-circle" id="user-initial">؟</div>
+        <div>
+          <div class="name" id="user-name">—</div>
+          <div class="role" id="user-role">—</div>
+        </div>
+      </div>
+      <button class="sidebar__logout" id="logout-btn" data-i18n="admin.logout">تسجيل الخروج</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="pagetitle">
+        <h1 data-i18n="admin.audit.title">سجل التدقيق</h1>
+        <p data-i18n="admin.audit.sub">كل إجراء إداري (إنشاء، موافقة، تعيين) يسجَّل هنا تلقائياً.</p>
+      </div>
+      <div class="cluster">
+        <button class="lang-toggle" id="lang-toggle" data-i18n-toggle aria-label="Toggle language">EN</button>
+      </div>
+    </div>
+
+    <section class="data-table-card">
+      <table class="data-table" aria-label="audit log">
+        <thead>
+          <tr>
+            <th>الإجراء</th>
+            <th>التفاصيل</th>
+            <th>التاريخ</th>
+          </tr>
+        </thead>
+        <tbody id="rows">
+          <tr><td colspan="3"><div class="skeleton" style="width:100%;height:1.2em"></div></td></tr>
+          <tr><td colspan="3"><div class="skeleton" style="width:100%;height:1.2em"></div></td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+</div>
+
+<script src="/lib/i18n.js"></script>
+<script src="/lib/error-handler.js"></script>
+<script src="/admin/_shell.js" defer></script>
+<script>
+(function () {
+  'use strict';
+  let LAST = [];
+  function isAr(){ return (document.documentElement.lang||'ar').slice(0,2)==='ar'; }
+  function esc(s){ return window.ADMIN_AUTH.esc(s); }
+  const ACT = {
+    vehicle_created:['تسجيل مركبة','is-offline'], vehicle_approved:['اعتماد مركبة','is-active'],
+    vehicle_rejected:['رفض مركبة','is-danger'], vehicle_suspended:['تعليق مركبة','is-warn'],
+    vehicle_resubmitted:['إعادة للانتظار','is-warn'], vehicle_assigned:['تعيين سائق/خط','is-offline'],
+    vehicle_decommissioned:['إخراج من الخدمة','is-danger'], route_created:['إنشاء خط','is-offline'],
+  };
+  function fmtDate(s){ try { return new Date(s).toLocaleString(isAr()?'ar-SY':'en-GB',{dateStyle:'medium',timeStyle:'short'}); } catch(_){ return s||'—'; } }
+  function render(rows){
+    const tbody = document.getElementById('rows');
+    if (!rows.length){
+      tbody.innerHTML = '<tr><td colspan="3"><div class="empty-state">'+(isAr()?'السجل فارغ.':'Log is empty.')+'</div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(function(e){
+      const a = ACT[e.action] || [e.action,'is-offline'];
+      return '<tr>'+
+        '<td><span class="status-pill '+a[1]+'">'+esc(isAr()?a[0]:(e.action||'—'))+'</span></td>'+
+        '<td style="max-width:520px">'+esc(e.details||'—')+'</td>'+
+        '<td class="cell-muted" style="white-space:nowrap">'+esc(fmtDate(e.created_at))+'</td>'+
+      '</tr>';
+    }).join('');
+  }
+  function load(){
+    if (!window.ADMIN_AUTH) return;
+    window.ADMIN_AUTH.fetch('/api/admin/audit-log?limit=100')
+      .then(r=>r.ok?r.json():Promise.reject(new Error('HTTP '+r.status)))
+      .then(rows=>{ LAST = Array.isArray(rows)?rows:[]; render(LAST); })
+      .catch(e=>{
+        if (String(e.message)!=='unauthorized')
+          document.getElementById('rows').innerHTML='<tr><td colspan="3"><div class="empty-state">'+esc(e.message||'Error')+'</div></td></tr>';
+      });
+  }
+  document.addEventListener('DOMContentLoaded', function(){ load(); setInterval(load, 60000); });
+  document.addEventListener('i18n:change', ()=>render(LAST));
+})();
+</script>
+</body>
+</html>

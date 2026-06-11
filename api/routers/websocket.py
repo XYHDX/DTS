@@ -3,39 +3,53 @@ import json
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 
 from api.models.schemas import WsStatsResponse
 
 from api.core.database import _supabase_get
 from api.core.geo import parse_location
+from api.core.tenancy import DEFAULT_OPERATOR_SLUG, _op_filter, _resolve_operator_id
 
 router = APIRouter()
 
 
 class ConnectionManager:
-    """Manages active WebSocket connections and per-connection route subscriptions."""
+    """Manages active WebSocket connections, each scoped to one operator.
+
+    Security fix (2026-06-11): connections were previously unscoped and every
+    client received every operator's live positions (cross-tenant leak).
+    Each connection now carries (operator_id, route_filter) and only receives
+    its own operator's vehicles.
+    """
 
     def __init__(self):
+        # ws -> {"operator_id": str, "route_id": Optional[str]}
         self._connections: dict = {}
 
-    def connect(self, ws: WebSocket, route_id: Optional[str] = None) -> None:
-        self._connections[ws] = route_id
+    def connect(self, ws: WebSocket, operator_id: str) -> None:
+        self._connections[ws] = {"operator_id": operator_id, "route_id": None}
 
     def disconnect(self, ws: WebSocket) -> None:
         self._connections.pop(ws, None)
 
     def subscribe(self, ws: WebSocket, route_id: Optional[str]) -> None:
         if ws in self._connections:
-            self._connections[ws] = route_id
+            self._connections[ws]["route_id"] = route_id
 
     @property
     def count(self) -> int:
         return len(self._connections)
 
-    async def broadcast_positions(self, positions: list) -> None:
+    def operator_ids(self) -> set:
+        return {c["operator_id"] for c in self._connections.values()}
+
+    async def broadcast_positions(self, operator_id: str, positions: list) -> None:
         dead: set = set()
-        for ws, route_filter in list(self._connections.items()):
+        for ws, sub in list(self._connections.items()):
+            if sub["operator_id"] != operator_id:
+                continue
+            route_filter = sub["route_id"]
             payload = (
                 [p for p in positions if p.get("route_id") == route_filter]
                 if route_filter is not None
@@ -48,10 +62,14 @@ class ConnectionManager:
         for ws in dead:
             self.disconnect(ws)
 
-    async def broadcast_alert(self, alert: dict) -> None:
+    async def broadcast_alert(
+        self, alert: dict, operator_id: Optional[str] = None
+    ) -> None:
         dead: set = set()
         message = json.dumps({"type": "geofence_alert", "data": alert})
-        for ws in list(self._connections):
+        for ws, sub in list(self._connections.items()):
+            if operator_id is not None and sub["operator_id"] != operator_id:
+                continue
             try:
                 await ws.send_text(message)
             except Exception:
@@ -63,13 +81,14 @@ class ConnectionManager:
 ws_manager = ConnectionManager()
 
 
-async def _fetch_ws_positions() -> list:
-    """Fetch latest vehicle positions for WebSocket broadcast."""
+async def _fetch_ws_positions(operator_id: str) -> list:
+    """Fetch latest vehicle positions for one operator for WS broadcast."""
     try:
         query = (
             "vehicle_positions_latest"
             "?select=vehicle_id,location,speed_kmh,heading,source,"
             "occupancy_pct,recorded_at,vehicles(vehicle_id,vehicle_type,name,name_ar,assigned_route_id)"
+            f"&{_op_filter(operator_id)}"
         )
         positions = await _supabase_get(query)
         result = []
@@ -99,11 +118,12 @@ async def _fetch_ws_positions() -> list:
 
 
 async def _ws_broadcast_loop() -> None:
-    """Background loop that pushes position updates to WebSocket clients every second."""
+    """Background loop pushing position updates to WS clients every second."""
     while True:
         if ws_manager.count > 0:
-            positions = await _fetch_ws_positions()
-            await ws_manager.broadcast_positions(positions)
+            for op_id in ws_manager.operator_ids():
+                positions = await _fetch_ws_positions(op_id)
+                await ws_manager.broadcast_positions(op_id, positions)
         await asyncio.sleep(1)
 
 
@@ -114,13 +134,27 @@ async def websocket_stats():
 
 
 @router.websocket("/api/ws/track")
-async def websocket_vehicle_tracking(websocket: WebSocket):
-    """WebSocket endpoint for real-time vehicle position streaming."""
+async def websocket_vehicle_tracking(
+    websocket: WebSocket,
+    operator: Optional[str] = Query(None, description="Operator slug"),
+):
+    """WebSocket endpoint for real-time vehicle position streaming.
+
+    Always scoped to exactly one operator (?operator=<slug>, defaulting to
+    the platform's default operator) so tenants never see each other's fleet.
+    """
+    try:
+        operator_id = await _resolve_operator_id(operator or DEFAULT_OPERATOR_SLUG)
+    except Exception:
+        # Unknown operator slug — refuse the socket politely.
+        await websocket.close(code=4404)
+        return
+
     await websocket.accept()
-    ws_manager.connect(websocket)
+    ws_manager.connect(websocket, operator_id)
 
     try:
-        positions = await _fetch_ws_positions()
+        positions = await _fetch_ws_positions(operator_id)
         await websocket.send_text(json.dumps({"type": "positions", "data": positions}))
     except Exception:
         pass

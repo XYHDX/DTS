@@ -86,7 +86,7 @@ def client():
 
 def _mock_supabase_get(url: str):
     """Route mock Supabase GET calls to the appropriate fixture data."""
-    if "users?role=eq.driver" in url and "id=eq." not in url:
+    if "users?role=eq.driver" in url and "?id=eq." not in url:
         return MOCK_DRIVERS
     if "users?id=eq.drv-001" in url:
         return [MOCK_DRIVERS[0]]

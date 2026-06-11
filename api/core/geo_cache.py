@@ -1,6 +1,6 @@
 """Redis Geo cache — sub-millisecond nearest-vehicle and live-map queries.
 
-Implements §4.A of transit_architecture_guide.md and step S3.1 of
+Implements §4.A of docs/transit_architecture_guide.md and step S3.1 of
 Scale_100k_Roadmap.md.
 
 Why this exists
@@ -21,7 +21,7 @@ remain in the legacy PostGIS path without branching.
 from __future__ import annotations
 
 import os
-from typing import Iterable, Optional
+from typing import Iterable
 
 from api.core.cache import _get_redis_client
 
@@ -117,19 +117,21 @@ async def nearest_vehicles(
             # Upstash returns dicts; redis-py returns tuples. Handle both.
             if isinstance(entry, dict):
                 member = entry.get("member")
-                dist   = float(entry.get("dist", 0))
+                dist = float(entry.get("dist", 0))
                 coords = entry.get("coords") or (0.0, 0.0)
                 lon_, lat_ = float(coords[0]), float(coords[1])
             else:
                 member, dist_raw, coord = entry
                 dist = float(dist_raw)
                 lon_, lat_ = float(coord[0]), float(coord[1])
-            results.append({
-                "vehicle_id": str(member),
-                "lat":        lat_,
-                "lon":        lon_,
-                "distance_m": dist,
-            })
+            results.append(
+                {
+                    "vehicle_id": str(member),
+                    "lat": lat_,
+                    "lon": lon_,
+                    "distance_m": dist,
+                }
+            )
         except (TypeError, ValueError, IndexError):
             continue
     return results

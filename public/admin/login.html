@@ -243,11 +243,21 @@ $('#login-form').addEventListener('submit', async (ev) => {
     if (!r.ok) throw new Error('login failed');
     const data = await r.json();
     const token = data.token || data.access_token;
-    const user = data.user || data;
+    // Fetch the real profile so the admin shell can show name + role
+    // (the login response only carries user_id/role).
+    let user = { role: data.role };
+    try {
+      const me = await fetch(API_BASE + '/api/auth/me', { headers: { 'Authorization': 'Bearer ' + token } });
+      if (me.ok) {
+        const mj = await me.json();
+        user = { name: mj.full_name_ar || mj.full_name, email: mj.email, role: mj.role,
+                 must_change_password: mj.must_change_password };
+      }
+    } catch (_) {}
     const storage = remember ? localStorage : sessionStorage;
     storage.setItem('dt_token', token);
     storage.setItem('dt_user', JSON.stringify(user));
-    const role = (user && user.role) || selectedRole;
+    const role = (user && user.role) || data.role || selectedRole;
     if (role === 'driver') location.href = '/driver/';
     else location.href = '/admin/';
   } catch (e) {
