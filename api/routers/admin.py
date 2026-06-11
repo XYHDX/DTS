@@ -69,6 +69,22 @@ def _own_op_filter(current_user: CurrentUser) -> str:
     return ""
 
 
+async def _count_pending_vehicles(op_suffix: str) -> int:
+    """Count vehicles awaiting approval, tolerating a pre-migration-019 DB.
+
+    If the `approval_status` column does not exist yet (migration 019 not
+    applied), the query errors — we treat that as 'no pending vehicles' so
+    the admin dashboard keeps working instead of returning 500.
+    """
+    try:
+        rows = await _supabase_get(
+            f"vehicles?approval_status=eq.pending&select=id{op_suffix}"
+        )
+        return len(rows or [])
+    except Exception:
+        return 0
+
+
 # ── Users ──────────────────────────────────────────────────────────────────────
 
 
@@ -701,10 +717,7 @@ async def pending_vehicle_count(
         op_suffix = ""
         if current_user.role != "super_admin" and current_user.operator_id:
             op_suffix = f"&{_op_filter(current_user.operator_id)}"
-        rows = await _supabase_get(
-            f"vehicles?approval_status=eq.pending&select=id{op_suffix}"
-        )
-        return {"pending": len(rows or [])}
+        return {"pending": await _count_pending_vehicles(op_suffix)}
     except Exception:
         logger.error("pending_vehicle_count failed", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
@@ -971,9 +984,7 @@ async def get_analytics_overview(
         open_alerts_rows = await _supabase_get(
             f"alerts?is_resolved=eq.false&select=id{op_suffix}"
         )
-        pending_rows = await _supabase_get(
-            f"vehicles?approval_status=eq.pending&select=id{op_suffix}"
-        )
+        pending_count = await _count_pending_vehicles(op_suffix)
 
         positions = await _supabase_get(
             f"vehicle_positions_latest?select=occupancy_pct{op_suffix}"
@@ -998,7 +1009,7 @@ async def get_analytics_overview(
             avg_occupancy_pct=round(avg_occupancy, 1) if avg_occupancy else None,
             trips_today=len(trips_today_rows or []),
             open_alerts=len(open_alerts_rows or []),
-            pending_vehicles=len(pending_rows or []),
+            pending_vehicles=pending_count,
         )
 
     except Exception:

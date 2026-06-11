@@ -24,6 +24,22 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+# Approval workflow (migration 019): the public must never see unapproved
+# vehicles. This clause hides them. On a database where migration 019 has
+# NOT been applied yet, the `approval_status` column does not exist and the
+# clause would make PostgREST error — so callers append it via the helper
+# below, which retries WITHOUT the clause if the column is missing. That
+# keeps the public map working on a partially-migrated database.
+_APPROVAL_PUBLIC_CLAUSE = "&or=(approval_status.is.null,approval_status.eq.approved)"
+
+
+async def _get_vehicles_approval_safe(base_query: str) -> list:
+    try:
+        return await _supabase_get(base_query + _APPROVAL_PUBLIC_CLAUSE)
+    except Exception:
+        # Column absent (pre-migration-019) — fall back to the unfiltered query.
+        return await _supabase_get(base_query)
+
 
 @router.get("/api/vehicles", response_model=List[VehicleResponse], tags=["vehicles"])
 async def list_vehicles(
@@ -56,12 +72,10 @@ async def list_vehicles(
             "vehicles?select=id,vehicle_id,name,name_ar,vehicle_type,"
             "capacity,status,assigned_route_id"
             "&status=neq.decommissioned"
-            # Approval workflow: the public never sees unapproved vehicles.
-            "&or=(approval_status.is.null,approval_status.eq.approved)"
         )
         if op_id:
             vehicles_query += f"&{_op_filter(op_id)}"
-        vehicles = await _supabase_get(vehicles_query)
+        vehicles = await _get_vehicles_approval_safe(vehicles_query)
 
         # Fetch latest positions separately and merge by vehicle UUID.
         # The table stores coords as PostGIS geometry(Point,4326) in
@@ -133,11 +147,10 @@ async def get_vehicle_positions(
         veh_query = (
             "vehicles?select=id,vehicle_id,vehicle_type,name,name_ar,assigned_route_id"
             "&status=neq.decommissioned"
-            "&or=(approval_status.is.null,approval_status.eq.approved)"
         )
         if op_id:
             veh_query += f"&{_op_filter(op_id)}"
-        vehicles = await _supabase_get(veh_query)
+        vehicles = await _get_vehicles_approval_safe(veh_query)
 
         # Fetch latest positions and index by vehicle UUID.
         pos_query = (
