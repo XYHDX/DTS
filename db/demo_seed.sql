@@ -12,16 +12,19 @@
 --
 --   ┌───────────────────────────────────────────────────────────┐
 --   │  ALL DEMO ACCOUNTS — PASSWORD:  Damascus2026!              │
---   ├──────────────────────────────┬───────────┬────────────────┤
---   │ Email                        │ Role      │ Login tab       │
---   ├──────────────────────────────┼───────────┼────────────────┤
---   │ superadmin@damascus-transit.demo │ super_admin │ إدارة      │
---   │ admin@damascus-transit.demo      │ admin       │ إدارة (Admin) │
+--   ├──────────────────────────────────┬───────────┬────────────┤
+--   │ Email                            │ Role      │ Login tab   │
+--   ├──────────────────────────────────┼───────────┼────────────┤
+--   │ admin@damascus-transit.demo      │ admin       │ إدارة (Admin)   │
 --   │ operator@damascus-transit.demo   │ dispatcher  │ موزّع (Operator)│
---   │ driver@damascus-transit.demo     │ driver      │ سائق (Driver) │
---   │ driver2@damascus-transit.demo    │ driver      │ سائق          │
+--   │ driver@damascus-transit.demo     │ driver      │ سائق (Driver)  │
+--   │ driver2@damascus-transit.demo    │ driver      │ سائق           │
 --   │ passenger@damascus-transit.demo  │ viewer      │ (passenger app)│
---   └──────────────────────────────┴───────────┴────────────────┘
+--   └──────────────────────────────────┴───────────┴────────────┘
+--
+--   A super_admin account is OPTIONAL — your user_role enum may not
+--   include that value yet (it is added by migration 002). See the
+--   "Optional: super_admin" block at the very bottom of this file.
 --
 --   ⚠ These are DEMO credentials. Rotate or delete them before any
 --     real production use (see the "Clean-up" block at the bottom).
@@ -46,12 +49,6 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.users
   (id, email, password_hash, full_name, full_name_ar, role, phone, is_active, operator_id)
 VALUES
-  ('a0000000-0000-0000-0000-000000000001',
-   'superadmin@damascus-transit.demo',
-   '$2b$12$VJMfh9cBYdtvoJ43Of0JwuLDYmbEmwYYA4f7o2ynSC9mqdzFFf/im',
-   'Super Admin', 'المدير العام', 'super_admin', '+963900000001', true,
-   '00000000-0000-0000-0000-000000000001'),
-
   ('a0000000-0000-0000-0000-000000000002',
    'admin@damascus-transit.demo',
    '$2b$12$HpbfV7OnWCfrsLxLp8UiZO4Rc0BNiCUPrf56PF0vSaQTGnbS7PafK',
@@ -182,6 +179,27 @@ COMMIT;
 -- ── Verify ─────────────────────────────────────────────────────────
 SELECT email, role, is_active FROM public.users
  WHERE email LIKE '%@damascus-transit.demo' ORDER BY role;
+
+-- ============================================================
+-- Optional: super_admin account
+-- ============================================================
+-- Run these TWO statements ONLY if you want a cross-operator super admin.
+-- `ALTER TYPE ... ADD VALUE` cannot run inside a transaction, so run the
+-- ALTER on its own first, THEN the INSERT.
+--
+--   Step 1 (run alone):
+-- ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'super_admin';
+--
+--   Step 2 (run after step 1 has committed):
+-- INSERT INTO public.users
+--   (id, email, password_hash, full_name, full_name_ar, role, phone, is_active, operator_id)
+-- VALUES
+--   ('a0000000-0000-0000-0000-000000000001',
+--    'superadmin@damascus-transit.demo',
+--    '$2b$12$VJMfh9cBYdtvoJ43Of0JwuLDYmbEmwYYA4f7o2ynSC9mqdzFFf/im',
+--    'Super Admin', 'المدير العام', 'super_admin', '+963900000001', true,
+--    '00000000-0000-0000-0000-000000000001')
+-- ON CONFLICT (email) DO NOTHING;
 
 -- ============================================================
 -- Clean-up (run to remove all demo data):
