@@ -14,26 +14,6 @@
 <link rel="stylesheet" href="/lib/design-system.css">
 <link rel="stylesheet" href="/admin/_layout.css">
 <script src="/admin/_gate.js"></script>
-<style>
-  .data-table-card { background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--r-lg); overflow:auto; }
-  .data-table { width:100%; border-collapse:collapse; font-size:var(--fs-sm); }
-  .data-table th { text-align:start; padding:12px 14px; color:var(--color-text-mute); font-weight:600; border-bottom:1px solid var(--color-border); white-space:nowrap; }
-  .data-table td { padding:11px 14px; border-bottom:1px solid var(--color-border); vertical-align:middle; }
-  .data-table tr:last-child td { border-bottom:0; }
-  .cell-mono { font-family:var(--font-mono); font-size:var(--fs-xs); }
-  .cell-muted { color:var(--color-text-mute); }
-  .status-pill { display:inline-block; padding:2px 10px; border-radius:999px; font-size:var(--fs-xs); font-weight:600; background:#e2e8f0; color:#334155; }
-  .status-pill.is-active { background:var(--national-green-100); color:var(--national-green-800); }
-  .status-pill.is-warn { background:#fef3c7; color:#92400e; }
-  .status-pill.is-offline { background:#e2e8f0; color:#334155; }
-  .status-pill.is-danger { background:var(--national-red-100); color:var(--national-red-900); }
-  .empty-state { padding:40px 16px; text-align:center; color:var(--color-text-mute); }
-  .btn-primary { padding:8px 14px; background:var(--national-green); color:#fff; border:0; border-radius:8px; cursor:pointer; font:inherit; font-size:var(--fs-sm); }
-  .btn-row { background:transparent; border:0; cursor:pointer; font-size:13px; font-family:inherit; }
-  .skeleton{position:relative;overflow:hidden;background:var(--color-surface-2);border-radius:6px}
-  .skeleton::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);animation:sk 1.2s infinite}
-  @keyframes sk{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
-</style>
 </head>
 <body data-page="routes">
 
@@ -46,6 +26,8 @@
       <a href="/passenger/" data-i18n="header.passenger">للركاب</a>
       <span class="sep"></span>
       <a href="/driver/" data-i18n="header.driver">للسائقين</a>
+      <span class="sep"></span>
+      <a href="/admin/login.html" data-i18n="header.admin">الإدارة</a>
     </span>
   </div>
 </div>
@@ -55,27 +37,15 @@
   <aside class="sidebar" aria-label="القائمة الجانبية">
     <a href="/" class="sidebar__brand">
       <span class="sidebar__brand-mark" aria-hidden="true">
-        <picture>
-          <source srcset="/assets/identity/sy-emblem-eagle.avif" type="image/avif">
-          <img src="/assets/identity/sy-emblem-eagle.png" alt="">
-        </picture>
+        <picture><source srcset="/assets/identity/sy-emblem-eagle.avif" type="image/avif"><img src="/assets/identity/sy-emblem-eagle.png" alt=""></picture>
       </span>
-      <span class="sidebar__brand-text">
-        <b data-i18n="admin.brand">نقل دمشق</b>
-        <small data-i18n="admin.brandSub">لوحة الإدارة</small>
-      </span>
+      <span class="sidebar__brand-text"><b data-i18n="admin.brand">نقل دمشق</b><small data-i18n="admin.brandSub">لوحة الإدارة</small></span>
     </a>
 
-    <nav data-shell-nav></nav>
+    <nav data-shell-nav aria-label="إدارة"></nav>
 
     <div class="sidebar__footer">
-      <div class="sidebar__user">
-        <div class="avatar-circle" id="user-initial">؟</div>
-        <div>
-          <div class="name" id="user-name">—</div>
-          <div class="role" id="user-role">—</div>
-        </div>
-      </div>
+      <div class="sidebar__user"><div class="avatar-circle" id="user-initial">؟</div><div><div class="name" id="user-name">—</div><div class="role" id="user-role">—</div></div></div>
       <button class="sidebar__logout" id="logout-btn" data-i18n="admin.logout">تسجيل الخروج</button>
     </div>
   </aside>
@@ -84,10 +54,10 @@
     <div class="topbar">
       <div class="pagetitle">
         <h1 data-i18n="admin.routes.title">الخطوط</h1>
-        <p data-i18n="admin.routes.sub">خطوط الشبكة وأجرتها. مسار الخريطة (الهندسة) يُدار عبر GTFS وليس من هنا.</p>
+        <p data-i18n="admin.routes.sub">خطوط النقل العام في دمشق مع لون التعريف وعدد الحافلات.</p>
       </div>
       <div class="cluster">
-        <button id="btn-add" class="btn-primary" type="button">+ <span data-i18n="admin.routes.add">إضافة خط</span></button>
+        <button id="btn-add-route" type="button" style="padding:8px 14px;background:#0E5650;color:#fff;border:0;border-radius:8px;cursor:pointer;">+ إضافة خط / Add route</button>
         <button class="lang-toggle" id="lang-toggle" data-i18n-toggle aria-label="Toggle language">EN</button>
       </div>
     </div>
@@ -96,12 +66,12 @@
       <table class="data-table" aria-label="routes">
         <thead>
           <tr>
-            <th>الرمز</th>
-            <th>الاسم</th>
-            <th>النوع</th>
-            <th>المسافة (كم)</th>
-            <th>الأجرة (ل.س)</th>
-            <th>الحالة</th>
+            <th data-i18n="admin.routes.color">اللون</th>
+            <th data-i18n="admin.routes.short">رمز الخط</th>
+            <th data-i18n="admin.routes.name">الاسم</th>
+            <th data-i18n="admin.routes.stops">عدد المحطات</th>
+            <th data-i18n="admin.routes.vehicles">الحافلات</th>
+            <th data-i18n="admin.routes.status">الحالة</th>
             <th>—</th>
           </tr>
         </thead>
@@ -112,109 +82,127 @@
       </table>
     </section>
   </main>
-
 </div>
 
 <script src="/lib/i18n.js"></script>
-<script src="/lib/error-handler.js"></script>
 <script src="/admin/_shell.js" defer></script>
 <script>
 (function () {
-  'use strict';
-  let LAST = [];
-  function isAr(){ return (document.documentElement.lang||'ar').slice(0,2)==='ar'; }
-  function esc(s){ return window.ADMIN_AUTH.esc(s); }
-  const TYPE_AR = { bus:'حافلة', microbus:'ميكروباص', taxi:'تكسي' };
-  function render(rows){
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  let DATA = { routes: [], vehicles: [] };
+  function render() {
     const tbody = document.getElementById('rows');
-    if (!rows.length){
-      tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">'+(isAr()?'لا خطوط بعد.':'No routes yet.')+'</div></td></tr>';
+    const routes = DATA.routes;
+    if (!routes || routes.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">' +
+        (window.I18N ? window.I18N.t('admin.routes.empty') : 'No routes yet.') + '</div></td></tr>';
       return;
     }
-    tbody.innerHTML = rows.map(function(r){
-      const name = isAr()?(r.name_ar||r.name||'—'):(r.name||r.name_ar||'—');
-      const active = r.is_active !== false;
-      return '<tr>'+
-        '<td class="cell-mono"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:'+esc(r.color||'#428177')+';margin-inline-end:6px"></span>'+esc(r.route_id||'—')+'</td>'+
-        '<td>'+esc(name)+'</td>'+
-        '<td class="cell-muted">'+esc(isAr()?(TYPE_AR[r.route_type]||r.route_type):(r.route_type||'bus'))+'</td>'+
-        '<td>'+(r.distance_km!=null?esc(r.distance_km):'—')+'</td>'+
-        '<td>'+(r.fare_syp!=null?esc(r.fare_syp):'—')+'</td>'+
-        '<td><span class="status-pill '+(active?'is-active':'is-offline')+'">'+(active?(isAr()?'فعّال':'Active'):(isAr()?'موقوف':'Inactive'))+'</span></td>'+
-        '<td><button class="btn-row js-edit" data-id="'+esc(r.id)+'" style="color:var(--national-green)">'+(isAr()?'تعديل':'Edit')+'</button></td>'+
+    const isAr = (document.documentElement.lang || 'ar').slice(0,2) === 'ar';
+    const activeT = window.I18N ? window.I18N.t('admin.users.active') : 'Active';
+    const inactiveT = window.I18N ? window.I18N.t('admin.users.inactive') : 'Inactive';
+
+    // Count vehicles per route
+    const countByRoute = {};
+    (DATA.vehicles || []).forEach(v => {
+      const rid = v.assigned_route_id;
+      if (rid) countByRoute[rid] = (countByRoute[rid] || 0) + 1;
+    });
+
+    const canEdit = window.ADMIN_AUTH && window.ADMIN_AUTH.isAdmin();
+    tbody.innerHTML = routes.map(r => {
+      const name = isAr ? (r.name_ar || r.name || '—') : (r.name || r.name_ar || '—');
+      const isActive = r.is_active !== false;
+      const stops = (r.stop_ids && r.stop_ids.length) || r.stops_count || '—';
+      const count = countByRoute[r.id] || 0;
+      const color = r.color || '#0E5650';
+      const actions = canEdit
+        ? '<button class="js-del" data-id="' + escapeHtml(r.id || '') + '" style="background:transparent;border:0;color:#b91c1c;cursor:pointer;font-size:13px;">' + (isAr ? 'حذف' : 'Delete') + '</button>'
+        : '<span class="cell-muted">—</span>';
+      return '<tr>' +
+        '<td><span class="cell-color" style="background:' + escapeHtml(color) + '"></span></td>' +
+        '<td class="cell-mono">' + escapeHtml(r.route_id || r.short_name || r.code || '—') + '</td>' +
+        '<td>' + escapeHtml(name) + '</td>' +
+        '<td>' + stops + '</td>' +
+        '<td>' + count + '</td>' +
+        '<td><span class="status-pill ' + (isActive ? 'is-active' : 'is-offline') + '">' +
+          escapeHtml(isActive ? activeT : inactiveT) + '</span></td>' +
+        '<td>' + actions + '</td>' +
       '</tr>';
     }).join('');
-    tbody.querySelectorAll('.js-edit').forEach(b=>b.addEventListener('click', onEdit));
+    tbody.querySelectorAll('.js-del').forEach(b => b.addEventListener('click', onDelete));
   }
-  function onEdit(ev){
-    const r = LAST.find(x=>x.id===ev.currentTarget.dataset.id);
-    if (!r) return;
-    window.ADMIN_AUTH.openForm({
-      title: (isAr()?'تعديل الخط ':'Edit route ')+(r.route_id||''),
-      fields: [
-        { name:'name', label:'Name (English)', label_ar:'الاسم (إنجليزي)', value:r.name },
-        { name:'name_ar', label:'Name (Arabic)', label_ar:'الاسم (عربي)', value:r.name_ar },
-        { name:'fare_syp', label:'Fare (SYP)', label_ar:'الأجرة (ل.س)', type:'number', min:0, value:r.fare_syp },
-        { name:'distance_km', label:'Distance (km)', label_ar:'المسافة (كم)', type:'number', min:0, step:'0.1', value:r.distance_km },
-        { name:'avg_duration_min', label:'Avg duration (min)', label_ar:'مدة الرحلة (دقيقة)', type:'number', min:0, value:r.avg_duration_min },
-        { name:'is_active', label:'Status', label_ar:'الحالة', type:'select', value:String(r.is_active!==false),
-          options:[{value:'true',label:'Active',label_ar:'فعّال'},{value:'false',label:'Inactive',label_ar:'موقوف'}]},
-      ],
-      onSubmit: async function(values){
-        const body = {};
-        ['name','name_ar'].forEach(k=>{ if(values[k]) body[k]=values[k]; });
-        ['fare_syp','distance_km','avg_duration_min'].forEach(k=>{ if(values[k]!=null&&values[k]!=='') body[k]=Number(values[k]); });
-        body.is_active = values.is_active === 'true';
-        const resp = await window.ADMIN_AUTH.fetch('/api/admin/routes/'+encodeURIComponent(r.id), {
-          method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
-        });
-        if (!resp.ok){ const j = await resp.json().catch(()=>({detail:'Failed'})); return {error:j.detail||'Failed'}; }
-        window.ADMIN_AUTH.toast('تم حفظ الخط','Route saved','success');
-      },
-      onAfter: load,
-    });
+  function onDelete(ev) {
+    const id = ev.currentTarget.getAttribute('data-id');
+    if (!id) return;
+    const isAr = (document.documentElement.lang || 'ar').slice(0,2) === 'ar';
+    if (!confirm(isAr ? 'تأكيد إيقاف هذا الخط؟' : 'Deactivate this route?')) return;
+    window.ADMIN_AUTH.fetch('/api/admin/routes/' + encodeURIComponent(id), {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_active: false }),
+    })
+      .then(r => { if (!r.ok) return r.json().then(j => { throw new Error(j.detail || 'Deactivate failed'); }); load(); })
+      .catch(e => alert(e.message));
   }
-  function openAddForm(){
+  function openAddForm() {
+    const isAr = (document.documentElement.lang || 'ar').slice(0,2) === 'ar';
     window.ADMIN_AUTH.openForm({
-      title: isAr()?'إضافة خط جديد':'Add new route',
-      subtitle: isAr()?'نوع المركبات على الخط يجب أن يطابق نوع الخط.':'Vehicle type on the line must match the route type.',
+      title:    isAr ? 'إضافة خط جديد' : 'Add new route',
+      subtitle: isAr ? 'الرمز فريد. اللون يستخدم على الخريطة.' : 'Code is unique. Color is shown on the live map.',
       fields: [
-        { name:'route_id', label:'Code', label_ar:'الرمز', required:true, placeholder:'R009' },
-        { name:'name', label:'Name (English)', label_ar:'الاسم (إنجليزي)', required:true, placeholder:'Marjeh → Mezzeh' },
-        { name:'name_ar', label:'Name (Arabic)', label_ar:'الاسم (عربي)', required:true, placeholder:'المرجة → المزة' },
+        { name:'route_id', label:'Route code', label_ar:'رمز الخط', required:true, placeholder:'R103' },
+        { name:'name',     label:'Name (English)', label_ar:'الاسم (إنجليزي)', required:true, placeholder:'Baramkeh → Mezzeh' },
+        { name:'name_ar',  label:'Name (Arabic)',  label_ar:'الاسم (عربي)',  required:true, placeholder:'البرامكة → المزة' },
         { name:'route_type', label:'Type', label_ar:'النوع', type:'select', required:true, value:'bus',
           options:[{value:'bus',label:'Bus',label_ar:'حافلة'},{value:'microbus',label:'Microbus',label_ar:'ميكروباص'},{value:'taxi',label:'Taxi',label_ar:'تكسي'}]},
-        { name:'fare_syp', label:'Fare (SYP)', label_ar:'الأجرة (ل.س)', type:'number', min:0, value:5000 },
-        { name:'distance_km', label:'Distance (km)', label_ar:'المسافة (كم)', type:'number', min:0, step:'0.1' },
-        { name:'avg_duration_min', label:'Avg duration (min)', label_ar:'مدة الرحلة (دقيقة)', type:'number', min:0 },
+        { name:'color',    label:'Color (#RRGGBB)', label_ar:'اللون (#RRGGBB)', value:'#0E5650', placeholder:'#0E5650' },
+        { name:'distance_km', label:'Distance (km)', label_ar:'المسافة (كم)', type:'number', step:'0.1', min:0, max:500, value:5 },
+        { name:'avg_duration_min', label:'Avg duration (min)', label_ar:'المدة الوسطية (دقيقة)', type:'number', min:0, max:600, value:25 },
+        { name:'fare_syp', label:'Fare (SYP)', label_ar:'الأجرة (ل.س)', type:'number', min:0, max:100000, value:500 },
       ],
-      onSubmit: async function(values){
-        ['fare_syp','distance_km','avg_duration_min'].forEach(k=>{ if(values[k]==null||values[k]==='') delete values[k]; else values[k]=Number(values[k]); });
+      onSubmit: async function (values) {
         const r = await window.ADMIN_AUTH.fetch('/api/admin/routes', {
-          method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(values)
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(values),
         });
-        if (!r.ok){ const j = await r.json().catch(()=>({detail:'Save failed'})); return {error:j.detail||'Save failed'}; }
-        window.ADMIN_AUTH.toast('تم إنشاء الخط','Route created','success');
+        if (!r.ok) {
+          const j = await r.json().catch(()=>({detail:'Save failed'}));
+          return { error: j.detail || 'Save failed' };
+        }
       },
       onAfter: load,
     });
   }
-  function load(){
+
+  function load() {
     if (!window.ADMIN_AUTH) return;
-    window.ADMIN_AUTH.fetch('/api/admin/routes')
-      .then(r=>r.ok?r.json():Promise.reject(new Error('HTTP '+r.status)))
-      .then(rows=>{ LAST = Array.isArray(rows)?rows:[]; render(LAST); })
-      .catch(e=>{
-        if (String(e.message)!=='unauthorized')
-          document.getElementById('rows').innerHTML='<tr><td colspan="7"><div class="empty-state">'+esc(e.message||'Error')+'</div></td></tr>';
-      });
+    Promise.all([
+      window.ADMIN_AUTH.fetch('/api/admin/routes').then(r => r.ok ? r.json() : fetch('/api/routes').then(rr => rr.json())),
+      window.ADMIN_AUTH.fetch('/api/vehicles').then(r => r.json()).catch(() => []),
+    ]).then(([routes, vehicles]) => {
+      DATA = { routes: Array.isArray(routes) ? routes : [], vehicles: Array.isArray(vehicles) ? vehicles : [] };
+      render();
+    }).catch(e => {
+      if (String(e.message) !== 'unauthorized') {
+        document.getElementById('rows').innerHTML =
+          '<tr><td colspan="7"><div class="empty-state">' + escapeHtml(e.message || 'Error') + '</div></td></tr>';
+      }
+    });
   }
-  document.addEventListener('DOMContentLoaded', function(){
+
+  document.addEventListener('DOMContentLoaded', function () {
     load();
-    const btn = document.getElementById('btn-add');
-    if (btn) btn.addEventListener('click', openAddForm);
+    const btn = document.getElementById('btn-add-route');
+    if (btn) {
+      btn.addEventListener('click', openAddForm);
+    }
   });
-  document.addEventListener('i18n:change', ()=>render(LAST));
+  document.addEventListener('i18n:change', render);
 })();
 </script>
 </body>

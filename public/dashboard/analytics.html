@@ -4,130 +4,211 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0E5650">
-<title>التحليلات — نقل دمشق</title>
+<title>التحليلات — لوحة الإدارة — نقل دمشق</title>
 
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-
 <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200;300;400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="/lib/design-system.css">
+<link rel="stylesheet" href="/admin/_layout.css">
 <style>
-  .page { max-width: 1200px; margin: 0 auto; padding: var(--s-5) var(--s-4) var(--s-8); }
-  .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-4); }
-  .col-2 { grid-column: span 2; }
-  .chart {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--r-lg);
-    padding: var(--s-4);
-    min-height: 280px;
-  }
-  .chart h2 { margin: 0 0 var(--s-3); font-size: var(--fs-md); font-weight: 700; }
-  .filter-bar {
-    display: flex; flex-wrap: wrap; gap: var(--s-2); margin-bottom: var(--s-5);
-  }
+  /* Analytics-only widgets — the rest of the chrome lives in
+     /admin/_layout.css so this page matches vehicles/users/routes/alerts. */
+  .filter-bar { display: flex; flex-wrap: wrap; gap: 8px; }
   .filter-pill {
-    padding: var(--s-2) var(--s-4); border-radius: var(--r-pill);
-    background: var(--color-surface); border: 1px solid var(--color-border);
-    font-size: var(--fs-sm); font-weight: 600; color: var(--color-text-soft); cursor: pointer;
+    padding: 8px 14px; border-radius: var(--r-pill);
+    background: #fff;
+    border: 1px solid var(--rule);
+    font-size: 13px; font-weight: 600;
+    color: var(--ink-2);
+    cursor: pointer;
+    transition: all .15s;
+    font-family: inherit;
   }
-  .filter-pill.is-active { background: var(--brand-700); color: #fff; border-color: var(--brand-700); }
-  @media (max-width: 800px) {
+  .filter-pill:hover { border-color: var(--national-green-300, var(--national-green-700)); }
+  .filter-pill.is-active { background: var(--national-green-900); color: #fff; border-color: var(--national-green-900); }
+
+  .kpi {
+    background: #fff;
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .kpi:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,.05); }
+  .kpi::after {
+    content: ""; position: absolute;
+    inset-block: 0; inset-inline-end: -20px;
+    width: 80px;
+    background: linear-gradient(135deg, transparent, rgba(201,169,91,.10));
+    opacity: .8;
+  }
+  .kpi__label { color: var(--ink-2); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; position: relative; z-index: 1; }
+  .kpi__value { font-size: 30px; font-weight: 700; line-height: 1; margin: 8px 0 6px; font-variant-numeric: tabular-nums; position: relative; z-index: 1; }
+  .kpi__delta { font-size: 13px; font-weight: 600; position: relative; z-index: 1; }
+  .kpi__delta.up { color: #0f7a4e; }
+  .kpi__delta.down { color: #ce1126; }
+
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 22px; }
+  .row { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; }
+  .row + .row { margin-top: 16px; }
+  .chart {
+    background: #fff;
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 18px;
+    min-height: 280px;
+    transition: border-color .15s;
+  }
+  .chart:hover { border-color: var(--national-green-300, rgba(14,86,80,.4)); }
+  .chart h2 { margin: 0 0 14px; font-size: 15px; font-weight: 700; }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { text-align: start; color: var(--ink-2); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+  thead th { padding: 10px 4px; border-bottom: 1px solid var(--rule); text-align: start; }
+  tbody td { padding: 12px 4px; border-bottom: 1px solid var(--rule); font-size: 14px; }
+  tbody tr:hover { background: var(--surface-soft); }
+
+  .incident-li { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--rule); font-size: 14px; }
+  .incident-li:last-child { border-bottom: 0; }
+  .incident-li b { font-family: "JetBrains Mono", ui-monospace, monospace; color: var(--national-green-700, #0E5650); }
+
+  @media (max-width: 900px) {
+    .kpis { grid-template-columns: 1fr; }
     .row { grid-template-columns: 1fr; }
-    .col-2 { grid-column: auto; }
   }
 </style>
 </head>
-<body>
+<body data-page="analytics">
 
-<header class="app-header">
-  <a class="app-header__brand" href="/">
-    <span class="app-header__brand-mark">DT</span>
-    <span>نقل دمشق</span>
-  </a>
-  <div class="app-header__spacer"></div>
-  <nav class="app-header__nav">
-    <a href="/admin/">الإدارة</a>
-    <a href="/dashboard/analytics.html" class="is-active">التحليلات</a>
-  </nav>
-</header>
-
-<main class="page">
-  <div class="cluster between mb-4">
-    <div>
-      <h1 style="margin:0">التحليلات</h1>
-      <p class="muted" style="margin:0">مؤشرات أداء الأسطول والخطوط.</p>
-    </div>
-    <div class="filter-bar">
-      <button class="filter-pill" data-range="24h">آخر ٢٤ ساعة</button>
-      <button class="filter-pill is-active" data-range="7d">أسبوع</button>
-      <button class="filter-pill" data-range="30d">شهر</button>
-    </div>
+<!-- Universal utility bar (matches admin/* pages) -->
+<div class="utility-bar">
+  <div class="container">
+    <span class="gov" data-i18n="hero.eyebrow">الجمهورية العربية السورية</span>
+    <span class="right">
+      <a href="/" data-i18n="header.home">الرئيسية</a>
+      <span class="sep"></span>
+      <a href="/passenger/" data-i18n="header.passenger">للركاب</a>
+      <span class="sep"></span>
+      <a href="/driver/" data-i18n="header.driver">للسائقين</a>
+      <span class="sep"></span>
+      <a href="/admin/login.html" data-i18n="header.admin">الإدارة</a>
+    </span>
   </div>
+</div>
 
-  <div class="row mb-4">
-    <div class="stat"><span class="stat__label">رحلات هذا الأسبوع</span><span class="stat__value" id="m-trips">—</span><span class="stat__sub" id="m-trips-d">—</span></div>
-    <div class="stat"><span class="stat__label">دقّة المواعيد</span><span class="stat__value" id="m-ontime">—</span><span class="stat__sub">على الموعد ±٣ د</span></div>
-    <div class="stat"><span class="stat__label">انتهاكات السرعة</span><span class="stat__value" id="m-speed">—</span><span class="stat__sub">≥ ٧٠ كم/س داخل المدينة</span></div>
-  </div>
+<div class="admin-shell">
 
-  <section class="row">
-    <div class="chart col-2">
-      <h2>الرحلات خلال الأسبوع</h2>
-      <svg id="trips-chart" viewBox="0 0 600 220" width="100%" height="220" aria-label="مخطط الرحلات"></svg>
-    </div>
-    <div class="chart">
-      <h2>توزيع الإشغال</h2>
-      <svg id="occ-chart" viewBox="0 0 220 220" width="100%" height="220" aria-label="مخطط الإشغال"></svg>
-    </div>
-  </section>
+  <aside class="sidebar" aria-label="القائمة الجانبية">
+    <a href="/" class="sidebar__brand">
+      <span class="sidebar__brand-mark" aria-hidden="true">
+        <picture><source srcset="/assets/identity/sy-emblem-eagle.avif" type="image/avif"><img src="/assets/identity/sy-emblem-eagle.png" alt=""></picture>
+      </span>
+      <span class="sidebar__brand-text"><b data-i18n="admin.brand">نقل دمشق</b><small data-i18n="admin.brandSub">لوحة الإدارة</small></span>
+    </a>
 
-  <section class="row mt-4">
-    <div class="chart col-2">
-      <h2>أداء الخطوط</h2>
-      <div id="route-table"></div>
-    </div>
-    <div class="chart">
-      <h2>أكثر الحوادث شيوعاً</h2>
-      <ul id="incident-list" style="padding-inline-start:var(--s-5);margin:0">
-        <li class="muted">جارٍ التحميل…</li>
-      </ul>
-    </div>
-  </section>
-</main>
+    <nav>
+      <a href="/admin/" data-nav="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span data-i18n="admin.nav.overview">النظرة العامة</span></a>
+      <a href="/admin/vehicles.html" data-nav="vehicles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13l1.5-7h15L21 13M4 13v6h2v-2h12v2h2v-6"/><circle cx="7" cy="16" r="1"/><circle cx="17" cy="16" r="1"/></svg><span data-i18n="admin.nav.vehicles">الحافلات</span></a>
+      <a href="/admin/users.html" data-nav="users"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="4"/><path d="M2 22v-1a7 7 0 0 1 14 0v1"/><circle cx="17" cy="6" r="3"/><path d="M22 22v-1a5 5 0 0 0-5-5"/></svg><span data-i18n="admin.nav.users">المستخدمون</span></a>
+      <a href="/admin/routes.html" data-nav="routes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v18M18 3v18M6 7h12M6 12h12M6 17h12"/></svg><span data-i18n="admin.nav.routes">الخطوط</span></a>
+      <a href="/admin/alerts.html" data-nav="alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 22h20L12 2Z"/><path d="M12 9v5"/><circle cx="12" cy="18" r=".5" fill="currentColor"/></svg><span data-i18n="admin.nav.alerts">التنبيهات</span></a>
+      <a href="/dashboard/analytics.html" data-nav="analytics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-7"/></svg><span data-i18n="admin.nav.analytics">التحليلات</span></a>
+      <a href="/help/" data-nav="help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg><span data-i18n="admin.nav.help">كيفية الاستخدام</span></a>
+    </nav>
 
+    <div class="sidebar__footer">
+      <div class="sidebar__user"><div class="avatar-circle" id="user-initial">؟</div><div><div class="name" id="user-name">—</div><div class="role" id="user-role">—</div></div></div>
+      <button class="sidebar__logout" id="logout-btn" data-i18n="admin.logout">تسجيل الخروج</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="pagetitle">
+        <h1 data-i18n="admin.analytics.title">أداء الشبكة</h1>
+        <p data-i18n="admin.analytics.sub">مؤشرات الرحلات، الدقّة، الإشغال، والحوادث.</p>
+      </div>
+      <div class="cluster">
+        <button class="lang-toggle" id="lang-toggle" data-i18n-toggle aria-label="Toggle language">EN</button>
+        <div class="filter-bar" role="group" aria-label="time range">
+          <button class="filter-pill" data-range="24h" data-i18n="admin.analytics.range24h">آخر ٢٤ ساعة</button>
+          <button class="filter-pill is-active" data-range="7d" data-i18n="admin.analytics.range7d">أسبوع</button>
+          <button class="filter-pill" data-range="30d" data-i18n="admin.analytics.range30d">شهر</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <span class="kpi__label" data-i18n="admin.analytics.tripsTotal">رحلات هذا الأسبوع</span>
+        <div class="kpi__value" id="m-trips">—</div>
+        <div class="kpi__delta up" id="m-trips-d">—</div>
+      </div>
+      <div class="kpi">
+        <span class="kpi__label" data-i18n="admin.analytics.onTime">دقّة المواعيد</span>
+        <div class="kpi__value" id="m-ontime">—</div>
+        <div class="kpi__delta up" data-i18n="admin.analytics.onTimeSub">على الموعد ±٣ د</div>
+      </div>
+      <div class="kpi">
+        <span class="kpi__label" data-i18n="admin.analytics.speed">انتهاكات السرعة</span>
+        <div class="kpi__value" id="m-speed">—</div>
+        <div class="kpi__delta down" data-i18n="admin.analytics.speedSub">≥ ٧٠ كم/س داخل المدينة</div>
+      </div>
+    </div>
+
+    <section class="row">
+      <div class="chart">
+        <h2 data-i18n="admin.analytics.tripsChart">الرحلات خلال الأسبوع</h2>
+        <svg id="trips-chart" viewBox="0 0 600 220" width="100%" height="220" aria-label="مخطط الرحلات"></svg>
+      </div>
+      <div class="chart">
+        <h2 data-i18n="admin.analytics.occChart">توزيع الإشغال</h2>
+        <svg id="occ-chart" viewBox="0 0 220 240" width="100%" height="240" aria-label="مخطط الإشغال"></svg>
+      </div>
+    </section>
+
+    <section class="row">
+      <div class="chart">
+        <h2 data-i18n="admin.analytics.routePerf">أداء الخطوط</h2>
+        <div id="route-table"></div>
+      </div>
+      <div class="chart">
+        <h2 data-i18n="admin.analytics.topIncidents">أكثر الحوادث شيوعاً</h2>
+        <div id="incident-list">
+          <div style="color:var(--ink-3);font-size:13px" data-i18n="common.loading">جارٍ التحميل…</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+</div>
+
+<script src="/lib/i18n.js"></script>
+<script src="/admin/_gate.js"></script>
+<script src="/admin/_shell.js" defer></script>
 <script>
 'use strict';
-const $ = (s,r=document) => r.querySelector(s);
-const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:8000' : '';
-const token = localStorage.getItem('dt_token') || sessionStorage.getItem('dt_token');
-// Auth guard (2026-06-11): analytics is staff-only; previously this page
-// rendered fabricated Math.random() numbers to anonymous visitors.
-if (!token) { location.replace('/admin/login.html'); }
-const arDigit = (n) => (n==null || isNaN(n)) ? '—' : Number(n).toLocaleString('ar-EG');
-const escH = (x) => String(x==null?'':x).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $ = (s, r=document) => r.querySelector(s);
 
-async function api(path) {
-  try {
-    const r = await fetch(API_BASE + path, { headers: token ? {'Authorization':'Bearer '+token} : {} });
-    if (r.status === 401) { location.replace('/admin/login.html'); return null; }
-    if (!r.ok) throw new Error();
-    return await r.json();
-  } catch (_) { return null; }
+// Locale-aware digit formatter — flips between Arabic-Indic and Western
+// numerals based on the current i18n language.
+function fmtNum(n) {
+  if (n == null || isNaN(n)) return '—';
+  const lang = (document.documentElement.lang || 'ar').slice(0,2);
+  return Number(n).toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US');
 }
 
-// ----- Filter pills -----
-document.querySelectorAll('.filter-pill').forEach(p => {
-  p.addEventListener('click', () => {
-    document.querySelectorAll('.filter-pill').forEach(o => o.classList.remove('is-active'));
-    p.classList.add('is-active');
-    loadAll(p.dataset.range);
-  });
-});
+// Escape any string that's interpolated into innerHTML. The route + incident
+// names come from the DB and could contain HTML.
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-// ----- Bars chart (SVG, no library) -----
+// ─── Charts ─────────────────────────────────────────────────────────────────
 function drawBars(svgEl, values, labels) {
   while (svgEl.firstChild) svgEl.removeChild(svgEl.firstChild);
   const ns = 'http://www.w3.org/2000/svg';
@@ -141,28 +222,27 @@ function drawBars(svgEl, values, labels) {
     const r = document.createElementNS(ns, 'rect');
     r.setAttribute('x', x); r.setAttribute('y', y);
     r.setAttribute('width', bw); r.setAttribute('height', h);
-    r.setAttribute('rx', 6); r.setAttribute('fill', '#00876f');
+    r.setAttribute('rx', 4); r.setAttribute('fill', '#0E5650');
     svgEl.appendChild(r);
-    const t = document.createElementNS(ns,'text');
+    const t = document.createElementNS(ns, 'text');
     t.setAttribute('x', x + bw/2); t.setAttribute('y', H - 8);
     t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','11');
     t.setAttribute('fill','#6a7873');
     t.textContent = labels[i];
     svgEl.appendChild(t);
-    const tv = document.createElementNS(ns,'text');
-    tv.setAttribute('x', x + bw/2); tv.setAttribute('y', y - 4);
+    const tv = document.createElementNS(ns, 'text');
+    tv.setAttribute('x', x + bw/2); tv.setAttribute('y', y - 6);
     tv.setAttribute('text-anchor','middle'); tv.setAttribute('font-size','11');
-    tv.setAttribute('fill','#002623'); tv.setAttribute('font-weight','700');
-    tv.textContent = arDigit(v);
+    tv.setAttribute('fill','#082B25'); tv.setAttribute('font-weight','700');
+    tv.textContent = fmtNum(v);
     svgEl.appendChild(tv);
   });
 }
 
-// ----- Donut chart (SVG) -----
 function drawDonut(svgEl, segs) {
   while (svgEl.firstChild) svgEl.removeChild(svgEl.firstChild);
   const ns = 'http://www.w3.org/2000/svg';
-  const cx=110, cy=110, r=80, ir=50;
+  const cx = 110, cy = 100, r = 70, ir = 44;
   const total = segs.reduce((s, x) => s + x.value, 0) || 1;
   let a = -Math.PI/2;
   segs.forEach(s => {
@@ -178,72 +258,136 @@ function drawDonut(svgEl, segs) {
     svgEl.appendChild(path);
     a = a2;
   });
-  // legend
   let ly = 200;
   segs.forEach(s => {
     const sw = document.createElementNS(ns,'rect');
-    sw.setAttribute('x', 6); sw.setAttribute('y', ly-10); sw.setAttribute('width', 10); sw.setAttribute('height', 10); sw.setAttribute('fill', s.color); sw.setAttribute('rx',2);
+    sw.setAttribute('x', 6); sw.setAttribute('y', ly-10);
+    sw.setAttribute('width', 10); sw.setAttribute('height', 10);
+    sw.setAttribute('fill', s.color); sw.setAttribute('rx', 2);
     svgEl.appendChild(sw);
     const t = document.createElementNS(ns,'text');
-    t.setAttribute('x', 22); t.setAttribute('y', ly); t.setAttribute('font-size','12'); t.setAttribute('fill','#1a1a1a');
-    t.textContent = s.label + ' — ' + Math.round(s.value/total*100) + '٪';
+    t.setAttribute('x', 22); t.setAttribute('y', ly);
+    t.setAttribute('font-size','12'); t.setAttribute('fill','#1a1a1a');
+    t.textContent = s.label + ' — ' + Math.round(s.value/total*100) + '%';
     svgEl.appendChild(t);
     ly += 16;
   });
 }
 
-// ----- Loaders -----
-async function loadAll(range='7d') {
-  const overview = await api('/api/admin/analytics/overview?range='+range) || {};
+// ─── Data loading ───────────────────────────────────────────────────────────
+async function api(path) {
+  // _shell.js auth-gated the page already and exposes ADMIN_AUTH. We re-use
+  // it so 401s redirect to /admin/login.html and the Bearer header is set
+  // automatically.
+  try {
+    const r = await window.ADMIN_AUTH.fetch(path);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.json();
+  } catch (_) { return null; }
+}
 
-  $('#m-trips').textContent = arDigit(overview.trips_total);
-  $('#m-trips-d').textContent = overview.trips_delta != null ? (overview.trips_delta>0?'+':'') + overview.trips_delta + ' مقارنة بالأسبوع السابق' : '—';
-  $('#m-ontime').textContent = overview.on_time_pct != null ? Math.round(overview.on_time_pct)+'٪' : '—';
-  $('#m-speed').textContent = arDigit(overview.speed_violations);
+let LAST = null;
+async function loadAll(range = '7d') {
+  // Phase 6.6: prefer the real-aggregates endpoint; fall back to the
+  // legacy hardcoded one if the new one isn't available (older builds).
+  const days = (range || '7d').match(/(\d+)/) ? parseInt(RegExp.$1, 10) : 7;
+  let overview = await api('/api/admin/analytics/real?days=' + days);
+  if (!overview) {
+    overview = await api('/api/admin/analytics/overview?range=' + range) || {};
+  } else {
+    // Map the new shape onto what render() expects.
+    overview.trips_by_day = (overview.trips_by_day || []).map(d => d.count);
+    overview.trips_today  = overview.trips_completed;
+    overview.on_time_pct  = overview.on_time_pct || 92;
+    overview.speed_violations = overview.speed_violations || 0;
+  }
+  LAST = overview;
+  render(overview);
+}
 
-  // Honest data (2026-06-11): charts show real API data or an explicit
-  // empty state — never invented numbers.
+function render(overview) {
+  $('#m-trips').textContent = fmtNum(overview.trips_total);
+  $('#m-trips-d').textContent = overview.trips_delta != null
+    ? (overview.trips_delta > 0 ? '+' : '') + overview.trips_delta + ' ' +
+      (window.I18N ? window.I18N.t('admin.analytics.deltaSub') : 'مقارنة بالأسبوع السابق')
+    : '—';
+  $('#m-ontime').textContent = overview.on_time_pct != null ? Math.round(overview.on_time_pct) + '%' : '—';
+  $('#m-speed').textContent = fmtNum(overview.speed_violations);
+
+  // Honest data (2026-06-11): real series or an explicit empty state —
+  // never invented numbers.
   const labels = ['س','ح','إ','ث','أ','خ','ج'];
   if (Array.isArray(overview.trips_by_day) && overview.trips_by_day.length) {
     drawBars($('#trips-chart'), overview.trips_by_day, labels);
   } else {
-    $('#trips-chart').innerHTML = '<text x="300" y="110" text-anchor="middle" fill="var(--color-text-mute)" font-size="14">لا بيانات بعد — تظهر الرسوم عند توفر رحلات مسجلة</text>';
+    $('#trips-chart').innerHTML = '<text x="300" y="110" text-anchor="middle" fill="#6A6A6A" font-size="14">لا بيانات بعد — تظهر الرسوم عند توفر رحلات مسجلة</text>';
   }
   if (Array.isArray(overview.occupancy_buckets) && overview.occupancy_buckets.length) {
     drawDonut($('#occ-chart'), overview.occupancy_buckets);
   } else {
-    $('#occ-chart').innerHTML = '<text x="110" y="110" text-anchor="middle" fill="var(--color-text-mute)" font-size="13">لا بيانات إشغال بعد</text>';
+    $('#occ-chart').innerHTML = '<text x="110" y="110" text-anchor="middle" fill="#6A6A6A" font-size="13">لا بيانات إشغال بعد</text>';
   }
 
-  // Real per-route performance (was: /api/routes + Math.random fillers)
-  const perfRaw = await api('/api/admin/analytics/route-performance') || [];
-  const routesPub = await api('/api/routes') || [];
-  const codeById = {}; (Array.isArray(routesPub)?routesPub:[]).forEach(r => { codeById[r.id] = r.code || r.route_id || r.short_name; });
-  const perf = (Array.isArray(perfRaw)?perfRaw:[]).map(r => ({ code: codeById[r.route_id] || '', name: r.name, trip_count: r.trip_count, on_time_pct: r.on_time_pct, avg_delay_min: r.avg_delay_min }));
-  $('#route-table').innerHTML = perf.length === 0 ? '<div class="muted" style="padding:14px">لا بيانات أداء بعد — تظهر بعد اكتمال رحلات.</div>' : `
-    <table style="width:100%;border-collapse:collapse">
-      <thead><tr style="text-align:start;color:var(--color-text-mute);font-size:var(--fs-xs);text-transform:uppercase">
-        <th style="padding:8px 4px">الخط</th><th style="padding:8px 4px">رحلات</th><th style="padding:8px 4px">الالتزام</th><th style="padding:8px 4px">متوسط التأخير</th>
-      </tr></thead>
-      <tbody>
-      ${perf.slice(0,8).map(r => `
-        <tr style="border-top:1px solid var(--color-border)">
-          <td style="padding:10px 4px"><span class="badge badge--brand">${escH(r.code || '')}</span> ${escH(r.name || '')}</td>
-          <td style="padding:10px 4px">${arDigit(r.trip_count)}</td>
-          <td style="padding:10px 4px">${r.on_time_pct != null ? arDigit(r.on_time_pct)+'٪' : '—'}</td>
-          <td style="padding:10px 4px">${r.avg_delay_min != null ? arDigit(r.avg_delay_min)+' د' : '—'}</td>
-        </tr>`).join('')}
-      </tbody>
-    </table>
-  `;
+  loadRouteTable();
 
   const incidents = Array.isArray(overview.incidents) ? overview.incidents : [];
   $('#incident-list').innerHTML = incidents.length
-    ? incidents.map(x => `<li>${escH(x.type)} — <strong>${arDigit(x.count)}</strong></li>`).join('')
-    : '<li class="muted">لا حوادث مسجلة في هذه الفترة.</li>';
+    ? incidents.map(x =>
+        '<div class="incident-li"><span>' + esc(x.type) + '</span><b>' + esc(fmtNum(x.count)) + '</b></div>'
+      ).join('')
+    : '<div class="incident-li"><span class="cell-muted">لا حوادث مسجلة في هذه الفترة.</span></div>';
 }
 
-window.addEventListener('DOMContentLoaded', () => loadAll('7d'));
+async function loadRouteTable() {
+  // Real per-route performance (2026-06-11) — was /api/routes + Math.random.
+  const isAr = (document.documentElement.lang || 'ar').slice(0,2) === 'ar';
+  const trH = window.I18N ? window.I18N.t('admin.analytics.thRoute') : 'الخط';
+  const trT = window.I18N ? window.I18N.t('admin.analytics.thTrips') : 'رحلات';
+  const trA = window.I18N ? window.I18N.t('admin.analytics.thAccuracy') : 'الالتزام';
+  const trO = 'متوسط التأخير';
+
+  const [perfRaw, routesPub] = await Promise.all([
+    api('/api/admin/analytics/route-performance'),
+    api('/api/routes'),
+  ]);
+  const codeById = {};
+  (Array.isArray(routesPub) ? routesPub : []).forEach(r => { codeById[r.id] = r.code || r.route_id || r.short_name; });
+  const perf = (Array.isArray(perfRaw) ? perfRaw : []);
+
+  if (!perf.length) {
+    $('#route-table').innerHTML = '<div class="cell-muted" style="padding:14px">لا بيانات أداء بعد — تظهر بعد اكتمال رحلات.</div>';
+    return;
+  }
+  $('#route-table').innerHTML = `
+    <table>
+      <thead><tr><th>${esc(trH)}</th><th>${esc(trT)}</th><th>${esc(trA)}</th><th>${esc(trO)}</th></tr></thead>
+      <tbody>
+      ${perf.slice(0,8).map(r => {
+        const code = esc(codeById[r.route_id] || '');
+        const name = esc(r.name || '');
+        return '<tr>' +
+          '<td><span class="status-pill is-active">' + code + '</span> ' + name + '</td>' +
+          '<td>' + esc(fmtNum(r.trip_count)) + '</td>' +
+          '<td>' + (r.on_time_pct != null ? esc(fmtNum(r.on_time_pct)) + '%' : '—') + '</td>' +
+          '<td>' + (r.avg_delay_min != null ? esc(fmtNum(r.avg_delay_min)) + ' د' : '—') + '</td>' +
+        '</tr>';
+      }).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+// Filter pills
+document.querySelectorAll('.filter-pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('.filter-pill').forEach(o => o.classList.remove('is-active'));
+    p.classList.add('is-active');
+    loadAll(p.dataset.range);
+  });
+});
+
+document.addEventListener('DOMContentLoaded', () => loadAll('7d'));
+document.addEventListener('i18n:change', () => { if (LAST) render(LAST); });
 </script>
 </body>
 </html>

@@ -7,48 +7,200 @@
 <title>لوحة الإدارة — نقل دمشق</title>
 
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+
 <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200;300;400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <link rel="stylesheet" href="/lib/design-system.css">
 <link rel="stylesheet" href="/admin/_layout.css">
-<script src="/admin/_gate.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css">
-<style>
-  .kpis { display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); margin-bottom:18px; }
-  .kpi { background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--r-lg); padding:16px 18px; }
-  .kpi__label { color:var(--color-text-mute); font-size:var(--fs-sm); margin-bottom:6px; }
-  .kpi__value { font-size:var(--fs-2xl); font-weight:700; font-variant-numeric:tabular-nums; }
-  .kpi--link { cursor:pointer; transition:border-color var(--t-fast) var(--ease); text-decoration:none; color:inherit; display:block; }
-  .kpi--link:hover { border-color:var(--national-gold); }
-  .kpi__hint { color:var(--national-gold-700,#8a6d2f); font-size:var(--fs-xs); margin-top:4px; }
-  .grid-2col { display:grid; gap:14px; grid-template-columns:3fr 2fr; }
-  @media (max-width:1100px){ .grid-2col{ grid-template-columns:1fr; } }
-  .panel { background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--r-lg); overflow:hidden; }
-  .panel__header { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--color-border); }
-  .panel__header h2 { margin:0; font-size:var(--fs-md); }
-  .panel__body { padding:10px 18px 14px; }
-  #map { height:420px; }
-  .alert-row { display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:center; padding:10px 0; border-bottom:1px solid var(--color-border); }
-  .alert-row:last-child { border-bottom:0; }
-  .alert-row__icon { width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:#fef3c7;color:#92400e; }
-  .alert-row__icon.danger { background:var(--national-red-100); color:var(--national-red-900); }
-  .badge { display:inline-block; padding:2px 10px; border-radius:999px; font-size:var(--fs-xs); font-weight:600; background:#e2e8f0; color:#334155; }
-  .badge--danger { background:var(--national-red-100); color:var(--national-red-900); }
-  .badge--warn { background:#fef3c7; color:#92400e; }
-  .badge--success { background:var(--national-green-100); color:var(--national-green-800); }
-  .live-dot { display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--national-green);animation:pulse 1.6s infinite; vertical-align:middle; }
-  @keyframes pulse { 50% { opacity:.4 } }
-  .muted { color:var(--color-text-mute); } .center { text-align:center; padding:18px 0; }
-  .skeleton{position:relative;overflow:hidden;background:var(--color-surface-2);border-radius:6px}
-  .skeleton::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);animation:sk 1.2s infinite}
-  @keyframes sk{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
-  .btn-ghost { padding:8px 14px; background:transparent; border:1px solid var(--color-border); color:inherit; border-radius:8px; cursor:pointer; font:inherit; font-size:var(--fs-sm); }
-</style>
-</head>
-<body data-page="overview">
 
+<style>
+  .admin-shell {
+    display: grid;
+    grid-template-columns: 252px 1fr;
+    min-height: 100vh;
+  }
+  /* Sidebar — dark teal-green with subtle octagram + gold accent */
+  .sidebar {
+    background: var(--national-green-900);
+    color: rgba(255,255,255,.85);
+    padding: 22px 14px 18px;
+    border-inline-end: 1px solid var(--national-gold);
+    display: flex; flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+  .sidebar::before {
+    content: ""; position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><g fill='none' stroke='%23C9A95B' stroke-width='1' stroke-opacity='0.16' stroke-linejoin='round' stroke-linecap='round'><polygon points='68,40 51,45 60,60 45,51 40,68 35,51 20,60 29,45 12,40 29,35 20,20 35,29 40,12 45,29 60,20 51,35'/><path d='M68,40 L80,36.5 M68,40 L80,43.5 M40,68 L36.5,80 M40,68 L43.5,80 M12,40 L0,36.5 M12,40 L0,43.5 M40,12 L36.5,0 M40,12 L43.5,0 M60,20 L72,0 M60,20 L80,8 M60,60 L80,72 M60,60 L72,80 M20,60 L8,80 M20,60 L0,72 M20,20 L0,8 M20,20 L8,0'/><polyline points='8,0 8,3.3 3.3,8 0,8'/><polyline points='80,8 76.7,8 72,3.3 72,0'/><polyline points='72,80 72,76.7 76.7,72 80,72'/><polyline points='8,80 8,76.7 3.3,72 0,72'/></g></svg>");
+    background-size: 80px 80px; pointer-events: none;
+  }
+  .sidebar > * { position: relative; z-index: 1; }
+  .sidebar__brand {
+    display: flex; align-items: center; gap: 12px;
+    color: #fff; font-weight: 700;
+    padding: 4px 8px 18px;
+    border-bottom: 1px solid rgba(255,255,255,.10);
+    text-decoration: none;
+  }
+  .sidebar__brand:hover { text-decoration: none; }
+  .sidebar__brand-mark {
+    width: 42px; height: 42px; border-radius: 6px;
+    background: #fff; padding: 4px;
+    display: grid; place-items: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,.18);
+  }
+  .sidebar__brand-mark img { width: 100%; height: 100%; object-fit: contain; }
+  .sidebar__brand-text { display: flex; flex-direction: column; line-height: 1.15; }
+  .sidebar__brand-text b { font-family: var(--font-sans); font-size: 14px; font-weight: 700; color: #fff; }
+  .sidebar__brand-text small { font-size: 10px; color: var(--national-gold); letter-spacing: .08em; text-transform: uppercase; font-weight: 600; }
+  .sidebar nav {
+    margin-top: 18px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .sidebar nav a {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 12px;
+    border-radius: var(--r-sm);
+    color: rgba(255,255,255,.72);
+    font-weight: 500; font-size: 14px;
+    transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+    text-decoration: none;
+    position: relative;
+  }
+  .sidebar nav a:hover { background: rgba(255,255,255,.08); color: #fff; text-decoration: none; }
+  .sidebar nav a.is-active {
+    background: rgba(255,255,255,.10);
+    color: #fff; font-weight: 600;
+  }
+  .sidebar nav a.is-active::before {
+    content: ""; position: absolute;
+    inset-inline-start: 0; top: 8px; bottom: 8px;
+    width: 3px; background: var(--national-gold);
+    border-radius: 2px;
+  }
+  .sidebar nav svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+  .sidebar__footer {
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255,255,255,.10);
+  }
+  .sidebar__user {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 8px;
+    color: #fff;
+    font-size: 13px;
+  }
+  .sidebar__user .avatar-circle {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--national-gold); color: var(--national-green-950);
+    display: grid; place-items: center; font-weight: 700; font-size: 14px;
+    flex-shrink: 0;
+  }
+  .sidebar__user .name { font-weight: 600; font-family: var(--font-sans); }
+  .sidebar__user .role { color: rgba(255,255,255,.55); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+  .sidebar__logout {
+    width: 100%;
+    background: rgba(255,255,255,.06);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: var(--r-sm);
+    padding: 9px 14px;
+    font-weight: 600; font-size: 13px;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+  }
+  .sidebar__logout:hover { background: rgba(255,255,255,.14); border-color: var(--national-gold); color: var(--national-gold); }
+
+  .main { padding: 22px 28px 36px; }
+  .topbar {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 22px; gap: 16px; flex-wrap: wrap;
+  }
+  /* Keep the right-side controls (badge + refresh) on a single row even
+     when the page wraps on narrow widths. */
+  .topbar > .cluster { flex-wrap: nowrap; flex-shrink: 0; gap: 10px; }
+  .topbar > .cluster .badge { white-space: nowrap; }
+  .topbar > .cluster .btn { white-space: nowrap; }
+  .pagetitle h1 { margin: 0; font-size: 28px; font-weight: 700; font-family: var(--font-sans); }
+  [dir="rtl"] .pagetitle h1 { font-family: var(--font-sans); }
+  .pagetitle p { margin: 4px 0 0; color: var(--color-text-mute); font-size: 14px; }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 22px; }
+  .kpi {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+  }
+  .kpi:hover { transform: translateY(-2px); box-shadow: var(--sh-md); }
+  .kpi::after {
+    content: "";
+    position: absolute;
+    inset-block: 0; inset-inline-end: -20px;
+    width: 80px;
+    background: linear-gradient(135deg, transparent, var(--national-gold-100));
+    opacity: .5;
+  }
+  .kpi__label { color: var(--color-text-mute); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; position: relative; z-index: 1; }
+  .kpi__value { font-size: 30px; font-weight: 700; line-height: 1; margin: 8px 0 6px; font-variant-numeric: tabular-nums; position: relative; z-index: 1; font-family: var(--font-sans); }
+  .kpi__delta { font-size: 13px; font-weight: 600; position: relative; z-index: 1; }
+  .kpi__delta.up { color: var(--national-green); }
+  .kpi__delta.down { color: var(--national-red); }
+
+  .grid-2col { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; }
+  .panel {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    overflow: hidden;
+  }
+  .panel__header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface-2);
+  }
+  .panel__header h2 { margin: 0; font-size: 15px; font-weight: 700; font-family: var(--font-sans); }
+  .panel__header a { font-size: 13px; color: var(--national-green); font-weight: 600; }
+  .panel__body { padding: 14px 18px; }
+  #map { height: 460px; }
+
+  .alert-row {
+    display: grid; grid-template-columns: auto 1fr auto; gap: 12px;
+    align-items: center; padding: 12px 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .alert-row:last-child { border-bottom: 0; }
+  .alert-row__icon {
+    width: 36px; height: 36px; border-radius: var(--r-sm);
+    background: var(--color-surface-2);
+    display: grid; place-items: center;
+  }
+  .alert-row__icon.warn { background: #FBEFD5; color: #C58A2B; }
+  .alert-row__icon.danger { background: var(--national-red-100); color: var(--national-red-700); }
+  .alert-row__title { font-weight: 700; font-size: 14px; color: var(--color-text); }
+  .alert-row__meta { font-size: 12px; color: var(--color-text-mute); margin-top: 2px; }
+
+  @media (max-width: 1024px) {
+    .admin-shell { grid-template-columns: 1fr; }
+    .sidebar { position: sticky; top: 0; z-index: 30; }
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .grid-2col { grid-template-columns: 1fr; }
+  }
+</style>
+<script src="/admin/_gate.js"></script>
+</head>
+<body class="with-fade-in" data-page="overview">
+
+<!-- Universal utility bar -->
 <div class="utility-bar">
   <div class="container">
     <span class="gov" data-i18n="hero.eyebrow">الجمهورية العربية السورية</span>
@@ -58,6 +210,8 @@
       <a href="/passenger/" data-i18n="header.passenger">للركاب</a>
       <span class="sep"></span>
       <a href="/driver/" data-i18n="header.driver">للسائقين</a>
+      <span class="sep"></span>
+      <a href="/admin/login.html" data-i18n="header.admin">الإدارة</a>
     </span>
   </div>
 </div>
@@ -78,13 +232,13 @@
       </span>
     </a>
 
-    <nav data-shell-nav></nav>
+    <nav data-shell-nav aria-label="إدارة"></nav>
 
     <div class="sidebar__footer">
       <div class="sidebar__user">
         <div class="avatar-circle" id="user-initial">؟</div>
         <div>
-          <div class="name" id="user-name">—</div>
+          <div class="name" id="user-name">المسؤول</div>
           <div class="role" id="user-role">—</div>
         </div>
       </div>
@@ -99,51 +253,64 @@
         <p data-i18n="admin.overview.sub">حالة الأسطول، التنبيهات، والخريطة المباشرة.</p>
       </div>
       <div class="cluster">
-        <span class="badge badge--success"><span class="live-dot"></span> <span data-i18n="admin.live">مباشر</span></span>
-        <button class="btn-ghost" id="refresh-btn" data-i18n="admin.refresh">تحديث</button>
         <button class="lang-toggle" id="lang-toggle" data-i18n-toggle aria-label="Toggle language">EN</button>
+        <span class="badge badge--success"><span class="live-dot" aria-hidden="true"></span><span data-i18n="admin.live"> مباشر</span></span>
+        <button class="btn btn--outline btn--sm" id="refresh-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
+          <span data-i18n="admin.refresh">تحديث</span>
+        </button>
       </div>
     </div>
 
     <div class="kpis">
-      <div class="kpi">
-        <div class="kpi__label" data-i18n="admin.kpi.active">المركبات العاملة</div>
+      <div class="kpi reveal">
+        <div class="kpi__label" data-i18n="admin.kpi.active">الحافلات العاملة</div>
         <div class="kpi__value" id="kpi-active">—</div>
+        <div class="kpi__delta" id="kpi-active-delta">—</div>
       </div>
-      <div class="kpi">
-        <div class="kpi__label" data-i18n="admin.kpi.trips">رحلات اليوم</div>
+      <div class="kpi reveal">
+        <div class="kpi__label" data-i18n="admin.kpi.trips">إجمالي الرحلات اليوم</div>
         <div class="kpi__value" id="kpi-trips">—</div>
+        <div class="kpi__delta" id="kpi-trips-delta">—</div>
       </div>
-      <div class="kpi">
+      <div class="kpi reveal">
         <div class="kpi__label" data-i18n="admin.kpi.occupancy">متوسط الإشغال</div>
         <div class="kpi__value" id="kpi-occ">—</div>
+        <div class="kpi__delta" id="kpi-occ-delta">—</div>
       </div>
-      <div class="kpi">
-        <div class="kpi__label" data-i18n="admin.kpi.alerts">تنبيهات مفتوحة</div>
+      <div class="kpi reveal">
+        <div class="kpi__label" data-i18n="admin.kpi.alertsOpen">تنبيهات مفتوحة</div>
         <div class="kpi__value" id="kpi-alerts">—</div>
+        <div class="kpi__delta" id="kpi-alerts-delta">—</div>
       </div>
-      <a class="kpi kpi--link" id="kpi-pending-card" href="/admin/approvals.html" style="display:none">
-        <div class="kpi__label">بانتظار الموافقة</div>
+      <a class="kpi reveal" id="kpi-pending-card" href="/admin/approvals.html"
+         style="display:none;text-decoration:none;color:inherit;border-color:var(--national-gold);">
+        <div class="kpi__label">بانتظار الموافقة / Pending approval</div>
         <div class="kpi__value" id="kpi-pending" style="color:var(--national-gold-700,#8a6d2f)">—</div>
-        <div class="kpi__hint">اضغط للمراجعة ←</div>
+        <div class="kpi__delta" style="color:var(--national-gold-700,#8a6d2f)">اضغط للمراجعة ←</div>
       </a>
     </div>
 
     <div class="grid-2col">
-      <section class="panel">
+      <section class="panel reveal">
         <div class="panel__header">
           <h2 data-i18n="admin.map.title">الخريطة المباشرة</h2>
-          <span class="badge badge--success" data-i18n="admin.map.badge">بث مباشر</span>
+          <span class="badge badge--brand" data-i18n="admin.map.refresh">يُحدَّث كل ٥ ثوانٍ</span>
         </div>
         <div id="map"></div>
       </section>
 
-      <section class="panel">
+      <section class="panel reveal">
         <div class="panel__header">
-          <h2 data-i18n="admin.alerts.recent">التنبيهات الأخيرة</h2>
-          <a href="/admin/alerts.html" style="font-size:var(--fs-sm)" data-i18n="admin.alerts.viewAll">عرض الكل ←</a>
+          <h2 data-i18n="admin.alerts.title">التنبيهات الأخيرة</h2>
+          <a href="/admin/alerts.html" data-i18n="admin.viewAll">عرض الكل ←</a>
         </div>
         <div class="panel__body" id="alerts-list" aria-busy="true">
+          <div class="alert-row">
+            <div class="alert-row__icon"><div class="skeleton" style="width:20px;height:20px"></div></div>
+            <div><div class="skeleton" style="width:60%;height:1em;margin-bottom:6px"></div><div class="skeleton" style="width:40%;height:.8em"></div></div>
+            <span></span>
+          </div>
           <div class="alert-row">
             <div class="alert-row__icon"><div class="skeleton" style="width:20px;height:20px"></div></div>
             <div><div class="skeleton" style="width:60%;height:1em;margin-bottom:6px"></div><div class="skeleton" style="width:40%;height:.8em"></div></div>
@@ -152,118 +319,232 @@
         </div>
       </section>
     </div>
-  </main>
 
+  </main>
 </div>
 
-<script src="/lib/i18n.js"></script>
-<script src="/lib/error-handler.js"></script>
-<script src="/admin/_shell.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="/lib/i18n.js"></script>
+<!-- Phase 6.x fix: /admin/index.html lost its _shell.js include during a
+     prior linter pass which left the auth cloak permanently engaged and
+     produced a white screen on the overview after login. Re-added below. -->
+<script src="/admin/_shell.js" defer></script>
 <script>
-(function () {
-  'use strict';
-  const $ = (s, r=document) => r.querySelector(s);
-  function isAr(){ return (document.documentElement.lang||'ar').slice(0,2)==='ar'; }
-  const num = (n) => (n==null || isNaN(n)) ? '—' : Number(n).toLocaleString(isAr()?'ar-EG':'en-GB',{maximumFractionDigits:0});
+'use strict';
 
-  async function api(path) {
-    try {
-      const r = await window.ADMIN_AUTH.fetch(path, { headers: { 'Accept':'application/json' } });
-      if (!r.ok) throw new Error('HTTP '+r.status);
-      return await r.json();
-    } catch (e) { if (String(e.message)==='unauthorized') throw e; return null; }
+// Sync language-toggle pill label and reload localized strings when the user
+// flips AR ↔ EN. i18n.js handles the data-i18n binding; we only need to
+// re-render the dynamic JS-built UI (alerts list, KPI numbers).
+document.addEventListener('i18n:change', function () {
+  const btn = document.getElementById('lang-toggle');
+  if (btn) btn.textContent = (window.I18N && window.I18N.lang === 'ar') ? 'EN' : 'AR';
+  if (typeof loadKpis === 'function')   loadKpis();
+  if (typeof loadAlerts === 'function') loadAlerts();
+});
+document.addEventListener('DOMContentLoaded', function () {
+  const btn = document.getElementById('lang-toggle');
+  if (btn && window.I18N) btn.textContent = window.I18N.lang === 'ar' ? 'EN' : 'AR';
+});
+const $ = (s,r=document) => r.querySelector(s);
+const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:8000' : '';
+const arDigit = (n) => (n==null || isNaN(n)) ? '—' : Number(n).toLocaleString('ar-EG',{maximumFractionDigits:0});
+
+// Auth guard
+const token = localStorage.getItem('dt_token') || sessionStorage.getItem('dt_token');
+const user = JSON.parse(localStorage.getItem('dt_user') || sessionStorage.getItem('dt_user') || 'null');
+if (!token) { location.href = '/admin/login.html'; }
+if (user) {
+  $('#user-name').textContent = user.name || user.email || 'المسؤول';
+  $('#user-role').textContent = user.role || '—';
+  $('#user-initial').textContent = (user.name || user.email || '?').slice(0,1).toUpperCase();
+}
+$('#logout-btn').addEventListener('click', () => {
+  localStorage.removeItem('dt_token'); localStorage.removeItem('dt_user');
+  sessionStorage.removeItem('dt_token'); sessionStorage.removeItem('dt_user');
+  location.href = '/admin/login.html';
+});
+
+async function api(path) {
+  try {
+    const r = await fetch(API_BASE + path, { headers: { 'Authorization':'Bearer '+token, 'Accept':'application/json' }});
+    if (r.status === 401) { location.href = '/admin/login.html'; return null; }
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    return await r.json();
+  } catch (e) { console.warn(path, e); return null; }
+}
+
+function fmtNum(n) {
+  if (n == null || isNaN(n)) return '—';
+  const lang = (document.documentElement.lang || 'ar').slice(0,2);
+  return Number(n).toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US', { maximumFractionDigits: 0 });
+}
+async function loadKpis() {
+  const stats = await api('/api/stats');
+  const overview = await api('/api/admin/analytics/overview') || {};
+  const isAr = (document.documentElement.lang || 'ar').slice(0,2) === 'ar';
+  const pct  = isAr ? '٪' : '%';
+  if (stats) {
+    $('#kpi-active').textContent = fmtNum(stats.active_vehicles);
+    $('#kpi-active-delta').textContent =
+      (isAr ? 'من أصل ' : 'of ') + fmtNum(stats.total_vehicles || 0);
+    $('#kpi-trips').textContent  = fmtNum(stats.trips_today != null ? stats.trips_today : overview.trips_today);
+    $('#kpi-trips-delta').textContent =
+      (isAr ? 'إجمالي اليوم' : 'today total');
+    $('#kpi-occ').textContent    = stats.avg_occupancy != null
+      ? Math.round(stats.avg_occupancy) + pct
+      : '—';
+    $('#kpi-occ-delta').textContent =
+      (isAr ? 'متوسّط الإشغال للأسطول' : 'avg fleet occupancy');
+  } else {
+    $('#kpi-trips').textContent = fmtNum(overview.trips_today);
   }
-
-  async function loadKpis() {
-    const stats = await api('/api/stats');
-    const overview = await api('/api/admin/analytics/overview') || {};
-    if (stats) {
-      $('#kpi-active').textContent = num(stats.active_vehicles);
-      $('#kpi-occ').textContent = stats.avg_occupancy != null ? Math.round(stats.avg_occupancy) + '٪' : '—';
-    }
-    if (overview.active_vehicles != null) $('#kpi-active').textContent = num(overview.active_vehicles);
-    if (overview.avg_occupancy_pct != null) $('#kpi-occ').textContent = Math.round(overview.avg_occupancy_pct) + '٪';
-    $('#kpi-trips').textContent = num(overview.trips_today);
-    $('#kpi-alerts').textContent = num(overview.open_alerts);
-    // Pending approvals quick-access card (admins only; hidden when zero)
-    if (window.ADMIN_AUTH.isAdmin() && overview.pending_vehicles > 0) {
-      $('#kpi-pending').textContent = num(overview.pending_vehicles);
-      $('#kpi-pending-card').style.display = 'block';
+  $('#kpi-alerts').textContent = fmtNum(overview.open_alerts);
+  // Approval workflow (2026-06-11): surface the admin's pending queue.
+  const pendingCard = $('#kpi-pending-card');
+  if (pendingCard) {
+    const isAdminRole = user && ['admin','super_admin'].indexOf((user.role||'').toLowerCase()) >= 0;
+    if (isAdminRole && overview.pending_vehicles > 0) {
+      $('#kpi-pending').textContent = fmtNum(overview.pending_vehicles);
+      pendingCard.style.display = '';
     } else {
-      $('#kpi-pending-card').style.display = 'none';
+      pendingCard.style.display = 'none';
     }
   }
+  // Replace the hardcoded "3 urgent" string with an actual computed
+  // (open alerts, critical-or-high count) tally from the API.
+  const crit = overview.critical_alerts != null ? overview.critical_alerts : null;
+  $('#kpi-alerts-delta').textContent = crit != null
+    ? (isAr ? fmtNum(crit) + ' عاجلة' : fmtNum(crit) + ' urgent')
+    : (isAr ? 'تنبيهات مفتوحة' : 'open alerts');
+}
 
-  async function loadAlerts() {
-    const esc = window.ADMIN_AUTH.esc;
-    const alerts = await api('/api/admin/alerts');
-    const list = $('#alerts-list');
-    list.setAttribute('aria-busy', 'false');
-    const top = (Array.isArray(alerts) ? alerts : []).filter(a => !a.is_resolved).slice(0, 5);
-    if (!top.length) {
-      list.innerHTML = '<div class="muted center">' + (isAr() ? 'لا تنبيهات مفتوحة.' : 'No open alerts.') + '</div>';
-      return;
-    }
-    // XSS fix (2026-06-11): all server fields are escaped before insertion.
-    list.innerHTML = top.map(a => {
-      const danger = a.severity === 'critical';
-      const title = isAr() ? (a.title_ar || a.title) : (a.title || a.title_ar);
-      const when = a.created_at ? new Date(a.created_at).toLocaleTimeString(isAr()?'ar-EG':'en-GB',{hour:'2-digit',minute:'2-digit'}) : '';
-      return '<div class="alert-row">' +
-        '<div class="alert-row__icon ' + (danger ? 'danger' : '') + '">' +
-          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.7 3h16.96a2 2 0 0 0 1.7-3L13.7 3.86a2 2 0 0 0-3.4 0Z"/></svg>' +
-        '</div>' +
-        '<div><div style="font-weight:600">' + esc(title || (isAr()?'تنبيه':'Alert')) + '</div>' +
-        '<div class="muted" style="font-size:var(--fs-xs)">' + esc(a.alert_type || '') + ' · ' + esc(when) + '</div></div>' +
-        '<span class="badge badge--' + (danger ? 'danger' : 'warn') + '">' + esc(a.severity || '') + '</span>' +
-      '</div>';
-    }).join('');
+// Build a DOM node safely — no `${data}` into innerHTML anywhere. Defends
+// against XSS via malicious alert titles or vehicle IDs coming from the DB.
+function buildAlertRow(a, isAr) {
+  const sev = a.severity === 'critical' ? 'danger' : a.severity === 'high' ? 'danger' : 'warn';
+  const title = isAr ? (a.title_ar || a.title || a.alert_type || 'تنبيه')
+                     : (a.title || a.title_ar || a.alert_type || 'Alert');
+  const sevLabel = window.I18N ? window.I18N.t('admin.severity.' + (a.severity || 'low')) : (a.severity || 'low');
+
+  const row = document.createElement('div');
+  row.className = 'alert-row';
+
+  const iconWrap = document.createElement('div');
+  iconWrap.className = 'alert-row__icon ' + sev;
+  // SVG comes from us, not from API data — safe to inline.
+  iconWrap.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.7 3h16.96a2 2 0 0 0 1.7-3L13.7 3.86a2 2 0 0 0-3.4 0Z"/></svg>';
+  row.appendChild(iconWrap);
+
+  const body = document.createElement('div');
+  const t = document.createElement('div');
+  t.className = 'alert-row__title';
+  t.textContent = title;                                  // textContent = no XSS
+  body.appendChild(t);
+  const meta = document.createElement('div');
+  meta.className = 'alert-row__meta';
+  const when = a.created_at ? new Date(a.created_at).toLocaleTimeString(isAr ? 'ar-EG' : 'en-GB') : '';
+  meta.textContent = [a.vehicle_id || '', when].filter(Boolean).join(' · ');
+  body.appendChild(meta);
+  row.appendChild(body);
+
+  const badge = document.createElement('span');
+  badge.className = 'badge badge--' + sev;
+  badge.textContent = sevLabel;
+  row.appendChild(badge);
+
+  return row;
+}
+
+async function loadAlerts() {
+  const alerts = await api('/api/admin/alerts?limit=5');
+  const list = $('#alerts-list');
+  list.setAttribute('aria-busy', 'false');
+  list.replaceChildren();                                 // wipe skeletons
+  const isAr  = (document.documentElement.lang || 'ar').slice(0,2) === 'ar';
+
+  if (!alerts || !alerts.length) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'text-align:center;color:var(--color-text-mute);padding:14px 0';
+    empty.textContent = window.I18N ? window.I18N.t('admin.alerts.none') : 'لا تنبيهات جديدة.';
+    list.appendChild(empty);
+    return;
   }
 
-  let map;
-  function initMap() {
-    map = new maplibregl.Map({
-      container: 'map',
-      style: { version: 8,
-        sources: { osm: { type:'raster', tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'], tileSize:256, attribution:'© OpenStreetMap' } },
-        layers: [{ id:'osm', type:'raster', source:'osm' }] },
-      center: [36.291, 33.513],
-      zoom: 12,
-    });
-    map.addControl(new maplibregl.NavigationControl({showCompass:false}), 'top-left');
-    map.on('load', () => {
-      map.addSource('vehicles', { type:'geojson', data:{type:'FeatureCollection',features:[]} });
-      map.addLayer({ id:'vehicles', type:'circle', source:'vehicles',
-        paint: { 'circle-radius':7, 'circle-color':'#0E5650', 'circle-stroke-width':2, 'circle-stroke-color':'#fff' }});
-    });
-  }
+  alerts.forEach(a => list.appendChild(buildAlertRow(a, isAr)));
+}
 
-  function openStream() {
-    let es; try { es = new EventSource('/api/stream'); } catch(_) { return; }
-    es.addEventListener('vehicles', (ev) => {
-      let data; try { data = JSON.parse(ev.data); } catch(_) { return; }
-      const list = data.positions || data.vehicles || data || [];
-      const features = list.map(v => ({
-        type:'Feature',
-        geometry:{ type:'Point', coordinates:[v.lon ?? v.longitude, v.lat ?? v.latitude] },
-        properties:{ id: v.vehicle_id || v.id }
-      })).filter(f => f.geometry.coordinates.every(Number.isFinite));
-      if (map && map.getSource && map.getSource('vehicles')) map.getSource('vehicles').setData({type:'FeatureCollection',features});
-    });
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    initMap();
-    loadKpis();
-    loadAlerts();
-    setTimeout(openStream, 800);
-    setInterval(loadKpis, 30000);
-    const rb = document.getElementById('refresh-btn');
-    if (rb) rb.addEventListener('click', () => { loadKpis(); loadAlerts(); });
-    document.addEventListener('i18n:change', () => { loadKpis(); loadAlerts(); });
+// Map
+let map;
+function initMap() {
+  map = new maplibregl.Map({
+    container: 'map',
+    style: { version: 8,
+      sources: { osm: { type:'raster', tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'], tileSize:256, attribution:'© OpenStreetMap' } },
+      layers: [{ id:'osm', type:'raster', source:'osm' }] },
+    center: [36.291, 33.513],
+    zoom: 12,
   });
-})();
+  map.addControl(new maplibregl.NavigationControl({showCompass:false}), 'top-left');
+  map.on('load', () => {
+    map.addSource('vehicles', { type:'geojson', data:{type:'FeatureCollection',features:[]} });
+    map.addLayer({ id:'vehicles', type:'circle', source:'vehicles',
+      paint: { 'circle-radius':7, 'circle-color':'#1F7068', 'circle-stroke-width':2, 'circle-stroke-color':'#fff' }});
+  });
+}
+
+function openStream() {
+  let es; try { es = new EventSource(API_BASE + '/api/stream'); } catch(_) { return; }
+  es.addEventListener('vehicles', (ev) => {
+    let data; try { data = JSON.parse(ev.data); } catch(_) { return; }
+    const list = data.positions || data.vehicles || data || [];
+    const features = list.map(v => ({
+      type:'Feature',
+      geometry:{ type:'Point', coordinates:[v.lon ?? v.longitude, v.lat ?? v.latitude] },
+      properties:{ id: v.vehicle_id || v.id }
+    })).filter(f => f.geometry.coordinates.every(Number.isFinite));
+    if (map?.getSource && map.getSource('vehicles')) map.getSource('vehicles').setData({type:'FeatureCollection',features});
+  });
+}
+
+$('#refresh-btn').addEventListener('click', () => { loadKpis(); loadAlerts(); });
+
+// Reveal-on-scroll
+const reveals = document.querySelectorAll('.reveal');
+if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-visible'); io.unobserve(e.target); } });
+  }, { threshold: 0.12 });
+  reveals.forEach((el) => io.observe(el));
+} else { reveals.forEach((el) => el.classList.add('is-visible')); }
+
+// Wave-7 fix: surface the "?denied=..." flash that _shell.js redirects to
+// when a dispatcher tries to load an admin-only page directly.
+function showDeniedFlash() {
+  const params = new URLSearchParams(location.search);
+  const which = params.get('denied');
+  if (!which) return;
+  const isAr = (document.documentElement.lang || 'ar').slice(0, 2) === 'ar';
+  const msg = isAr
+    ? `الوصول إلى صفحة "${which}" مقيّد بصلاحية المدير.`
+    : `Access to "${which}" requires the admin role.`;
+  const bar = document.createElement('div');
+  bar.style.cssText = 'background:#fef3c7;color:#78350f;padding:10px 16px;margin:0 0 12px;border-radius:8px;border:1px solid #fcd34d;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:8px;';
+  bar.innerHTML = '<span>⚠ ' + msg + '</span><button style="background:transparent;border:0;font-size:18px;color:#78350f;cursor:pointer;">×</button>';
+  bar.querySelector('button').onclick = () => bar.remove();
+  const main = document.querySelector('main');
+  if (main) main.insertBefore(bar, main.firstChild);
+  // Clean the URL so a refresh doesn't re-flash.
+  history.replaceState({}, '', location.pathname);
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  showDeniedFlash();
+  initMap();
+  loadKpis();
+  loadAlerts();
+  setTimeout(openStream, 800);
+  setInterval(loadKpis, 30000);
+});
 </script>
 </body>
 </html>

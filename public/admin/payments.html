@@ -14,29 +14,10 @@
 <link rel="stylesheet" href="/lib/design-system.css">
 <link rel="stylesheet" href="/admin/_layout.css">
 <script src="/admin/_gate.js"></script>
-<style>
-  .data-table-card { background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--r-lg); overflow:auto; }
-  .data-table { width:100%; border-collapse:collapse; font-size:var(--fs-sm); }
-  .data-table th { text-align:start; padding:12px 14px; color:var(--color-text-mute); font-weight:600; border-bottom:1px solid var(--color-border); white-space:nowrap; }
-  .data-table td { padding:11px 14px; border-bottom:1px solid var(--color-border); vertical-align:middle; }
-  .data-table tr:last-child td { border-bottom:0; }
-  .cell-mono { font-family:var(--font-mono); font-size:var(--fs-xs); }
-  .cell-muted { color:var(--color-text-mute); }
-  .status-pill { display:inline-block; padding:2px 10px; border-radius:999px; font-size:var(--fs-xs); font-weight:600; background:#e2e8f0; color:#334155; }
-  .status-pill.is-active { background:var(--national-green-100); color:var(--national-green-800); }
-  .status-pill.is-warn { background:#fef3c7; color:#92400e; }
-  .status-pill.is-offline { background:#e2e8f0; color:#334155; }
-  .status-pill.is-danger { background:var(--national-red-100); color:var(--national-red-900); }
-  .empty-state { padding:40px 16px; text-align:center; color:var(--color-text-mute); }
-  .btn-primary { padding:8px 14px; background:var(--national-green); color:#fff; border:0; border-radius:8px; cursor:pointer; font:inherit; font-size:var(--fs-sm); }
-  .btn-row { background:transparent; border:0; cursor:pointer; font-size:13px; font-family:inherit; }
-  .skeleton{position:relative;overflow:hidden;background:var(--color-surface-2);border-radius:6px}
-  .skeleton::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);animation:sk 1.2s infinite}
-  @keyframes sk{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
-</style>
 </head>
 <body data-page="payments">
 
+<!-- Universal utility bar -->
 <div class="utility-bar">
   <div class="container">
     <span class="gov" data-i18n="hero.eyebrow">الجمهورية العربية السورية</span>
@@ -46,6 +27,8 @@
       <a href="/passenger/" data-i18n="header.passenger">للركاب</a>
       <span class="sep"></span>
       <a href="/driver/" data-i18n="header.driver">للسائقين</a>
+      <span class="sep"></span>
+      <a href="/admin/login.html" data-i18n="header.admin">الإدارة</a>
     </span>
   </div>
 </div>
@@ -66,7 +49,7 @@
       </span>
     </a>
 
-    <nav data-shell-nav></nav>
+    <nav data-shell-nav aria-label="إدارة"></nav>
 
     <div class="sidebar__footer">
       <div class="sidebar__user">
@@ -87,13 +70,16 @@
         <p data-i18n="admin.payments.sub">سجل عمليات دفع الأجرة عبر مسح رمز QR. وضع التجربة لا يحرّك أموالاً حقيقية.</p>
       </div>
       <div class="cluster">
+        <span class="badge badge--success"><span class="live-dot" aria-hidden="true"></span><span data-i18n="admin.live"> مباشر</span></span>
         <button class="lang-toggle" id="lang-toggle" data-i18n-toggle aria-label="Toggle language">EN</button>
       </div>
     </div>
 
-    <div id="sandbox-banner" style="display:none;margin-bottom:14px;padding:10px 14px;border-radius:10px;background:#fef3c7;color:#92400e;font-size:var(--fs-sm);">
-      وضع التجربة (Sandbox) — لا تُحرَّك أموال حقيقية. أضِف بيانات تاجر شام كاش في الإعدادات للتفعيل الحقيقي.
+    <div class="alert alert--warning" id="sandbox-banner" style="display:none;margin-bottom:16px">
+      <span class="alert__icon" aria-hidden="true">⚠</span>
+      <span class="alert__body">وضع التجربة (Sandbox) — لا تُحرَّك أموال حقيقية. أضِف بيانات تاجر شام كاش في الإعدادات للتفعيل الحقيقي.</span>
     </div>
+
     <section class="data-table-card">
       <table class="data-table" aria-label="payments">
         <thead>
@@ -117,66 +103,84 @@
 </div>
 
 <script src="/lib/i18n.js"></script>
-<script src="/lib/error-handler.js"></script>
 <script src="/admin/_shell.js" defer></script>
 <script>
 (function () {
   'use strict';
   let LAST = [], VEH = {};
-  function isAr(){ return (document.documentElement.lang||'ar').slice(0,2)==='ar'; }
-  function esc(s){ return window.ADMIN_AUTH.esc(s); }
-  const ST = { pending:['قيد الانتظار','Pending','is-warn'], confirmed:['مؤكدة','Confirmed','is-active'],
-               failed:['فاشلة','Failed','is-danger'], refunded:['مستردة','Refunded','is-offline'], expired:['منتهية','Expired','is-offline'] };
-  function fmtDate(s){ try { return new Date(s).toLocaleString(isAr()?'ar-SY':'en-GB',{dateStyle:'short',timeStyle:'short'}); } catch(_){ return s||'—'; } }
-  function render(rows){
+  function isAr() { return (document.documentElement.lang || 'ar').slice(0,2) === 'ar'; }
+  function esc(s) { return window.ADMIN_AUTH.esc(s); }
+  const ST = {
+    pending:   ['قيد الانتظار', 'Pending',   'is-warn'],
+    confirmed: ['مؤكدة',        'Confirmed', 'is-active'],
+    failed:    ['فاشلة',        'Failed',    'is-critical'],
+    refunded:  ['مستردة',       'Refunded',  'is-offline'],
+    expired:   ['منتهية',       'Expired',   'is-offline'],
+  };
+  function fmt(ts) {
+    if (!ts) return '—';
+    const d = new Date(ts);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleString(isAr() ? 'ar-SY' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' });
+  }
+  function render(rows) {
     const tbody = document.getElementById('rows');
-    if (!rows.length){
-      tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">'+(isAr()?'لا توجد عمليات دفع بعد. تُنشأ العمليات عندما يمسح الركاب رمز QR في المركبة.':'No payments yet.')+'</div></td></tr>';
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">' +
+        (isAr() ? 'لا توجد عمليات دفع بعد — تُنشأ عندما يمسح الركاب رمز QR في المركبة.' : 'No payments yet.') +
+        '</div></td></tr>';
       return;
     }
-    tbody.innerHTML = rows.map(function(p){
-      const st = ST[p.status]||ST.pending;
-      const sandboxConfirm = (p.status==='pending' && p.sandbox)
-        ? '<button class="btn-row js-confirm" data-id="'+esc(p.id)+'" data-amt="'+esc(p.amount_syp)+'" style="color:var(--national-green)">'+(isAr()?'تأكيد تجريبي':'Sandbox confirm')+'</button>'
+    tbody.innerHTML = rows.map(p => {
+      const st = ST[p.status] || ST.pending;
+      const sandboxConfirm = (p.status === 'pending' && p.sandbox)
+        ? '<button class="btn btn--sm btn--outline js-confirm" data-id="' + esc(p.id) + '" data-amt="' + esc(p.amount_syp) + '">' +
+          (isAr() ? 'تأكيد تجريبي' : 'Sandbox confirm') + '</button>'
         : '<span class="cell-muted">—</span>';
-      return '<tr>'+
-        '<td class="cell-mono">'+esc((p.id||'').slice(0,8))+(p.sandbox?' <span class="status-pill is-warn" style="font-size:10px">SBX</span>':'')+'</td>'+
-        '<td class="cell-mono">'+esc(VEH[p.vehicle_id]||(p.vehicle_id||'').slice(0,8))+'</td>'+
-        '<td>'+esc(p.amount_syp)+'</td>'+
-        '<td><span class="status-pill '+st[2]+'">'+(isAr()?st[0]:st[1])+'</span></td>'+
-        '<td class="cell-muted">'+esc(fmtDate(p.created_at))+'</td>'+
-        '<td>'+sandboxConfirm+'</td>'+
+      return '<tr>' +
+        '<td class="cell-mono">' + esc((p.id || '').slice(0, 8)) +
+          (p.sandbox ? ' <span class="status-pill is-warn" style="font-size:10px">SBX</span>' : '') + '</td>' +
+        '<td class="cell-mono">' + esc(VEH[p.vehicle_id] || (p.vehicle_id || '').slice(0, 8)) + '</td>' +
+        '<td>' + esc(p.amount_syp) + '</td>' +
+        '<td><span class="status-pill ' + st[2] + '">' + (isAr() ? st[0] : st[1]) + '</span></td>' +
+        '<td class="cell-muted">' + esc(fmt(p.created_at)) + '</td>' +
+        '<td>' + sandboxConfirm + '</td>' +
       '</tr>';
     }).join('');
-    tbody.querySelectorAll('.js-confirm').forEach(b=>b.addEventListener('click', onConfirm));
+    tbody.querySelectorAll('.js-confirm').forEach(b => b.addEventListener('click', onConfirm));
   }
-  function onConfirm(ev){
+  function onConfirm(ev) {
     const id = ev.currentTarget.dataset.id, amt = Number(ev.currentTarget.dataset.amt);
-    if (!confirm(isAr()?'محاكاة تأكيد الدفع من شام كاش؟ (وضع التجربة)':'Simulate the Sham Cash confirmation? (sandbox)')) return;
+    if (!confirm(isAr() ? 'محاكاة تأكيد الدفع من شام كاش؟ (وضع التجربة)' : 'Simulate the Sham Cash confirmation? (sandbox)')) return;
     window.ADMIN_AUTH.fetch('/api/pay/sandbox/confirm', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ payment_id:id, provider_ref:'SBX-'+id.slice(0,8)+'-'+Date.now(), result:'success', amount_syp:amt })
-    }).then(r=>{ if(!r.ok) return r.json().then(j=>{throw new Error(j.detail||'Failed');});
-      window.ADMIN_AUTH.toast('تم تأكيد الدفعة (تجريبي)','Payment confirmed (sandbox)','success'); load();
-    }).catch(e=>window.ADMIN_AUTH.toast(e.message,e.message,'error'));
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payment_id: id, provider_ref: 'SBX-' + id.slice(0, 8) + '-' + Date.now(), result: 'success', amount_syp: amt }),
+    }).then(r => {
+      if (!r.ok) return r.json().then(j => { throw new Error(j.detail || 'Failed'); });
+      window.ADMIN_AUTH.toast('تم تأكيد الدفعة (تجريبي)', 'Payment confirmed (sandbox)', 'success');
+      load();
+    }).catch(e => window.ADMIN_AUTH.toast(e.message, e.message, 'error'));
   }
-  function load(){
+  function load() {
     if (!window.ADMIN_AUTH) return;
     Promise.all([
-      window.ADMIN_AUTH.fetch('/api/admin/payments').then(r=>r.ok?r.json():Promise.reject(new Error('HTTP '+r.status))),
-      window.ADMIN_AUTH.fetch('/api/admin/vehicles').then(r=>r.ok?r.json():[]).catch(()=>[]),
-    ]).then(function(parts){
-      LAST = Array.isArray(parts[0])?parts[0]:[];
-      (Array.isArray(parts[1])?parts[1]:[]).forEach(v=>{ VEH[v.id]=v.vehicle_id; });
-      document.getElementById('sandbox-banner').style.display = LAST.some(p=>p.sandbox) || LAST.length===0 ? 'block' : 'none';
+      window.ADMIN_AUTH.fetch('/api/admin/payments').then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status))),
+      window.ADMIN_AUTH.fetch('/api/admin/vehicles').then(r => r.ok ? r.json() : []).catch(() => []),
+    ]).then(function (parts) {
+      LAST = Array.isArray(parts[0]) ? parts[0] : [];
+      (Array.isArray(parts[1]) ? parts[1] : []).forEach(v => { VEH[v.id] = v.vehicle_id; });
+      document.getElementById('sandbox-banner').style.display =
+        (LAST.some(p => p.sandbox) || LAST.length === 0) ? '' : 'none';
       render(LAST);
-    }).catch(e=>{
-      if (String(e.message)!=='unauthorized')
-        document.getElementById('rows').innerHTML='<tr><td colspan="6"><div class="empty-state">'+esc(e.message||'Error')+'</div></td></tr>';
+    }).catch(e => {
+      if (String(e.message) !== 'unauthorized')
+        document.getElementById('rows').innerHTML =
+          '<tr><td colspan="6"><div class="empty-state">' + esc(e.message || 'Error') + '</div></td></tr>';
     });
   }
-  document.addEventListener('DOMContentLoaded', function(){ load(); setInterval(load, 60000); });
-  document.addEventListener('i18n:change', ()=>render(LAST));
+  document.addEventListener('DOMContentLoaded', function () { load(); setInterval(load, 60000); });
+  document.addEventListener('i18n:change', () => render(LAST));
 })();
 </script>
 </body>

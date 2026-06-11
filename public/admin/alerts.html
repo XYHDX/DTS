@@ -14,26 +14,6 @@
 <link rel="stylesheet" href="/lib/design-system.css">
 <link rel="stylesheet" href="/admin/_layout.css">
 <script src="/admin/_gate.js"></script>
-<style>
-  .data-table-card { background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--r-lg); overflow:auto; }
-  .data-table { width:100%; border-collapse:collapse; font-size:var(--fs-sm); }
-  .data-table th { text-align:start; padding:12px 14px; color:var(--color-text-mute); font-weight:600; border-bottom:1px solid var(--color-border); white-space:nowrap; }
-  .data-table td { padding:11px 14px; border-bottom:1px solid var(--color-border); vertical-align:middle; }
-  .data-table tr:last-child td { border-bottom:0; }
-  .cell-mono { font-family:var(--font-mono); font-size:var(--fs-xs); }
-  .cell-muted { color:var(--color-text-mute); }
-  .status-pill { display:inline-block; padding:2px 10px; border-radius:999px; font-size:var(--fs-xs); font-weight:600; background:#e2e8f0; color:#334155; }
-  .status-pill.is-active { background:var(--national-green-100); color:var(--national-green-800); }
-  .status-pill.is-warn { background:#fef3c7; color:#92400e; }
-  .status-pill.is-offline { background:#e2e8f0; color:#334155; }
-  .status-pill.is-danger { background:var(--national-red-100); color:var(--national-red-900); }
-  .empty-state { padding:40px 16px; text-align:center; color:var(--color-text-mute); }
-  .btn-primary { padding:8px 14px; background:var(--national-green); color:#fff; border:0; border-radius:8px; cursor:pointer; font:inherit; font-size:var(--fs-sm); }
-  .btn-row { background:transparent; border:0; cursor:pointer; font-size:13px; font-family:inherit; }
-  .skeleton{position:relative;overflow:hidden;background:var(--color-surface-2);border-radius:6px}
-  .skeleton::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);animation:sk 1.2s infinite}
-  @keyframes sk{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
-</style>
 </head>
 <body data-page="alerts">
 
@@ -46,6 +26,8 @@
       <a href="/passenger/" data-i18n="header.passenger">للركاب</a>
       <span class="sep"></span>
       <a href="/driver/" data-i18n="header.driver">للسائقين</a>
+      <span class="sep"></span>
+      <a href="/admin/login.html" data-i18n="header.admin">الإدارة</a>
     </span>
   </div>
 </div>
@@ -55,27 +37,15 @@
   <aside class="sidebar" aria-label="القائمة الجانبية">
     <a href="/" class="sidebar__brand">
       <span class="sidebar__brand-mark" aria-hidden="true">
-        <picture>
-          <source srcset="/assets/identity/sy-emblem-eagle.avif" type="image/avif">
-          <img src="/assets/identity/sy-emblem-eagle.png" alt="">
-        </picture>
+        <picture><source srcset="/assets/identity/sy-emblem-eagle.avif" type="image/avif"><img src="/assets/identity/sy-emblem-eagle.png" alt=""></picture>
       </span>
-      <span class="sidebar__brand-text">
-        <b data-i18n="admin.brand">نقل دمشق</b>
-        <small data-i18n="admin.brandSub">لوحة الإدارة</small>
-      </span>
+      <span class="sidebar__brand-text"><b data-i18n="admin.brand">نقل دمشق</b><small data-i18n="admin.brandSub">لوحة الإدارة</small></span>
     </a>
 
-    <nav data-shell-nav></nav>
+    <nav data-shell-nav aria-label="إدارة"></nav>
 
     <div class="sidebar__footer">
-      <div class="sidebar__user">
-        <div class="avatar-circle" id="user-initial">؟</div>
-        <div>
-          <div class="name" id="user-name">—</div>
-          <div class="role" id="user-role">—</div>
-        </div>
-      </div>
+      <div class="sidebar__user"><div class="avatar-circle" id="user-initial">؟</div><div><div class="name" id="user-name">—</div><div class="role" id="user-role">—</div></div></div>
       <button class="sidebar__logout" id="logout-btn" data-i18n="admin.logout">تسجيل الخروج</button>
     </div>
   </aside>
@@ -83,8 +53,8 @@
   <main class="main">
     <div class="topbar">
       <div class="pagetitle">
-        <h1 data-i18n="admin.alerts.title">التنبيهات</h1>
-        <p data-i18n="admin.alerts.sub">تنبيهات التشغيل: السرعة، الانحراف عن المسار، الأعطال، وفقدان الاتصال.</p>
+        <h1 data-i18n="admin.alertsPage.title">التنبيهات</h1>
+        <p data-i18n="admin.alertsPage.sub">تنبيهات الأسطول مرتبة حسب الأحدث.</p>
       </div>
       <div class="cluster">
         <button class="lang-toggle" id="lang-toggle" data-i18n-toggle aria-label="Toggle language">EN</button>
@@ -95,80 +65,124 @@
       <table class="data-table" aria-label="alerts">
         <thead>
           <tr>
-            <th>الخطورة</th>
-            <th>العنوان</th>
-            <th>النوع</th>
-            <th>التاريخ</th>
-            <th>الحالة</th>
-            <th>—</th>
+            <th data-i18n="admin.alertsPage.when">الوقت</th>
+            <th data-i18n="admin.alertsPage.type">النوع</th>
+            <th data-i18n="admin.alertsPage.severity">الخطورة</th>
+            <th data-i18n="admin.alertsPage.titleCol">العنوان</th>
+            <th data-i18n="admin.alertsPage.vehicle">الحافلة</th>
+            <th data-i18n="admin.alertsPage.status">الحالة</th>
+            <th data-i18n="admin.alertsPage.action">الإجراء</th>
           </tr>
         </thead>
         <tbody id="rows">
-          <tr><td colspan="6"><div class="skeleton" style="width:100%;height:1.2em"></div></td></tr>
-          <tr><td colspan="6"><div class="skeleton" style="width:100%;height:1.2em"></div></td></tr>
+          <tr><td colspan="7"><div class="skeleton" style="width:100%;height:1.2em"></div></td></tr>
+          <tr><td colspan="7"><div class="skeleton" style="width:100%;height:1.2em"></div></td></tr>
         </tbody>
       </table>
     </section>
   </main>
-
 </div>
 
 <script src="/lib/i18n.js"></script>
-<script src="/lib/error-handler.js"></script>
 <script src="/admin/_shell.js" defer></script>
 <script>
 (function () {
-  'use strict';
+  function fmt(ts, lang) {
+    if (!ts) return '—';
+    const d = new Date(ts);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleString(lang === 'ar' ? 'ar-SY' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function sevClass(s) {
+    if (s === 'critical' || s === 'high') return 'is-critical';
+    if (s === 'medium') return 'is-warn';
+    return 'is-offline';
+  }
+
   let LAST = [];
-  function isAr(){ return (document.documentElement.lang||'ar').slice(0,2)==='ar'; }
-  function esc(s){ return window.ADMIN_AUTH.esc(s); }
-  const SEV = { critical:['حرجة','Critical','is-danger'], warning:['تحذير','Warning','is-warn'], info:['معلومة','Info','is-offline'] };
-  function fmtDate(s){ try { return new Date(s).toLocaleString(isAr()?'ar-SY':'en-GB',{dateStyle:'short',timeStyle:'short'}); } catch(_){ return s||'—'; } }
-  function render(rows){
+  function render(rows) {
     const tbody = document.getElementById('rows');
-    if (!rows.length){
-      tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">'+(isAr()?'لا توجد تنبيهات.':'No alerts.')+'</div></td></tr>';
+    if (!rows || rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">' +
+        (window.I18N ? window.I18N.t('admin.alertsPage.empty') : 'No alerts.') + '</div></td></tr>';
       return;
     }
-    tbody.innerHTML = rows.map(function(a){
-      const sv = SEV[a.severity]||SEV.info;
-      const title = isAr()?(a.title_ar||a.title||'—'):(a.title||a.title_ar||'—');
-      const resolved = !!a.is_resolved;
-      const action = resolved
-        ? '<button class="btn-row js-res" data-id="'+esc(a.id)+'" data-to="false" style="color:var(--color-text-mute)">'+(isAr()?'إعادة فتح':'Reopen')+'</button>'
-        : '<button class="btn-row js-res" data-id="'+esc(a.id)+'" data-to="true" style="color:var(--national-green)">'+(isAr()?'حلّ':'Resolve')+'</button>';
-      return '<tr>'+
-        '<td><span class="status-pill '+sv[2]+'">'+(isAr()?sv[0]:sv[1])+'</span></td>'+
-        '<td>'+esc(title)+'</td>'+
-        '<td class="cell-muted cell-mono">'+esc(a.alert_type||'—')+'</td>'+
-        '<td class="cell-muted">'+esc(fmtDate(a.created_at))+'</td>'+
-        '<td>'+(resolved?(isAr()?'محلول':'Resolved'):(isAr()?'مفتوح':'Open'))+'</td>'+
-        '<td>'+action+'</td>'+
+    const lang = (document.documentElement.lang || 'ar').slice(0,2);
+    const isAr = lang === 'ar';
+    const sevT = (s) => window.I18N ? window.I18N.t('admin.severity.' + (s || 'low')) : (s || '—');
+    const openT = window.I18N ? window.I18N.t('admin.alertsPage.open') : 'Open';
+    const resolvedT = window.I18N ? window.I18N.t('admin.alertsPage.resolved') : 'Resolved';
+    const resolveBtnT = window.I18N ? window.I18N.t('admin.alertsPage.resolveBtn') : 'Mark resolved';
+
+    tbody.innerHTML = rows.map(a => {
+      const title = isAr ? (a.title_ar || a.title || '—') : (a.title || a.title_ar || '—');
+      const resolved = a.is_resolved === true;
+      // Resolve button only renders for open alerts. Resolved rows show a dash
+      // so the column doesn't look broken on closed alerts.
+      const actionCell = resolved
+        ? '<td class="cell-muted">—</td>'
+        : '<td><button class="btn btn--sm btn--outline btn-resolve" data-id="' + escapeHtml(a.id) + '">' + escapeHtml(resolveBtnT) + '</button></td>';
+      return '<tr>' +
+        '<td class="cell-muted">' + escapeHtml(fmt(a.created_at, lang)) + '</td>' +
+        '<td>' + escapeHtml(a.alert_type || '—') + '</td>' +
+        '<td><span class="status-pill ' + sevClass(a.severity) + '">' + escapeHtml(sevT(a.severity)) + '</span></td>' +
+        '<td>' + escapeHtml(title) + '</td>' +
+        '<td class="cell-mono">' + escapeHtml(a.vehicle_id || '—') + '</td>' +
+        '<td><span class="status-pill ' + (resolved ? 'is-active' : 'is-warn') + '">' +
+          escapeHtml(resolved ? resolvedT : openT) + '</span></td>' +
+        actionCell +
       '</tr>';
     }).join('');
-    tbody.querySelectorAll('.js-res').forEach(b=>b.addEventListener('click', onResolve));
-  }
-  function onResolve(ev){
-    const id = ev.currentTarget.dataset.id;
-    const to = ev.currentTarget.dataset.to === 'true';
-    window.ADMIN_AUTH.fetch('/api/admin/alerts/'+encodeURIComponent(id)+'/resolve', {
-      method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ resolved: to })
-    }).then(r=>{ if(!r.ok) return r.json().then(j=>{throw new Error(j.detail||'Failed');});
-      window.ADMIN_AUTH.toast(to?'تم حلّ التنبيه':'أُعيد فتح التنبيه', to?'Alert resolved':'Alert reopened','success'); load();
-    }).catch(e=>window.ADMIN_AUTH.toast(e.message,e.message,'error'));
-  }
-  function load(){
-    if (!window.ADMIN_AUTH) return;
-    window.ADMIN_AUTH.fetch('/api/admin/alerts')
-      .then(r=>r.ok?r.json():Promise.reject(new Error('HTTP '+r.status)))
-      .then(rows=>{ LAST = Array.isArray(rows)?rows:[]; render(LAST); })
-      .catch(e=>{
-        if (String(e.message)!=='unauthorized')
-          document.getElementById('rows').innerHTML='<tr><td colspan="6"><div class="empty-state">'+esc(e.message||'Error')+'</div></td></tr>';
+
+    // Wire the resolve buttons. Each click PATCHes the alert and reloads the
+    // table. We disable the button while the request is in flight so the
+    // user can't double-resolve.
+    tbody.querySelectorAll('.btn-resolve').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        const original = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = window.I18N ? window.I18N.t('common.loading') : '…';
+        try {
+          const r = await window.ADMIN_AUTH.fetch('/api/admin/alerts/' + encodeURIComponent(id) + '/resolve', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: '{}',
+          });
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          await load();
+        } catch (e) {
+          if (String(e.message) !== 'unauthorized') {
+            btn.disabled = false;
+            btn.textContent = original;
+            alert(window.I18N ? window.I18N.t('error.generic') : 'Error');
+          }
+        }
       });
+    });
   }
-  document.addEventListener('DOMContentLoaded', function(){ load(); setInterval(load, 60000); });
-  document.addEventListener('i18n:change', ()=>render(LAST));
+
+  async function load() {
+    if (!window.ADMIN_AUTH) return;
+    try {
+      const r = await window.ADMIN_AUTH.fetch('/api/admin/alerts?limit=200');
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const rows = await r.json();
+      LAST = Array.isArray(rows) ? rows : [];
+      render(LAST);
+    } catch (e) {
+      if (String(e.message) !== 'unauthorized') {
+        document.getElementById('rows').innerHTML =
+          '<tr><td colspan="7"><div class="empty-state">' + escapeHtml(e.message || 'Error') + '</div></td></tr>';
+      }
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', load);
+  document.addEventListener('i18n:change', () => render(LAST));
 })();
 </script>
 </body>

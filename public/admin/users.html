@@ -14,26 +14,6 @@
 <link rel="stylesheet" href="/lib/design-system.css">
 <link rel="stylesheet" href="/admin/_layout.css">
 <script src="/admin/_gate.js"></script>
-<style>
-  .data-table-card { background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--r-lg); overflow:auto; }
-  .data-table { width:100%; border-collapse:collapse; font-size:var(--fs-sm); }
-  .data-table th { text-align:start; padding:12px 14px; color:var(--color-text-mute); font-weight:600; border-bottom:1px solid var(--color-border); white-space:nowrap; }
-  .data-table td { padding:11px 14px; border-bottom:1px solid var(--color-border); vertical-align:middle; }
-  .data-table tr:last-child td { border-bottom:0; }
-  .cell-mono { font-family:var(--font-mono); font-size:var(--fs-xs); }
-  .cell-muted { color:var(--color-text-mute); }
-  .status-pill { display:inline-block; padding:2px 10px; border-radius:999px; font-size:var(--fs-xs); font-weight:600; background:#e2e8f0; color:#334155; }
-  .status-pill.is-active { background:var(--national-green-100); color:var(--national-green-800); }
-  .status-pill.is-warn { background:#fef3c7; color:#92400e; }
-  .status-pill.is-offline { background:#e2e8f0; color:#334155; }
-  .status-pill.is-danger { background:var(--national-red-100); color:var(--national-red-900); }
-  .empty-state { padding:40px 16px; text-align:center; color:var(--color-text-mute); }
-  .btn-primary { padding:8px 14px; background:var(--national-green); color:#fff; border:0; border-radius:8px; cursor:pointer; font:inherit; font-size:var(--fs-sm); }
-  .btn-row { background:transparent; border:0; cursor:pointer; font-size:13px; font-family:inherit; }
-  .skeleton{position:relative;overflow:hidden;background:var(--color-surface-2);border-radius:6px}
-  .skeleton::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);animation:sk 1.2s infinite}
-  @keyframes sk{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
-</style>
 </head>
 <body data-page="users">
 
@@ -46,6 +26,8 @@
       <a href="/passenger/" data-i18n="header.passenger">للركاب</a>
       <span class="sep"></span>
       <a href="/driver/" data-i18n="header.driver">للسائقين</a>
+      <span class="sep"></span>
+      <a href="/admin/login.html" data-i18n="header.admin">الإدارة</a>
     </span>
   </div>
 </div>
@@ -55,27 +37,15 @@
   <aside class="sidebar" aria-label="القائمة الجانبية">
     <a href="/" class="sidebar__brand">
       <span class="sidebar__brand-mark" aria-hidden="true">
-        <picture>
-          <source srcset="/assets/identity/sy-emblem-eagle.avif" type="image/avif">
-          <img src="/assets/identity/sy-emblem-eagle.png" alt="">
-        </picture>
+        <picture><source srcset="/assets/identity/sy-emblem-eagle.avif" type="image/avif"><img src="/assets/identity/sy-emblem-eagle.png" alt=""></picture>
       </span>
-      <span class="sidebar__brand-text">
-        <b data-i18n="admin.brand">نقل دمشق</b>
-        <small data-i18n="admin.brandSub">لوحة الإدارة</small>
-      </span>
+      <span class="sidebar__brand-text"><b data-i18n="admin.brand">نقل دمشق</b><small data-i18n="admin.brandSub">لوحة الإدارة</small></span>
     </a>
 
-    <nav data-shell-nav></nav>
+    <nav data-shell-nav aria-label="إدارة"></nav>
 
     <div class="sidebar__footer">
-      <div class="sidebar__user">
-        <div class="avatar-circle" id="user-initial">؟</div>
-        <div>
-          <div class="name" id="user-name">—</div>
-          <div class="role" id="user-role">—</div>
-        </div>
-      </div>
+      <div class="sidebar__user"><div class="avatar-circle" id="user-initial">؟</div><div><div class="name" id="user-name">—</div><div class="role" id="user-role">—</div></div></div>
       <button class="sidebar__logout" id="logout-btn" data-i18n="admin.logout">تسجيل الخروج</button>
     </div>
   </aside>
@@ -84,10 +54,10 @@
     <div class="topbar">
       <div class="pagetitle">
         <h1 data-i18n="admin.users.title">المستخدمون</h1>
-        <p data-i18n="admin.users.sub">أنشئ حسابات السائقين (اسم مستخدم + كلمة مرور) واربطهم بالمركبات. المشغّل ينشئ السائقين فقط.</p>
+        <p data-i18n="admin.users.sub">المسؤولون، الموزّعون، والسائقون الذين لديهم حق الوصول.</p>
       </div>
       <div class="cluster">
-        <button id="btn-add" class="btn-primary" type="button">+ <span data-i18n="admin.users.add">إضافة مستخدم</span></button>
+        <button id="btn-add-user" type="button" style="padding:8px 14px;background:#0E5650;color:#fff;border:0;border-radius:8px;cursor:pointer;">+ إضافة مستخدم / Add user</button>
         <button class="lang-toggle" id="lang-toggle" data-i18n-toggle aria-label="Toggle language">EN</button>
       </div>
     </div>
@@ -99,7 +69,7 @@
             <th data-i18n="admin.users.name">الاسم</th>
             <th data-i18n="admin.users.email">البريد الإلكتروني</th>
             <th data-i18n="admin.users.role">الصلاحية</th>
-            <th data-i18n="admin.users.statusCol">الحالة</th>
+            <th data-i18n="admin.users.status">الحالة</th>
             <th>الهاتف</th>
             <th>—</th>
           </tr>
@@ -111,11 +81,9 @@
       </table>
     </section>
   </main>
-
 </div>
 
 <script src="/lib/i18n.js"></script>
-<script src="/lib/error-handler.js"></script>
 <script src="/admin/_shell.js" defer></script>
 <script>
 (function () {
@@ -227,7 +195,7 @@
   }
   document.addEventListener('DOMContentLoaded', function(){
     load();
-    const btn = document.getElementById('btn-add');
+    const btn = document.getElementById('btn-add-user');
     // Admins create any role; operators (dispatchers) create drivers only.
     if (btn) btn.addEventListener('click', openAddForm);
   });

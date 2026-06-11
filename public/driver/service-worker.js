@@ -2,20 +2,26 @@
 // Provides offline support, GPS position queue background sync,
 // and Web Push notifications for driver app.
 
-const CACHE_NAME = 'damascus-driver-v2';
+// v4 — bumped with the v4 redesign so existing clients evict stale shell
+// HTML and CSS from the v2 driver cache. Bump again whenever the assets
+// listed in APP_SHELL change.
+const CACHE_NAME = 'damascus-driver-v4';
 const APP_SHELL = [
   '/driver/',
   '/driver/index.html',
   '/driver/manifest.json',
+  '/lib/design-system.css',
+  '/lib/i18n.js',
 ];
 
 // Static data — stale-while-revalidate (trip manifests, routes)
-const STATIC_DATA_CACHE = 'damascus-driver-data-v2';
+const STATIC_DATA_CACHE = 'damascus-driver-data-v4';
 const STATIC_DATA_PATTERNS = ['/api/routes', '/api/stops'];
 
-// Map tile cache
-const TILE_CACHE = 'damascus-driver-tiles-v2';
-const TILE_HOSTS = ['basemaps.cartocdn.com'];
+// Map tile cache — driver v4 uses OSM tiles directly; cartocdn kept
+// whitelisted so old clients keep their offline tiles.
+const TILE_CACHE = 'damascus-driver-tiles-v4';
+const TILE_HOSTS = ['tile.openstreetmap.org', 'basemaps.cartocdn.com'];
 
 // IndexedDB for GPS position queue (accessed from SW context)
 const IDB_NAME = 'damascus-driver-sw';
