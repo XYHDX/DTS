@@ -20,4 +20,4 @@ pywebpush>=2.3.0
 # Scale track (Scale_100k_Roadmap.md)
 aiomqtt>=2.0.0,<3.0.0                  # S2.2 — async MQTT consumer (api/workers/mqtt_consumer.py)
 prometheus-fastapi-instrumentator>=7.0.0  # S7.2 — optional /metrics (enable with METRICS_ENABLED=true)
-redis>=5.0.0,<6.0.0                    # S3.4 — pub/sub live bus (api/core/live_bus.py); TCP, only used when REDIS_PUBSUB_URL is set
+redis>=8.0.0,<9.0.0                    # S3.4 — pub/sub live bus (api/core/live_bus.py); TCP, only used when REDIS_PUBSUB_URL is set
