@@ -21,6 +21,9 @@ const { test, expect } = require('@playwright/test');
 // Tile patterns per page.
 // Each entry: { path, tilePattern, description }
 // tilePattern is matched against the full request URL.
+// 2026-06-11 restructure: the passenger map uses OSM raster tiles (same as
+// the hero map), and the driver console is the GPS *sender* — it has no map
+// by design, so it is no longer part of the canary.
 const MAP_PAGES = [
   {
     path: '/',
@@ -28,14 +31,9 @@ const MAP_PAGES = [
     description: 'hero map (index) — OSM raster tiles',
   },
   {
-    path: '/driver',
-    tilePattern: /basemaps\.cartocdn\.com\/.+\/\d+\/\d+\/\d+\.(png|pbf|mvt)/,
-    description: 'driver page — CartoCDN vector tiles',
-  },
-  {
     path: '/passenger',
-    tilePattern: /basemaps\.cartocdn\.com\/.+\/\d+\/\d+\/\d+\.(png|pbf|mvt)/,
-    description: 'passenger page — CartoCDN vector tiles',
+    tilePattern: /tile\.openstreetmap\.org\/\d+\/\d+\/\d+\.png/,
+    description: 'passenger page — OSM raster tiles',
   },
 ];
 
