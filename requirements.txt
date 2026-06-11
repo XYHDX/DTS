@@ -13,7 +13,7 @@ python-dotenv>=1.2.2
 pytest-timeout>=2.3.12
 upstash-redis>=1.7.0,<2.0.0
 gtfs-realtime-bindings>=1.0.0,<2.0.0  # 2.0 on its own branch
-protobuf>=4.25.0
+protobuf>=7.35.0
 sentry-sdk[fastapi]>=2.58.0,<3.0.0
 pywebpush>=2.3.0
 
