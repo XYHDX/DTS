@@ -22,15 +22,8 @@ updates:
     commit-message:
       prefix: "deps(flutter)"
 
-  - package-ecosystem: "npm"
-    directory: "/mobile"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 3
-    labels: ["dependencies", "mobile"]
-    commit-message:
-      prefix: "deps(capacitor)"
+  # (2026-06-11) Capacitor npm entry removed — mobile/ was archived;
+  # flutter_app/ is the single official mobile app (covered by "pub" above).
 
   - package-ecosystem: "github-actions"
     directory: "/"
