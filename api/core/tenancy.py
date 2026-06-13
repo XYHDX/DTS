@@ -29,8 +29,16 @@ async def _ensure_operator(slug: str) -> Optional[str]:
         return None
     for attempt in range(3):
         try:
-            headers = _supabase_headers()
-            headers["Prefer"] = "return=representation"
+            # Use the service-role key so the insert bypasses RLS. The anon
+            # key cannot write to `operators`, which silently broke auto-seed
+            # in production (every operator-scoped read then 404'd with
+            # "Operator 'damascus' not found"). Fall back to anon headers only
+            # when no service key is configured.
+            try:
+                headers = _supabase_headers(use_service_key=True)
+            except Exception:
+                headers = _supabase_headers()
+            headers["Prefer"] = "return=representation,resolution=merge-duplicates"
             async with httpx.AsyncClient(timeout=10.0) as client:
                 resp = await client.post(
                     _supabase_url("operators?on_conflict=slug"),

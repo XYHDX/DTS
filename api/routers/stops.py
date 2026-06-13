@@ -98,6 +98,7 @@ async def find_nearest_stops(
     lat: float = Query(..., ge=-90, le=90),
     lon: float = Query(..., ge=-180, le=180),
     radius: int = Query(1000, ge=100, le=5000),
+    radius_m: Optional[int] = Query(None, ge=100, le=5000),
     limit: int = Query(10, ge=1, le=50),
 ):
     """Find nearest stops using PostGIS RPC."""
@@ -109,14 +110,29 @@ async def find_nearest_stops(
             detail="Too many requests. Try again later.",
             headers={"Retry-After": str(window)},
         )
+    # The frontend sends `radius_m`; keep `radius` as a backwards-compatible
+    # alias. Either one maps to the RPC's p_radius_m argument.
+    effective_radius = radius_m if radius_m is not None else radius
     try:
         stops = await _supabase_rpc(
             "find_nearest_stops",
-            {"p_lat": lat, "p_lon": lon, "p_limit": limit, "p_radius_m": radius},
+            {
+                "p_lat": lat,
+                "p_lon": lon,
+                "p_limit": limit,
+                "p_radius_m": effective_radius,
+            },
         )
+    except Exception:
+        # Degrade gracefully: an unseeded operator, a missing PostGIS RPC, or
+        # a transient DB error should surface as "no nearby stops" in the
+        # passenger UI — not a 500 that breaks the whole screen.
+        logger.warning("find_nearest_stops RPC failed; returning []", exc_info=True)
+        return []
 
-        stops = stops if isinstance(stops, list) else [stops] if stops else []
+    stops = stops if isinstance(stops, list) else [stops] if stops else []
 
+    try:
         return [
             NearestStop(
                 id=stop.get("id"),
@@ -130,12 +146,9 @@ async def find_nearest_stops(
             )
             for stop in stops
         ]
-
     except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error",
-        )
+        logger.warning("Failed to parse nearest stops; returning []", exc_info=True)
+        return []
 
 
 @router.get("/api/stops/{stop_id}/eta", response_model=StopETAResponse, tags=["stops"])
