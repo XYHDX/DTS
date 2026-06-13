@@ -391,7 +391,15 @@ async function getJson(path) {
 
 async function loadStats() {
   const s = await getJson('/api/stats');
-  if (!s) return;
+  if (!s) {
+    // Don't leave the KPI cards blank on error (e.g. unseeded operator → 404).
+    // Show an em-dash placeholder so the UI reads as "unavailable", not broken.
+    ['#stat-active', '#stat-routes', '#stat-stops', '#stat-occupancy'].forEach(sel => {
+      const el = $(sel); if (el) el.textContent = '—';
+    });
+    const sub = $('#stat-active-sub'); if (sub) sub.textContent = '';
+    return;
+  }
   $('#stat-active').textContent = fmt(s.active_vehicles);
   $('#stat-active-sub').textContent = `من ${fmt(s.total_vehicles)} حافلة`;
   $('#stat-routes').textContent = fmt(s.total_routes);
@@ -465,23 +473,40 @@ function initMap() {
 function openStream() {
   let es;
   try { es = new EventSource(API_BASE + '/api/stream'); } catch (e) { return; }
-  es.addEventListener('vehicles', (ev) => {
-    let data;
-    try { data = JSON.parse(ev.data); } catch (_) { return; }
-    const list = data.positions || data.vehicles || data || [];
-    const features = list.map(v => ({
-      type: 'Feature',
-      geometry: { type: 'Point', coordinates: [v.lon ?? v.longitude, v.lat ?? v.latitude] },
-      properties: { id: v.vehicle_id || v.id, route: v.route_id, speed: v.speed }
-    })).filter(f => Array.isArray(f.geometry.coordinates) && f.geometry.coordinates.every(Number.isFinite));
-    if (map && map.getSource && map.getSource('vehicles')) {
-      map.getSource('vehicles').setData({ type:'FeatureCollection', features });
-    }
+  const _byId = new Map();
+  const setConnected = () => {
     const b = $('#conn-badge');
+    if (!b) return;
     b.classList.remove('badge--danger'); b.classList.add('badge--success');
     const txt = (window.I18N ? I18N.t('map.connected') : 'متصل');
     b.innerHTML = '<span class="live-dot" aria-hidden="true"></span> ' + txt;
-  });
+  };
+  // The server emits unnamed `data:` frames, one position object per frame
+  // (see api/routers/stream.py) — NOT a named "vehicles" event with a batch.
+  // Accept all three shapes and accumulate by vehicle id so each frame updates
+  // one marker instead of clearing the layer.
+  const applyFrame = (raw) => {
+    let data;
+    try { data = JSON.parse(raw); } catch (_) { return; }
+    if (!data || data.error) return;
+    const list = Array.isArray(data) ? data : (data.positions || data.vehicles || [data]);
+    for (const v of list) {
+      const lon = v.lon ?? v.longitude, lat = v.lat ?? v.latitude;
+      const id = v.vehicle_id || v.id;
+      if (id == null || !Number.isFinite(lon) || !Number.isFinite(lat)) continue;
+      _byId.set(id, {
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [lon, lat] },
+        properties: { id, route: v.route_id, speed: v.speed_kmh ?? v.speed }
+      });
+    }
+    if (map && map.getSource && map.getSource('vehicles')) {
+      map.getSource('vehicles').setData({ type:'FeatureCollection', features: [..._byId.values()] });
+    }
+    setConnected();
+  };
+  es.addEventListener('vehicles', (ev) => applyFrame(ev.data));
+  es.onmessage = (ev) => applyFrame(ev.data);
   es.onerror = () => {
     const b = $('#conn-badge');
     b.classList.remove('badge--success'); b.classList.add('badge--danger');

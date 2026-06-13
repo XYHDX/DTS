@@ -15,7 +15,12 @@ from api.core.auth import (
     verify_password,
 )
 from api.core.cache import RATE_LIMIT_LOGIN, _rate_limit_check
-from api.core.database import _supabase_get, _supabase_patch, _supabase_post
+from api.core.database import (
+    _service_get,
+    _supabase_get,
+    _supabase_patch,
+    _supabase_post,
+)
 from api.core.turnstile import verify_turnstile
 from api.models.schemas import (
     ChangePasswordRequest,
@@ -50,7 +55,12 @@ async def login(request: LoginRequest, raw_request: Request):
     # leaving login brute-force protection to the IP rate limit alone.
     await verify_turnstile(raw_request)
     try:
-        users = await _supabase_get(
+        # Service-key read: the `users` table is tenant-scoped under RLS
+        # (migration 002). An anonymous login request has no JWT, so an anon
+        # read returns zero rows and every login fails with "Invalid
+        # credentials" — even for valid accounts. Auth must look up the user
+        # with the service role. (users stays private; never exposed via anon.)
+        users = await _service_get(
             f"users?email=eq.{urllib.parse.quote(request.email, safe='')}&select=id,email,password_hash,role,operator_id,is_active"
         )
 
@@ -79,7 +89,7 @@ async def login(request: LoginRequest, raw_request: Request):
         vehicle_id = None
         vehicle_route_id = None
         if user["role"] == "driver":
-            driver_vehicles = await _supabase_get(
+            driver_vehicles = await _service_get(
                 f"vehicles?assigned_driver_id=eq.{user['id']}&select=id,assigned_route_id"
             )
             if driver_vehicles:

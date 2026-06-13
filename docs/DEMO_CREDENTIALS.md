@@ -2,36 +2,37 @@
 
 One-stop cheat sheet for testing every part of the system end-to-end.
 
-> ⚠ **Security update (2026-05-26):** each role now has its OWN unique
-> password. The old shared `damascus2025` password was a critical privilege
-> overlap (admin and operator had identical credentials). Every seeded
-> account also starts with `must_change_password = true`, so the first
-> successful login is REQUIRED to rotate the password before issuing a
-> full-privilege JWT.
+> ✅ **Canonical seed (2026-06-13):** the single source of truth for demo
+> data is **`db/demo_seed.sql`**. Run it in the Supabase SQL editor (it runs
+> as the service role, bypassing RLS) to create the `damascus` operator, all
+> demo accounts, a testable fleet, and seed live positions. See
+> **`db/RESTORE_RUNBOOK.md`** for the full restore procedure.
 >
-> Seeded by `db/supabase_bootstrap.sql` and `db/demo_accounts.sql`.
-> Re-run either of those to force-rotate to these hashes.
+> **Password for ALL demo accounts: `Damascus2026!`** (verified against the
+> bcrypt hashes in `db/demo_seed.sql`).
+>
+> ⚠ The older `db/demo_accounts.sql` (password `damascus2025`) and any
+> per-role `#2026` passwords are **deprecated** — they do not match the
+> deployed seed and were the cause of "Invalid credentials" at login.
 
 ---
 
-## 1. Demo accounts (one password per role)
+## 1. Demo accounts — one shared password
 
-| # | Email | Initial Password | Role (DB enum) | UI to test on | Arabic name | English name |
-|---|---|---|---|---|---|---|
-| 0 | `superadmin@damascus-transit.demo` | `SuperAdmin#2026`     | `super_admin` | `/admin/login.html` → tab **إدارة / Admin** | مدير عام تجريبي | Demo Super Admin |
-| 1 | `admin@damascus-transit.demo`      | `AdminDamascus#2026`  | `admin`       | `/admin/login.html` → tab **إدارة / Admin**      | مدير تجريبي     | Demo Admin     |
-| 2 | `operator@damascus-transit.demo`   | `Dispatcher#2026`     | `dispatcher`  | `/admin/login.html` → tab **موزّع / Dispatcher** | مشغّل تجريبي    | Demo Operator  |
-| 3 | `driver@damascus-transit.demo`     | `Driver#2026`         | `driver`      | `/admin/login.html` → tab **سائق / Driver** OR `/driver/` directly | سائق تجريبي    | Demo Driver    |
-| 4 | `passenger@damascus-transit.demo`  | `Passenger#2026`      | `viewer`      | Not used — passengers are anonymous              | راكب تجريبي     | Demo Passenger |
+| # | Email | Password | Role (DB enum) | UI to test on |
+|---|---|---|---|---|
+| 1 | `admin@damascus-transit.demo`      | `Damascus2026!` | `admin`      | `/admin/login.html` → tab **إدارة / Admin** |
+| 2 | `operator@damascus-transit.demo`   | `Damascus2026!` | `dispatcher` | `/admin/login.html` → tab **موزّع / Operator** |
+| 3 | `driver@damascus-transit.demo`     | `Damascus2026!` | `driver`     | `/admin/login.html` → tab **سائق / Driver**, or `/driver/` directly |
+| 4 | `driver2@damascus-transit.demo`    | `Damascus2026!` | `driver`     | `/driver/` (second driver, bound to MIC-014) |
+| 5 | `passenger@damascus-transit.demo`  | `Damascus2026!` | `viewer`     | Not required — the passenger app is anonymous |
 
-> All five accounts have `must_change_password = true`. After login the
-> token has limited scope and the client is required to call
-> `POST /api/auth/change_password` before any privileged endpoint accepts
-> the JWT.
+`driver@damascus-transit.demo` is bound to **BUS-101** on route **R001
+(Marjeh → Mezzeh)**, so you can start a trip and stream GPS.
 
-> The "passenger" account exists in the seed but the public passenger app
-> doesn't require a login at all. You can skip it. It's there for future
-> use if a personal "saved routes" feature is added.
+> A `super_admin` cross-operator account is **optional** — see the commented
+> block at the bottom of `db/demo_seed.sql` (it needs an enum value added
+> first, which can't run inside a transaction).
 
 ---
 
@@ -40,18 +41,20 @@ One-stop cheat sheet for testing every part of the system end-to-end.
 ### Admin (`admin@damascus-transit.demo`)
 After login lands on `/admin/`. Has access to every admin page:
 
-| Page                    | URL                              | What to test |
-|-------------------------|----------------------------------|---|
-| Overview                | `/admin/`                        | Live map, KPIs (active vehicles, trips today, occupancy, open alerts), recent-alerts panel |
-| Vehicles                | `/admin/vehicles.html`           | Bus list with assigned route, capacity, status pill |
-| Users                   | `/admin/users.html`              | Full user list (admin-only — dispatcher won't see this page) |
-| Routes                  | `/admin/routes.html`             | All 4 routes with color swatches and vehicle counts |
-| Alerts                  | `/admin/alerts.html`             | All alerts + **Resolve** button on open rows |
-| Analytics               | `/dashboard/analytics.html`      | Charts: trips/week, occupancy donut, route table, top incidents |
-| Help                    | `/help/`                         | The user guide |
+| Page      | URL                          | What to test |
+|-----------|------------------------------|---|
+| Overview  | `/admin/`                    | Live map, KPIs (active vehicles, trips today, occupancy, open alerts), recent-alerts panel |
+| Vehicles  | `/admin/vehicles.html`       | Fleet list with assigned route, capacity, status pill |
+| Users     | `/admin/users.html`          | Full user list (admin-only — dispatcher gets 403) |
+| Routes    | `/admin/routes.html`         | Routes with color swatches and vehicle counts |
+| Alerts    | `/admin/alerts.html`         | All alerts + **Resolve** button on open rows |
+| Approvals | `/admin/approvals.html`      | Vehicle approval workflow (migration 019) |
+| Payments  | `/admin/payments.html`       | Sham-cash payment records (migration 020) |
+| Audit     | `/admin/audit.html`          | Audit log |
+| Analytics | `/dashboard/analytics.html`  | Charts: trips/week, occupancy donut, route table, top incidents |
 
-### Dispatcher (`operator@damascus-transit.demo`)
-Same as admin **except**: `/admin/users.html` returns 403 (admin-only). Can resolve alerts and view all other admin screens.
+### Dispatcher / Operator (`operator@damascus-transit.demo`)
+Same as admin **except** `/admin/users.html` returns 403 (admin-only). Can resolve alerts and view the other admin screens.
 
 ### Driver (`driver@damascus-transit.demo`)
 After login lands on `/driver/`. Tests:
@@ -59,76 +62,47 @@ After login lands on `/driver/`. Tests:
 | Feature                  | How |
 |--------------------------|---|
 | GPS streaming            | Allow location → green "متصل / Connected" pill |
-| Start a trip             | Click **▶ بدء الرحلة** — should POST to `/api/driver/trip/start` |
+| Start a trip             | **▶ بدء الرحلة** → POST `/api/driver/trip/start` |
 | Live speed/distance/time | Counters tick while moving (or simulated) |
 | Passenger count          | Increment/decrement during trip |
-| Incident report          | **🚨 الإبلاغ عن حادث** — creates a critical alert that admins see |
-| End a trip               | **■ إنهاء الرحلة** — POSTs to `/api/driver/trip/end` |
-| Bilingual UI             | EN/AR pill in the driver-bar |
+| Incident report          | **🚨 الإبلاغ عن حادث** → creates a critical alert admins see |
+| End a trip               | **■ إنهاء الرحلة** → POST `/api/driver/trip/end` |
+| Bilingual UI             | EN/AR pill in the driver bar |
 
 ### Passenger (no account needed)
-Just open `/passenger/` — no login. Tests:
-
-| Feature                  | How |
-|--------------------------|---|
-| Search autocomplete      | Type "مزة" or "Bab Tuma" — dropdown appears with matching stops + routes |
-| Keyboard nav             | Arrow/Enter/Escape work on the dropdown |
-| Locate me                | **موقعي** button — asks for geolocation → fills "nearest stops" |
-| Live map                 | Vehicle markers refresh every 5s via SSE |
-| Popular routes           | Tap a route card → `/passenger/?route=<id>` |
-| GTFS link                | Footer link → `/api/gtfs` (placeholder JSON) |
-| Install PWA              | Banner appears on mobile/Edge → adds to home screen |
-| Offline                  | Disable network → service worker serves the cached shell |
+Open `/passenger/` — no login. Search, locate-me, live map, popular routes, PWA install, offline shell.
 
 ---
 
 ## 3. Quick API tests (CLI)
 
-These run without the UI — useful for sanity checks.
-
 ### Health (no auth)
 ```bash
 curl https://dts-brown.vercel.app/api/health
-# → {"status":"ok", "config":{"supabase_configured":true,"jwt_configured":true,...}}
+# → {"status":"healthy","database":true,"redis":true,"active_vehicles":...}
 ```
 
 ### Login (get JWT)
 ```bash
 curl -X POST https://dts-brown.vercel.app/api/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"email":"admin@damascus-transit.demo","password":"damascus2025"}'
-# → {"token":"eyJ...","user":{"id":...,"email":"admin@...","role":"admin"}}
+  -d '{"email":"admin@damascus-transit.demo","password":"Damascus2026!"}'
+# → {"access_token":"eyJ...","user_id":"...","role":"admin"}
 ```
 
 Save the token then test gated endpoints:
 
 ```bash
 TOKEN="eyJ..."   # paste from login response
-
-# Admin-only — full user list
-curl -H "Authorization: Bearer $TOKEN" \
-  https://dts-brown.vercel.app/api/admin/users
-
-# Dispatcher+ — alerts (try with operator@ login too)
-curl -H "Authorization: Bearer $TOKEN" \
-  https://dts-brown.vercel.app/api/admin/alerts?limit=10
-
-# Resolve an alert (replace ID)
-curl -X PATCH -H "Authorization: Bearer $TOKEN" \
-  https://dts-brown.vercel.app/api/admin/alerts/<UUID>/resolve
-
-# Admin-only vehicle update
-curl -X PATCH -H "Authorization: Bearer $TOKEN" \
-  -H 'Content-Type: application/json' \
-  -d '{"status":"maintenance"}' \
-  https://dts-brown.vercel.app/api/admin/vehicles/<UUID>
+curl -H "Authorization: Bearer $TOKEN" https://dts-brown.vercel.app/api/auth/me
+curl -H "Authorization: Bearer $TOKEN" https://dts-brown.vercel.app/api/admin/alerts?limit=10
 ```
 
-### Without auth (public)
+### Public (after seeding)
 ```bash
-curl https://dts-brown.vercel.app/api/routes
-curl https://dts-brown.vercel.app/api/stops
-curl https://dts-brown.vercel.app/api/vehicles
+curl https://dts-brown.vercel.app/api/routes      # → 3 routes
+curl https://dts-brown.vercel.app/api/stops        # → 6 stops
+curl https://dts-brown.vercel.app/api/vehicles     # → 4 vehicles
 curl https://dts-brown.vercel.app/api/stats
 curl "https://dts-brown.vercel.app/api/stops/nearest?lat=33.513&lon=36.291&radius_m=1500"
 ```
@@ -137,42 +111,32 @@ curl "https://dts-brown.vercel.app/api/stops/nearest?lat=33.513&lon=36.291&radiu
 
 ## 4. Negative tests (what should fail)
 
-| Test                                                | Expected |
-|-----------------------------------------------------|----------|
-| Login with wrong password                           | 401, "Invalid email or password / بيانات الدخول غير صحيحة" — same latency as wrong email (timing-safe) |
-| Login 11 times in 5 minutes from one IP             | 429 "Too many requests" after the 10th |
-| Call `/api/admin/users` without a JWT               | 401 "Authentication required" |
-| Call `/api/admin/users` with a dispatcher's JWT     | 403 "Admin role required" |
-| Call `/api/admin/alerts/not-a-uuid/resolve`         | 400 "Invalid alert id" |
-| POST `/api/driver/position` with lat=99             | 400 "Coordinates outside service area" |
-| POST `/api/driver/position` without JWT             | 401 "Driver login required" |
-| GET `/api/health`                                   | 200 (always works) |
+| Test | Expected |
+|------|----------|
+| Login with wrong password | 401 "Invalid credentials" |
+| Login 11 times in 5 min from one IP | 429 after the 10th |
+| `/api/admin/users` without a JWT | 401 |
+| `/api/admin/users` with a dispatcher JWT | 403 |
+| `/api/driver/position` with lat=99 | 422 (out of range) |
+| `/api/health` | 200 (always) |
 
 ---
 
-## 5. Resetting a password
+## 5. Rotating a demo password
 
-Self-service password reset is **not enabled** (intentional — government-grade deployment). To rotate a demo password:
-
-1. Generate a new bcrypt hash locally:
-   ```bash
-   python3 -c "import bcrypt; print(bcrypt.hashpw(b'newpassword', bcrypt.gensalt()).decode())"
-   ```
-2. In the Supabase SQL editor:
-   ```sql
-   UPDATE users
-   SET password_hash = '$2b$12$NEW_HASH_HERE...'
-   WHERE email = 'admin@damascus-transit.demo';
-   ```
+```bash
+python3 -c "import bcrypt; print(bcrypt.hashpw(b'NewPass!', bcrypt.gensalt()).decode())"
+```
+```sql
+UPDATE public.users
+SET password_hash = '$2b$12$NEW_HASH_HERE...'
+WHERE email = 'admin@damascus-transit.demo';
+```
 
 ---
 
 ## 6. Production caveats
 
-- **Never use these credentials in a real deployment.** Rotate before going live.
-- The seeded password hash is publicly visible in this repo's git history.
-- All four accounts belong to a single demo operator
-  (`00000000-0000-0000-0000-000000000001`). Real operators get unique
-  UUIDs and scoped data.
-- `damascus2025` is intentionally weak so QA testers don't get locked out.
-  Production accounts should use long random passwords and rotate quarterly.
+- **Never use these credentials in a real deployment.** Rotate or delete them before going live (a clean-up block is at the bottom of `db/demo_seed.sql`).
+- The seeded hashes are public in this repo's git history.
+- All demo accounts belong to one demo operator (`00000000-0000-0000-0000-000000000001`). Real operators get unique UUIDs and scoped data.
