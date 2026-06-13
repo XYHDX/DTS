@@ -17,10 +17,9 @@ from fastapi.responses import StreamingResponse
 from api.core.auth import CurrentUser, hash_password, require_role
 from api.core.database import (
     _service_get,
+    _service_patch,
+    _service_post,
     _service_rpc,
-    _supabase_get,
-    _supabase_patch,
-    _supabase_post,
 )
 from api.core.geo import parse_location
 from api.core.tenancy import _op_filter, ensure_operator_scope
@@ -77,7 +76,7 @@ async def _count_pending_vehicles(op_suffix: str) -> int:
     the admin dashboard keeps working instead of returning 500.
     """
     try:
-        rows = await _supabase_get(
+        rows = await _service_get(
             f"vehicles?approval_status=eq.pending&select=id{op_suffix}"
         )
         return len(rows or [])
@@ -99,7 +98,7 @@ async def list_users(
         query = "users?select=*"
         if current_user.role != "super_admin" and current_user.operator_id:
             query += f"&{_op_filter(current_user.operator_id)}"
-        users = await _supabase_get(query)
+        users = await _service_get(query)
 
         return [
             UserResponse(
@@ -145,7 +144,7 @@ async def create_user(
             current_user.operator_id, current_user.operator_id, current_user.role
         )
 
-        existing = await _supabase_get(
+        existing = await _service_get(
             f"users?email=eq.{urllib.parse.quote(user_data.email, safe='')}&select=id"
         )
         if existing:
@@ -166,7 +165,7 @@ async def create_user(
             "must_change_password": True,
         }
 
-        result = await _supabase_post("users", new_user)
+        result = await _service_post("users", new_user)
         if not result:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -228,7 +227,7 @@ async def update_user(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="No fields to update"
             )
 
-        result = await _supabase_patch(
+        result = await _service_patch(
             f"users?id=eq.{user_id}{_own_op_filter(current_user)}", update_dict
         )
         if not result:
@@ -284,9 +283,9 @@ async def list_all_vehicles(
         veh_query = "vehicles?select=*&order=created_at.desc" + op_suffix
         if approval in ("pending", "approved", "rejected", "suspended"):
             veh_query += f"&approval_status=eq.{approval}"
-        vehicles = await _supabase_get(veh_query)
+        vehicles = await _service_get(veh_query)
 
-        positions = await _supabase_get(
+        positions = await _service_get(
             "vehicle_positions_latest?select=vehicle_id,location,speed_kmh,"
             "occupancy_pct,recorded_at" + op_suffix
         )
@@ -302,7 +301,7 @@ async def list_all_vehicles(
         drivers_by_id = {}
         if driver_ids:
             uniq = ",".join(sorted(set(driver_ids)))
-            drivers = await _supabase_get(
+            drivers = await _service_get(
                 f"users?id=in.({uniq})&select=id,full_name,full_name_ar,email"
             )
             drivers_by_id = {d["id"]: d for d in (drivers or [])}
@@ -364,7 +363,7 @@ async def create_vehicle(
         )
 
         # Duplicate fleet code check (was previously a raw 500).
-        existing = await _supabase_get(
+        existing = await _service_get(
             f"vehicles?vehicle_id=eq.{urllib.parse.quote(vehicle_data.vehicle_id, safe='')}"
             f"&select=id&{_op_filter(current_user.operator_id)}"
         )
@@ -393,7 +392,7 @@ async def create_vehicle(
             new_vehicle["approved_by"] = current_user.user_id
             new_vehicle["approved_at"] = datetime.utcnow().isoformat()
 
-        result = await _supabase_post("vehicles", new_vehicle)
+        result = await _service_post("vehicles", new_vehicle)
         if not result:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -402,7 +401,7 @@ async def create_vehicle(
 
         created = result if isinstance(result, dict) else result[0] if result else {}
 
-        await _supabase_post(
+        await _service_post(
             "audit_log",
             {
                 "admin_id": current_user.user_id,
@@ -463,7 +462,7 @@ async def update_vehicle(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="No fields to update"
             )
 
-        result = await _supabase_patch(
+        result = await _service_patch(
             f"vehicles?id=eq.{vehicle_id}{_own_op_filter(current_user)}", update_dict
         )
         if not result:
@@ -516,7 +515,7 @@ async def assign_vehicle(
                 update_data["assigned_driver_id"] = None
             else:
                 # The assigned driver must be an active driver of the same tenant.
-                drivers = await _supabase_get(
+                drivers = await _service_get(
                     f"users?id=eq.{urllib.parse.quote(assignment.driver_id, safe='')}"
                     f"&role=eq.driver&is_active=eq.true&select=id"
                     f"{_own_op_filter(current_user)}"
@@ -534,7 +533,7 @@ async def assign_vehicle(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Provide route_id and/or driver_id.",
             )
-        result = await _supabase_patch(
+        result = await _service_patch(
             f"vehicles?id=eq.{vehicle_id}{_own_op_filter(current_user)}", update_data
         )
         if not result:
@@ -548,7 +547,7 @@ async def assign_vehicle(
             "details": f"Vehicle {vehicle_id} assigned to route {assignment.route_id}, driver {assignment.driver_id}",
             "operator_id": current_user.operator_id,
         }
-        await _supabase_post("audit_log", audit_entry)
+        await _service_post("audit_log", audit_entry)
 
         return {"status": "success", "timestamp": datetime.utcnow().isoformat()}
 
@@ -575,7 +574,7 @@ async def decommission_vehicle(
     Hard deletes would orphan trips/positions history, so the row is kept.
     """
     try:
-        result = await _supabase_patch(
+        result = await _service_patch(
             f"vehicles?id=eq.{vehicle_id}{_own_op_filter(current_user)}",
             {
                 "status": "decommissioned",
@@ -586,7 +585,7 @@ async def decommission_vehicle(
         )
         if not result:
             raise HTTPException(status_code=404, detail="Vehicle not found")
-        await _supabase_post(
+        await _service_post(
             "audit_log",
             {
                 "admin_id": current_user.user_id,
@@ -620,7 +619,7 @@ async def admin_list_routes(
         op_suffix = ""
         if current_user.role != "super_admin" and current_user.operator_id:
             op_suffix = f"&{_op_filter(current_user.operator_id)}"
-        rows = await _supabase_get(
+        rows = await _service_get(
             "routes?select=id,route_id,name,name_ar,route_type,color,distance_km,"
             f"avg_duration_min,fare_syp,is_active,created_at&order=route_id.asc{op_suffix}"
         )
@@ -637,7 +636,7 @@ async def admin_create_route(
 ):
     """Create a route (business fields; geometry added later via GIS)."""
     try:
-        existing = await _supabase_get(
+        existing = await _service_get(
             f"routes?route_id=eq.{urllib.parse.quote(body.route_id, safe='')}&select=id"
         )
         if existing:
@@ -658,11 +657,11 @@ async def admin_create_route(
         }
         if body.color:
             new_route["color"] = body.color
-        created = await _supabase_post("routes", new_route)
+        created = await _service_post("routes", new_route)
         created = (
             created if isinstance(created, dict) else (created[0] if created else {})
         )
-        await _supabase_post(
+        await _service_post(
             "audit_log",
             {
                 "admin_id": current_user.user_id,
@@ -690,7 +689,7 @@ async def admin_update_route(
         update = {k: v for k, v in body.model_dump().items() if v is not None}
         if not update:
             raise HTTPException(status_code=400, detail="No fields to update")
-        result = await _supabase_patch(
+        result = await _service_patch(
             f"routes?id=eq.{route_pk}{_own_op_filter(current_user)}", update
         )
         if not result:
@@ -746,7 +745,7 @@ async def decide_vehicle_approval(
     Every decision is written to audit_log.
     """
     try:
-        rows = await _supabase_get(
+        rows = await _service_get(
             f"vehicles?id=eq.{urllib.parse.quote(vehicle_id, safe='')}"
             f"&select=id,vehicle_id,approval_status{_own_op_filter(current_user)}"
         )
@@ -779,13 +778,13 @@ async def decide_vehicle_approval(
             update["approved_by"] = None
             update["approved_at"] = None
 
-        result = await _supabase_patch(
+        result = await _service_patch(
             f"vehicles?id=eq.{vehicle_id}{_own_op_filter(current_user)}", update
         )
         if not result:
             raise HTTPException(status_code=404, detail="Vehicle not found")
 
-        await _supabase_post(
+        await _service_post(
             "audit_log",
             {
                 "admin_id": current_user.user_id,
@@ -819,7 +818,7 @@ async def list_audit_log(
         op_suffix = ""
         if current_user.role != "super_admin" and current_user.operator_id:
             op_suffix = f"&{_op_filter(current_user.operator_id)}"
-        rows = await _supabase_get(
+        rows = await _service_get(
             f"audit_log?select=id,admin_id,action,details,created_at"
             f"&order=created_at.desc&limit={limit}{op_suffix}"
         )
@@ -843,7 +842,7 @@ async def list_all_alerts(
         query = "alerts?select=*&order=created_at.desc"
         if current_user.role != "super_admin" and current_user.operator_id:
             query += f"&{_op_filter(current_user.operator_id)}"
-        alerts = await _supabase_get(query)
+        alerts = await _service_get(query)
 
         return [
             AlertResponse(
@@ -885,7 +884,7 @@ async def resolve_alert(
             if alert_data.resolved
             else None,
         }
-        result = await _supabase_patch(
+        result = await _service_patch(
             f"alerts?id=eq.{alert_id}{_own_op_filter(current_user)}", update_data
         )
         if not result:
@@ -932,7 +931,7 @@ async def list_trips(
         if params:
             query = f"trips?{'&'.join(params)}&select=*&order=created_at.desc"
 
-        result = await _supabase_get(query)
+        result = await _service_get(query)
         return result or []
 
     except Exception:
@@ -961,16 +960,16 @@ async def get_analytics_overview(
             else ""
         )
 
-        vehicles = await _supabase_get(f"vehicles?select=status{op_suffix}")
+        vehicles = await _service_get(f"vehicles?select=status{op_suffix}")
         active_vehicles = len([v for v in vehicles if v.get("status") == "active"])
         idle_vehicles = len([v for v in vehicles if v.get("status") == "idle"])
         maintenance_vehicles = len(
             [v for v in vehicles if v.get("status") == "maintenance"]
         )
 
-        routes = await _supabase_get(f"routes?is_active=eq.true&select=id{op_suffix}")
-        stops = await _supabase_get(f"stops?is_active=eq.true&select=id{op_suffix}")
-        drivers = await _supabase_get(
+        routes = await _service_get(f"routes?is_active=eq.true&select=id{op_suffix}")
+        stops = await _service_get(f"stops?is_active=eq.true&select=id{op_suffix}")
+        drivers = await _service_get(
             f"users?role=eq.driver&select=is_active{op_suffix}"
         )
         active_drivers = (
@@ -978,15 +977,15 @@ async def get_analytics_overview(
         )
 
         today = datetime.now(timezone.utc).strftime("%Y-%m-%dT00:00:00+00:00")
-        trips_today_rows = await _supabase_get(
+        trips_today_rows = await _service_get(
             f"trips?actual_start=gte.{urllib.parse.quote(today, safe='')}&select=id{op_suffix}"
         )
-        open_alerts_rows = await _supabase_get(
+        open_alerts_rows = await _service_get(
             f"alerts?is_resolved=eq.false&select=id{op_suffix}"
         )
         pending_count = await _count_pending_vehicles(op_suffix)
 
-        positions = await _supabase_get(
+        positions = await _service_get(
             f"vehicle_positions_latest?select=occupancy_pct{op_suffix}"
         )
         occupancy_values = [
@@ -1036,10 +1035,10 @@ async def get_fleet_utilization(
             else ""
         )
 
-        vehicles = await _supabase_get(f"vehicles?select=id,status{op_suffix}")
+        vehicles = await _service_get(f"vehicles?select=id,status{op_suffix}")
         total_vehicles = len(vehicles)
 
-        trips = await _supabase_get(
+        trips = await _service_get(
             f"trips?actual_start=gte.{cutoff.isoformat()}&select=actual_start,actual_end,vehicle_id{op_suffix}"
         )
 
@@ -1096,10 +1095,10 @@ async def get_route_performance(
             else ""
         )
 
-        routes = await _supabase_get(
+        routes = await _service_get(
             f"routes?is_active=eq.true&select=id,name,name_ar,distance_km{op_suffix}"
         )
-        trips = await _supabase_get(
+        trips = await _service_get(
             f"trips?status=eq.completed&actual_start=gte.{cutoff}"
             f"&select=route_id,on_time_pct,scheduled_start,actual_start{op_suffix}"
         )
@@ -1175,10 +1174,10 @@ async def get_driver_scoreboard(
             else ""
         )
 
-        drivers = await _supabase_get(
+        drivers = await _service_get(
             f"users?role=eq.driver&select=id,full_name,full_name_ar,is_active{op_suffix}"
         )
-        trips = await _supabase_get(
+        trips = await _service_get(
             f"trips?status=eq.completed&actual_start=gte.{cutoff}"
             f"&select=driver_id,on_time_pct,distance_km{op_suffix}"
         )
@@ -1238,7 +1237,7 @@ async def get_gps_heatmap(
             else ""
         )
 
-        positions = await _supabase_get(
+        positions = await _service_get(
             f"vehicle_positions?recorded_at=gte.{cutoff}"
             f"&select=location,speed_kmh&order=recorded_at.desc&limit=2000{op_suffix}"
         )
@@ -1282,7 +1281,7 @@ async def get_gps_heatmap(
             except (ValueError, TypeError, AttributeError):
                 continue
 
-        latest = await _supabase_get(
+        latest = await _service_get(
             f"vehicle_positions_latest?select=location,speed_kmh{op_suffix}"
         )
         for p in latest:
@@ -1484,7 +1483,7 @@ async def export_vehicles_csv(
             if current_user.role != "super_admin" and current_user.operator_id
             else ""
         )
-        vehicles = await _supabase_get(f"vehicles?select=*{op_suffix}")
+        vehicles = await _service_get(f"vehicles?select=*{op_suffix}")
         rows = [
             {
                 "vehicle_id": v.get("vehicle_id", ""),
@@ -1520,7 +1519,7 @@ async def export_trips_csv(
             if current_user.role != "super_admin" and current_user.operator_id
             else ""
         )
-        trips = await _supabase_get(
+        trips = await _service_get(
             f"trips?actual_start=gte.{cutoff}&select=*&order=actual_start.desc{op_suffix}"
         )
         rows = [
@@ -1559,7 +1558,7 @@ async def export_alerts_csv(
             if current_user.role != "super_admin" and current_user.operator_id
             else ""
         )
-        alerts = await _supabase_get(
+        alerts = await _service_get(
             f"alerts?select=*&order=created_at.desc{op_suffix}"
         )
         rows = [
@@ -1596,10 +1595,10 @@ async def export_drivers_csv(
             else ""
         )
         cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
-        drivers = await _supabase_get(
+        drivers = await _service_get(
             f"users?role=eq.driver&select=id,full_name,full_name_ar,email,phone,is_active,created_at{op_suffix}"
         )
-        trips = await _supabase_get(
+        trips = await _service_get(
             f"trips?status=eq.completed&actual_start=gte.{cutoff}"
             f"&select=driver_id,on_time_pct,distance_km{op_suffix}"
         )
@@ -1656,10 +1655,10 @@ async def export_route_performance_csv(
             if current_user.role != "super_admin" and current_user.operator_id
             else ""
         )
-        routes = await _supabase_get(
+        routes = await _service_get(
             f"routes?is_active=eq.true&select=id,name,name_ar,distance_km{op_suffix}"
         )
-        trips = await _supabase_get(
+        trips = await _service_get(
             f"trips?status=eq.completed&actual_start=gte.{cutoff}"
             f"&select=route_id,on_time_pct,scheduled_start,actual_start{op_suffix}"
         )

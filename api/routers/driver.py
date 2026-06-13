@@ -12,10 +12,10 @@ from api.core.cache import (
     _tenant_cache_key,
 )
 from api.core.database import (
-    _supabase_get,
-    _supabase_patch,
-    _supabase_post,
-    _supabase_rpc,
+    _service_get,
+    _service_patch,
+    _service_post,
+    _service_rpc,
 )
 from api.core import live_bus
 import logging
@@ -49,13 +49,13 @@ async def _require_approved_vehicle(driver_user_id: str, vehicle_id: str = None)
     """
     vehicles = None
     if vehicle_id:
-        vehicles = await _supabase_get(
+        vehicles = await _service_get(
             f"vehicles?id=eq.{vehicle_id}&select=id,assigned_route_id,approval_status,is_active"
         )
     if not vehicles:
         # No vehicle_id claim, or the token's vehicle was deleted/reassigned —
         # fall back to the live assignment instead of failing on a stale token.
-        vehicles = await _supabase_get(
+        vehicles = await _service_get(
             f"vehicles?assigned_driver_id=eq.{driver_user_id}"
             f"&select=id,assigned_route_id,approval_status,is_active"
         )
@@ -83,7 +83,7 @@ async def driver_me(
     its vehicle code / route, so the header showed em-dashes forever.
     """
     try:
-        vehicles = await _supabase_get(
+        vehicles = await _service_get(
             f"vehicles?assigned_driver_id=eq.{current_user.user_id}"
             f"&select=id,vehicle_id,name,name_ar,vehicle_type,approval_status,is_active,assigned_route_id"
         )
@@ -92,7 +92,7 @@ async def driver_me(
         v = vehicles[0]
         route = None
         if v.get("assigned_route_id"):
-            routes = await _supabase_get(
+            routes = await _service_get(
                 f"routes?id=eq.{v['assigned_route_id']}&select=id,route_id,name,name_ar,fare_syp"
             )
             route = routes[0] if routes else None
@@ -152,7 +152,7 @@ async def report_incident(
             "is_resolved": False,
             "operator_id": current_user.operator_id,
         }
-        await _supabase_post("alerts", alert)
+        await _service_post("alerts", alert)
         return {"status": "success", "timestamp": datetime.utcnow().isoformat()}
     except HTTPException:
         raise
@@ -181,7 +181,7 @@ async def report_driver_position(
         )
 
         try:
-            await _supabase_rpc(
+            await _service_rpc(
                 "upsert_vehicle_position",
                 {
                     "p_vehicle_id": db_vehicle_id,
@@ -266,7 +266,7 @@ async def start_trip(
             "operator_id": current_user.operator_id,
         }
 
-        result = await _supabase_post("trips", trip_data)
+        result = await _service_post("trips", trip_data)
         if not result:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -295,7 +295,7 @@ async def end_trip(
 ):
     """End the driver's current trip."""
     try:
-        trips = await _supabase_get(
+        trips = await _service_get(
             f"trips?driver_id=eq.{current_user.user_id}&status=eq.in_progress&select=id"
         )
         if not trips:
@@ -309,7 +309,7 @@ async def end_trip(
             "actual_end": datetime.utcnow().isoformat(),
             "passenger_count": trip_data.passenger_count,
         }
-        await _supabase_patch(f"trips?id=eq.{trip_id}", update_data)
+        await _service_patch(f"trips?id=eq.{trip_id}", update_data)
 
         return {
             "status": "success",
@@ -337,7 +337,7 @@ async def update_passenger_count(
 ):
     """Update passenger count for current trip."""
     try:
-        trips = await _supabase_get(
+        trips = await _service_get(
             f"trips?driver_id=eq.{current_user.user_id}&status=eq.in_progress&select=id"
         )
         if not trips:
@@ -346,7 +346,7 @@ async def update_passenger_count(
             )
 
         trip_id = trips[0]["id"]
-        await _supabase_patch(
+        await _service_patch(
             f"trips?id=eq.{trip_id}", {"passenger_count": data.passenger_count}
         )
 
