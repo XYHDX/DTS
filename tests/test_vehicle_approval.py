@@ -71,8 +71,8 @@ class TestVehicleCreationApprovalState:
             return {**data, "id": "veh-1", "created_at": "2026-06-11T00:00:00Z"}
 
         with (
-            patch("api.routers.admin._supabase_get", new_callable=AsyncMock) as g,
-            patch("api.routers.admin._supabase_post", side_effect=fake_post),
+            patch("api.routers.admin._service_get", new_callable=AsyncMock) as g,
+            patch("api.routers.admin._service_post", side_effect=fake_post),
         ):
             g.return_value = []  # no duplicate
             r = client.post(
@@ -92,8 +92,8 @@ class TestVehicleCreationApprovalState:
             return {**data, "id": "veh-2", "created_at": "2026-06-11T00:00:00Z"}
 
         with (
-            patch("api.routers.admin._supabase_get", new_callable=AsyncMock) as g,
-            patch("api.routers.admin._supabase_post", side_effect=fake_post),
+            patch("api.routers.admin._service_get", new_callable=AsyncMock) as g,
+            patch("api.routers.admin._service_post", side_effect=fake_post),
         ):
             g.return_value = []
             r = client.post(
@@ -107,7 +107,7 @@ class TestVehicleCreationApprovalState:
 
     def test_duplicate_fleet_code_rejected(self, client):
         with patch(
-            "api.routers.admin._supabase_get", new_callable=AsyncMock
+            "api.routers.admin._service_get", new_callable=AsyncMock
         ) as g:
             g.return_value = [{"id": "existing"}]
             r = client.post(
@@ -129,8 +129,8 @@ class TestDispatcherUserCreation:
             return {**data, "id": "drv-1"}
 
         with (
-            patch("api.routers.admin._supabase_get", new_callable=AsyncMock) as g,
-            patch("api.routers.admin._supabase_post", side_effect=fake_post),
+            patch("api.routers.admin._service_get", new_callable=AsyncMock) as g,
+            patch("api.routers.admin._service_post", side_effect=fake_post),
         ):
             g.return_value = []
             r = client.post(
@@ -195,9 +195,9 @@ class TestApprovalDecisions:
             return {**data, "id": "audit-1"}
 
         with (
-            patch("api.routers.admin._supabase_get", side_effect=fake_get),
-            patch("api.routers.admin._supabase_patch", side_effect=fake_patch),
-            patch("api.routers.admin._supabase_post", side_effect=fake_post),
+            patch("api.routers.admin._service_get", side_effect=fake_get),
+            patch("api.routers.admin._service_patch", side_effect=fake_patch),
+            patch("api.routers.admin._service_post", side_effect=fake_post),
         ):
             return client.post(
                 "/api/admin/vehicles/veh-1/approval",
@@ -259,7 +259,7 @@ class TestApprovalEnforcement:
                 }
             ]
 
-        with patch("api.routers.driver._supabase_get", side_effect=fake_get):
+        with patch("api.routers.driver._service_get", side_effect=fake_get):
             r = client.post(
                 "/api/driver/trip/start",
                 json={"route_id": "route-1"},
@@ -278,7 +278,7 @@ class TestApprovalEnforcement:
                 }
             ]
 
-        with patch("api.routers.driver._supabase_get", side_effect=fake_get):
+        with patch("api.routers.driver._service_get", side_effect=fake_get):
             r = client.post(
                 "/api/driver/position",
                 json={"latitude": 33.5, "longitude": 36.3, "speed_kmh": 30},
@@ -301,8 +301,8 @@ class TestApprovalEnforcement:
             return {**data, "id": "trip-1"}
 
         with (
-            patch("api.routers.driver._supabase_get", side_effect=fake_get),
-            patch("api.routers.driver._supabase_post", side_effect=fake_post),
+            patch("api.routers.driver._service_get", side_effect=fake_get),
+            patch("api.routers.driver._service_post", side_effect=fake_post),
         ):
             r = client.post(
                 "/api/driver/trip/start",
@@ -322,8 +322,8 @@ class TestApprovalEnforcement:
             return {**data, "id": "trip-1"}
 
         with (
-            patch("api.routers.driver._supabase_get", side_effect=fake_get),
-            patch("api.routers.driver._supabase_post", side_effect=fake_post),
+            patch("api.routers.driver._service_get", side_effect=fake_get),
+            patch("api.routers.driver._service_post", side_effect=fake_post),
         ):
             r = client.post(
                 "/api/driver/trip/start",
@@ -341,7 +341,7 @@ class TestApprovalEnforcement:
 class TestPendingCount:
     def test_pending_count(self, client):
         with patch(
-            "api.routers.admin._supabase_get", new_callable=AsyncMock
+            "api.routers.admin._service_get", new_callable=AsyncMock
         ) as g:
             g.return_value = [{"id": "1"}, {"id": "2"}]
             r = client.get(

@@ -1558,9 +1558,7 @@ async def export_alerts_csv(
             if current_user.role != "super_admin" and current_user.operator_id
             else ""
         )
-        alerts = await _service_get(
-            f"alerts?select=*&order=created_at.desc{op_suffix}"
-        )
+        alerts = await _service_get(f"alerts?select=*&order=created_at.desc{op_suffix}")
         rows = [
             {
                 "id": a.get("id", ""),
