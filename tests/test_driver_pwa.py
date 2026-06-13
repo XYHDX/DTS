@@ -99,7 +99,7 @@ class TestDriverLogin:
         ]
         mock_vehicle = [{"id": "v-bus-001", "assigned_route_id": "route-line-a"}]
         with (
-            patch("api.routers.auth._supabase_get", new_callable=AsyncMock) as mock_get,
+            patch("api.routers.auth._service_get", new_callable=AsyncMock) as mock_get,
             patch(
                 "api.routers.auth._rate_limit_check", new_callable=AsyncMock
             ) as mock_rl,
@@ -133,7 +133,7 @@ class TestDriverLogin:
             }
         ]
         with (
-            patch("api.routers.auth._supabase_get", new_callable=AsyncMock) as mock_get,
+            patch("api.routers.auth._service_get", new_callable=AsyncMock) as mock_get,
             patch(
                 "api.routers.auth._rate_limit_check", new_callable=AsyncMock
             ) as mock_rl,
@@ -152,7 +152,7 @@ class TestDriverLogin:
     def test_login_unknown_email_rejected(self, client):
         """Unknown email returns 401."""
         with (
-            patch("api.routers.auth._supabase_get", new_callable=AsyncMock) as mock_get,
+            patch("api.routers.auth._service_get", new_callable=AsyncMock) as mock_get,
             patch(
                 "api.routers.auth._rate_limit_check", new_callable=AsyncMock
             ) as mock_rl,
@@ -196,10 +196,10 @@ class TestRouteDisplay:
         mock_trip = {"id": "trip-abc-001"}
         with (
             patch(
-                "api.routers.driver._supabase_get", new_callable=AsyncMock
+                "api.routers.driver._service_get", new_callable=AsyncMock
             ) as mock_get,
             patch(
-                "api.routers.driver._supabase_post", new_callable=AsyncMock
+                "api.routers.driver._service_post", new_callable=AsyncMock
             ) as mock_post,
         ):
             mock_get.return_value = mock_vehicles
@@ -220,10 +220,10 @@ class TestRouteDisplay:
         mock_trip = {"id": "trip-sched-001"}
         with (
             patch(
-                "api.routers.driver._supabase_get", new_callable=AsyncMock
+                "api.routers.driver._service_get", new_callable=AsyncMock
             ) as mock_get,
             patch(
-                "api.routers.driver._supabase_post", new_callable=AsyncMock
+                "api.routers.driver._service_post", new_callable=AsyncMock
             ) as mock_post,
         ):
             mock_get.return_value = mock_vehicles
@@ -242,7 +242,7 @@ class TestRouteDisplay:
     def test_start_trip_no_vehicle_assigned(self, client, driver_token):
         """Driver without a vehicle gets 404 when trying to start a trip."""
         with patch(
-            "api.routers.driver._supabase_get", new_callable=AsyncMock
+            "api.routers.driver._service_get", new_callable=AsyncMock
         ) as mock_get:
             mock_get.return_value = []
             r = client.post(
@@ -258,10 +258,10 @@ class TestRouteDisplay:
         mock_vehicles = [{"id": "v-bus-001"}]
         with (
             patch(
-                "api.routers.driver._supabase_get", new_callable=AsyncMock
+                "api.routers.driver._service_get", new_callable=AsyncMock
             ) as mock_get,
             patch(
-                "api.routers.driver._supabase_post", new_callable=AsyncMock
+                "api.routers.driver._service_post", new_callable=AsyncMock
             ) as mock_post,
         ):
             mock_get.return_value = mock_vehicles
@@ -301,10 +301,10 @@ class TestLocationSharing:
         mock_vehicles = [{"id": "v-bus-001", "assigned_route_id": "route-line-a"}]
         with (
             patch(
-                "api.routers.driver._supabase_get", new_callable=AsyncMock
+                "api.routers.driver._service_get", new_callable=AsyncMock
             ) as mock_get,
             patch(
-                "api.routers.driver._supabase_rpc", new_callable=AsyncMock
+                "api.routers.driver._service_rpc", new_callable=AsyncMock
             ) as mock_rpc,
         ):
             mock_get.return_value = mock_vehicles
@@ -322,10 +322,10 @@ class TestLocationSharing:
         mock_vehicles = [{"id": "v-bus-001", "assigned_route_id": "route-line-a"}]
         with (
             patch(
-                "api.routers.driver._supabase_get", new_callable=AsyncMock
+                "api.routers.driver._service_get", new_callable=AsyncMock
             ) as mock_get,
             patch(
-                "api.routers.driver._supabase_rpc", new_callable=AsyncMock
+                "api.routers.driver._service_rpc", new_callable=AsyncMock
             ) as mock_rpc,
         ):
             mock_get.return_value = mock_vehicles
@@ -349,10 +349,10 @@ class TestLocationSharing:
         approval workflow (one indexed lookup) instead of trusted blindly."""
         with (
             patch(
-                "api.routers.driver._supabase_get", new_callable=AsyncMock
+                "api.routers.driver._service_get", new_callable=AsyncMock
             ) as mock_get,
             patch(
-                "api.routers.driver._supabase_rpc", new_callable=AsyncMock
+                "api.routers.driver._service_rpc", new_callable=AsyncMock
             ) as mock_rpc,
         ):
             mock_get.return_value = [{
@@ -379,10 +379,10 @@ class TestLocationSharing:
         """Speed and heading values are forwarded to the RPC correctly."""
         with (
             patch(
-                "api.routers.driver._supabase_get", new_callable=AsyncMock
+                "api.routers.driver._service_get", new_callable=AsyncMock
             ) as mock_get,
             patch(
-                "api.routers.driver._supabase_rpc", new_callable=AsyncMock
+                "api.routers.driver._service_rpc", new_callable=AsyncMock
             ) as mock_rpc,
         ):
             mock_get.return_value = [{
@@ -410,7 +410,7 @@ class TestLocationSharing:
     def test_position_update_no_vehicle(self, client, driver_token):
         """Driver with no vehicle assigned gets 404."""
         with patch(
-            "api.routers.driver._supabase_get", new_callable=AsyncMock
+            "api.routers.driver._service_get", new_callable=AsyncMock
         ) as mock_get:
             mock_get.return_value = []
             r = client.post(
@@ -432,10 +432,10 @@ class TestLocationSharing:
         )
         with (
             patch(
-                "api.routers.driver._supabase_get", new_callable=AsyncMock
+                "api.routers.driver._service_get", new_callable=AsyncMock
             ) as mock_get,
             patch(
-                "api.routers.driver._supabase_rpc", new_callable=AsyncMock
+                "api.routers.driver._service_rpc", new_callable=AsyncMock
             ) as mock_rpc,
         ):
             mock_get.return_value = [{
@@ -484,10 +484,10 @@ class TestStatusUpdates:
         mock_trips = [{"id": "trip-abc-001", "status": "in_progress"}]
         with (
             patch(
-                "api.routers.driver._supabase_get", new_callable=AsyncMock
+                "api.routers.driver._service_get", new_callable=AsyncMock
             ) as mock_get,
             patch(
-                "api.routers.driver._supabase_patch", new_callable=AsyncMock
+                "api.routers.driver._service_patch", new_callable=AsyncMock
             ) as mock_patch,
         ):
             mock_get.return_value = mock_trips
@@ -507,10 +507,10 @@ class TestStatusUpdates:
         mock_trips = [{"id": "trip-abc-002", "status": "in_progress"}]
         with (
             patch(
-                "api.routers.driver._supabase_get", new_callable=AsyncMock
+                "api.routers.driver._service_get", new_callable=AsyncMock
             ) as mock_get,
             patch(
-                "api.routers.driver._supabase_patch", new_callable=AsyncMock
+                "api.routers.driver._service_patch", new_callable=AsyncMock
             ) as mock_patch,
         ):
             mock_get.return_value = mock_trips
@@ -525,7 +525,7 @@ class TestStatusUpdates:
     def test_end_trip_no_active_trip(self, client, driver_token):
         """Ending a trip when no trip is in-progress returns 404."""
         with patch(
-            "api.routers.driver._supabase_get", new_callable=AsyncMock
+            "api.routers.driver._service_get", new_callable=AsyncMock
         ) as mock_get:
             mock_get.return_value = []
             r = client.post(
@@ -555,10 +555,10 @@ class TestPassengerCount:
         mock_trips = [{"id": "trip-abc-001"}]
         with (
             patch(
-                "api.routers.driver._supabase_get", new_callable=AsyncMock
+                "api.routers.driver._service_get", new_callable=AsyncMock
             ) as mock_get,
             patch(
-                "api.routers.driver._supabase_patch", new_callable=AsyncMock
+                "api.routers.driver._service_patch", new_callable=AsyncMock
             ) as mock_patch,
         ):
             mock_get.return_value = mock_trips
@@ -576,10 +576,10 @@ class TestPassengerCount:
         mock_trips = [{"id": "trip-abc-001"}]
         with (
             patch(
-                "api.routers.driver._supabase_get", new_callable=AsyncMock
+                "api.routers.driver._service_get", new_callable=AsyncMock
             ) as mock_get,
             patch(
-                "api.routers.driver._supabase_patch", new_callable=AsyncMock
+                "api.routers.driver._service_patch", new_callable=AsyncMock
             ) as mock_patch,
         ):
             mock_get.return_value = mock_trips
@@ -603,7 +603,7 @@ class TestPassengerCount:
     def test_update_passenger_count_no_active_trip(self, client, driver_token):
         """Updating count without an active trip returns 404."""
         with patch(
-            "api.routers.driver._supabase_get", new_callable=AsyncMock
+            "api.routers.driver._service_get", new_callable=AsyncMock
         ) as mock_get:
             mock_get.return_value = []
             r = client.post(

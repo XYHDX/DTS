@@ -490,7 +490,7 @@ class TestLoginHappyPath:
             "role": "driver",
         }
         with patch(
-            "api.routers.auth._supabase_get", new_callable=AsyncMock
+            "api.routers.auth._service_get", new_callable=AsyncMock
         ) as mock_get:
             mock_get.return_value = [mock_user]
             r = client.post(
@@ -513,7 +513,7 @@ class TestLoginHappyPath:
             "role": "driver",
         }
         with patch(
-            "api.routers.auth._supabase_get", new_callable=AsyncMock
+            "api.routers.auth._service_get", new_callable=AsyncMock
         ) as mock_get:
             mock_get.return_value = [mock_user]
             r = client.post(
@@ -541,7 +541,7 @@ class TestAdminWithAuth:
             }
         ]
         with patch(
-            "api.routers.admin._supabase_get", new_callable=AsyncMock
+            "api.routers.admin._service_get", new_callable=AsyncMock
         ) as mock_get:
             mock_get.return_value = mock_users
             r = client.get(
@@ -564,7 +564,7 @@ class TestAdminWithAuth:
             }
         ]
         with patch(
-            "api.routers.admin._supabase_get", new_callable=AsyncMock
+            "api.routers.admin._service_get", new_callable=AsyncMock
         ) as mock_get:
             mock_get.return_value = mock_vehicles
             r = client.get(
@@ -575,7 +575,7 @@ class TestAdminWithAuth:
 
     def test_list_admin_alerts(self, client, admin_token):
         with patch(
-            "api.routers.admin._supabase_get", new_callable=AsyncMock
+            "api.routers.admin._service_get", new_callable=AsyncMock
         ) as mock_get:
             mock_get.return_value = [MOCK_ALERT]
             r = client.get(
@@ -586,7 +586,7 @@ class TestAdminWithAuth:
 
     def test_list_admin_trips(self, client, admin_token):
         with patch(
-            "api.routers.admin._supabase_get", new_callable=AsyncMock
+            "api.routers.admin._service_get", new_callable=AsyncMock
         ) as mock_get:
             mock_get.return_value = []
             r = client.get(
@@ -597,7 +597,7 @@ class TestAdminWithAuth:
 
     def test_analytics_overview(self, client, admin_token):
         with patch(
-            "api.routers.admin._supabase_get", new_callable=AsyncMock
+            "api.routers.admin._service_get", new_callable=AsyncMock
         ) as mock_get:
             mock_get.side_effect = [
                 MOCK_VEHICLE_STATUS,  # vehicles
@@ -628,10 +628,10 @@ class TestDriverWithAuth:
         mock_vehicles = [{"id": "v-001", "vehicle_id": "VH-001"}]
         with (
             patch(
-                "api.routers.driver._supabase_get", new_callable=AsyncMock
+                "api.routers.driver._service_get", new_callable=AsyncMock
             ) as mock_get,
             patch(
-                "api.routers.driver._supabase_rpc", new_callable=AsyncMock
+                "api.routers.driver._service_rpc", new_callable=AsyncMock
             ) as mock_rpc,
         ):
             mock_get.return_value = mock_vehicles
@@ -652,10 +652,10 @@ class TestDriverWithAuth:
         blindly — an unapproved/suspended vehicle must not report positions."""
         with (
             patch(
-                "api.routers.driver._supabase_get", new_callable=AsyncMock
+                "api.routers.driver._service_get", new_callable=AsyncMock
             ) as mock_get,
             patch(
-                "api.routers.driver._supabase_rpc", new_callable=AsyncMock
+                "api.routers.driver._service_rpc", new_callable=AsyncMock
             ) as mock_rpc,
         ):
             mock_get.return_value = [{
@@ -692,9 +692,9 @@ class TestDriverWithAuth:
             }]
 
         with (
-            patch("api.routers.driver._supabase_get", side_effect=fake_get),
+            patch("api.routers.driver._service_get", side_effect=fake_get),
             patch(
-                "api.routers.driver._supabase_rpc", new_callable=AsyncMock
+                "api.routers.driver._service_rpc", new_callable=AsyncMock
             ) as mock_rpc,
         ):
             mock_rpc.return_value = {}
@@ -709,7 +709,7 @@ class TestDriverWithAuth:
     def test_driver_position_no_vehicle(self, client, driver_token):
         with (
             patch(
-                "api.routers.driver._supabase_get", new_callable=AsyncMock
+                "api.routers.driver._service_get", new_callable=AsyncMock
             ) as mock_get,
         ):
             mock_get.return_value = []
@@ -722,7 +722,7 @@ class TestDriverWithAuth:
 
     def test_wrong_role_forbidden(self, client, driver_token):
         """Driver cannot access admin-only endpoints."""
-        with patch("api.routers.admin._supabase_get", new_callable=AsyncMock):
+        with patch("api.routers.admin._service_get", new_callable=AsyncMock):
             r = client.get(
                 "/api/admin/users",
                 headers={"Authorization": f"Bearer {driver_token}"},

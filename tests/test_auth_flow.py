@@ -185,7 +185,7 @@ class TestLogin:
             patch(
                 "api.routers.auth._rate_limit_check", new=AsyncMock(return_value=True)
             ),
-            patch("api.routers.auth._supabase_get", new=AsyncMock(return_value=[user])),
+            patch("api.routers.auth._service_get", new=AsyncMock(return_value=[user])),
         ):
             resp = client.post(
                 "/api/auth/login",
@@ -203,7 +203,7 @@ class TestLogin:
             patch(
                 "api.routers.auth._rate_limit_check", new=AsyncMock(return_value=True)
             ),
-            patch("api.routers.auth._supabase_get", new=AsyncMock(return_value=[user])),
+            patch("api.routers.auth._service_get", new=AsyncMock(return_value=[user])),
         ):
             resp = client.post(
                 "/api/auth/login",
@@ -216,7 +216,7 @@ class TestLogin:
             patch(
                 "api.routers.auth._rate_limit_check", new=AsyncMock(return_value=True)
             ),
-            patch("api.routers.auth._supabase_get", new=AsyncMock(return_value=[])),
+            patch("api.routers.auth._service_get", new=AsyncMock(return_value=[])),
         ):
             resp = client.post(
                 "/api/auth/login",
@@ -250,7 +250,7 @@ class TestLogin:
             patch(
                 "api.routers.auth._rate_limit_check", new=AsyncMock(return_value=True)
             ),
-            patch("api.routers.auth._supabase_get", new=mock_get),
+            patch("api.routers.auth._service_get", new=mock_get),
         ):
             resp = client.post(
                 "/api/auth/login",
@@ -321,7 +321,7 @@ class TestProtectedEndpoints:
 class TestRoleBasedAccess:
     def test_admin_can_access_admin_users(self, client):
         token = _make_token("admin")
-        with patch("api.routers.admin._supabase_get", new=AsyncMock(return_value=[])):
+        with patch("api.routers.admin._service_get", new=AsyncMock(return_value=[])):
             resp = client.get(
                 "/api/admin/users", headers={"Authorization": f"Bearer {token}"}
             )
@@ -356,13 +356,13 @@ class TestRoleBasedAccess:
         )
         with (
             patch(
-                "api.routers.driver._supabase_get",
+                "api.routers.driver._service_get",
                 new=AsyncMock(return_value=[{
                     "id": "veh-001", "assigned_route_id": "route-001",
                     "approval_status": "approved", "is_active": True,
                 }]),
             ),
-            patch("api.routers.driver._supabase_rpc", new=AsyncMock(return_value={})),
+            patch("api.routers.driver._service_rpc", new=AsyncMock(return_value={})),
             patch(
                 "api.routers.driver._rate_limit_check", new=AsyncMock(return_value=True)
             ),
@@ -402,7 +402,7 @@ class TestRoleBasedAccess:
 
     def test_dispatcher_can_list_users(self, client):
         token = _make_token("dispatcher", user_id="disp-001", email="disp@transit.sy")
-        with patch("api.routers.admin._supabase_get", new=AsyncMock(return_value=[])):
+        with patch("api.routers.admin._service_get", new=AsyncMock(return_value=[])):
             resp = client.get(
                 "/api/admin/users", headers={"Authorization": f"Bearer {token}"}
             )
@@ -479,7 +479,7 @@ class TestConcurrentSessions:
         admin_token = _make_token("admin", user_id="user-001")
         driver_token = _make_token("driver", user_id="user-002", email="d@transit.sy")
 
-        with patch("api.routers.admin._supabase_get", new=AsyncMock(return_value=[])):
+        with patch("api.routers.admin._service_get", new=AsyncMock(return_value=[])):
             admin_resp = client.get(
                 "/api/admin/users",
                 headers={"Authorization": f"Bearer {admin_token}"},
