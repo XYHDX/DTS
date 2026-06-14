@@ -305,6 +305,21 @@ class TestSupabaseUrlSsrfGuard:
         )
 
     @pytest.mark.parametrize(
+        "ok",
+        [
+            "users?email=eq.a%40b.com&select=id",  # url-encoded value (@ -> %40)
+            "vehicles?id=in.(11111111-2222-3333-4444-555555555555)",  # uuid + in.()
+            "trips?driver_id=eq.x&status=in.(scheduled,dispatched,acked)",
+            "alerts?select=*&order=created_at.desc&operator_id=eq.op-1",
+            "stops?is_active=eq.true&select=id,name_ar",
+        ],
+    )
+    def test_real_postgrest_paths_accepted(self, ok):
+        from api.core.database import _supabase_url
+
+        assert _supabase_url(ok).endswith(ok)
+
+    @pytest.mark.parametrize(
         "bad",
         [
             "http://evil.com/x",  # absolute URL / scheme
