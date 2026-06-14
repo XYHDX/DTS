@@ -378,7 +378,10 @@
 <script>
 'use strict';
 const $  = (s, r=document) => r.querySelector(s);
-const fmt = (n) => (n==null || isNaN(n)) ? '—' : Number(n).toLocaleString('ar-EG', {maximumFractionDigits:0});
+const isAr = () => (document.documentElement.lang || 'ar').slice(0, 2) === 'ar';
+// Locale-aware digits: Arabic-Indic in AR, Latin in EN (was hardcoded ar-EG,
+// which showed "٧ stops" / Arabic KPI numbers even in English).
+const fmt = (n) => (n==null || isNaN(n)) ? '—' : Number(n).toLocaleString(isAr() ? 'ar-EG' : 'en-US', {maximumFractionDigits:0});
 const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:8000' : '';
 
 async function getJson(path) {
@@ -401,10 +404,13 @@ async function loadStats() {
     return;
   }
   $('#stat-active').textContent = fmt(s.active_vehicles);
-  $('#stat-active-sub').textContent = `من ${fmt(s.total_vehicles)} حافلة`;
+  // Bilingual subtitle (was hardcoded Arabic "من X حافلة", shown even in EN).
+  $('#stat-active-sub').textContent = isAr()
+    ? `من ${fmt(s.total_vehicles)} حافلة`
+    : `of ${fmt(s.total_vehicles)} buses`;
   $('#stat-routes').textContent = fmt(s.total_routes);
   $('#stat-stops').textContent  = fmt(s.total_stops);
-  const occ = s.avg_occupancy != null ? Math.round(s.avg_occupancy) + '%' : '—';
+  const occ = s.avg_occupancy != null ? fmt(Math.round(s.avg_occupancy)) + '%' : '—';
   $('#stat-occupancy').textContent = occ;
 }
 
@@ -513,8 +519,15 @@ function openStream() {
   es.onmessage = (ev) => applyFrame(ev.data);
   es.onerror = () => {
     const b = $('#conn-badge');
-    b.classList.remove('badge--success'); b.classList.add('badge--danger');
-    b.textContent = (window.I18N ? I18N.t('map.disconnected') : 'انقطع البث');
+    if (!b) return;
+    // EventSource fires onerror on every transient drop while it auto-reconnects
+    // — normal on serverless SSE, where data keeps flowing across reconnects.
+    // Only show "disconnected" when it has truly given up (CLOSED); during
+    // reconnect (CONNECTING) keep the last connected state.
+    if (es.readyState === EventSource.CLOSED) {
+      b.classList.remove('badge--success'); b.classList.add('badge--danger');
+      b.textContent = (window.I18N ? I18N.t('map.disconnected') : 'انقطع البث');
+    }
   };
 }
 
