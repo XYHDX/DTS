@@ -732,3 +732,76 @@ class TestDispatchBanner:
         """Unauthenticated ack is rejected."""
         r = client.post("/api/driver/trip/trip-disp-1/ack")
         assert r.status_code in (401, 403)
+
+
+class TestDriverMeActiveTrip:
+    """GET /api/driver/me surfaces an in-progress trip for reload-restore."""
+
+    _VEH = [
+        {
+            "id": "v1",
+            "vehicle_id": "BUS-1",
+            "name": "Bus 1",
+            "name_ar": "حافلة",
+            "vehicle_type": "bus",
+            "approval_status": "approved",
+            "is_active": True,
+            "assigned_route_id": "r1",
+        }
+    ]
+    _ROUTE = [
+        {
+            "id": "r1",
+            "route_id": "R1",
+            "name": "Line",
+            "name_ar": "خط",
+            "fare_syp": 2000,
+        }
+    ]
+
+    def test_me_includes_active_trip(self, client, driver_token):
+        atrip = [
+            {
+                "id": "trip-1",
+                "actual_start": "2026-06-14T09:00:00Z",
+                "passenger_count": 12,
+                "route_id": "r1",
+            }
+        ]
+        with patch(
+            "api.routers.driver._service_get", new_callable=AsyncMock
+        ) as mock_get:
+            mock_get.side_effect = [self._VEH, self._ROUTE, atrip]
+            r = client.get(
+                "/api/driver/me",
+                headers={"Authorization": f"Bearer {driver_token}"},
+            )
+        assert r.status_code == 200
+        d = r.json()
+        assert d["active_trip"]["id"] == "trip-1"
+        assert d["active_trip"]["passenger_count"] == 12
+
+    def test_me_active_trip_null_when_none(self, client, driver_token):
+        with patch(
+            "api.routers.driver._service_get", new_callable=AsyncMock
+        ) as mock_get:
+            mock_get.side_effect = [self._VEH, self._ROUTE, []]
+            r = client.get(
+                "/api/driver/me",
+                headers={"Authorization": f"Bearer {driver_token}"},
+            )
+        assert r.status_code == 200
+        assert r.json()["active_trip"] is None
+
+    def test_me_active_trip_lookup_failure_is_tolerated(self, client, driver_token):
+        """A failing active-trip query must not break driver bootstrap."""
+        with patch(
+            "api.routers.driver._service_get", new_callable=AsyncMock
+        ) as mock_get:
+            mock_get.side_effect = [self._VEH, self._ROUTE, Exception("col missing")]
+            r = client.get(
+                "/api/driver/me",
+                headers={"Authorization": f"Bearer {driver_token}"},
+            )
+        assert r.status_code == 200
+        assert r.json()["active_trip"] is None

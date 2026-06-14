@@ -457,6 +457,8 @@ async function hydrateMe() {
         if (fareEl) fareEl.textContent = arDigit(d.route.fare_syp) + ' ل.س';
       }
     }
+    // Rehydrate an in-progress trip if the driver refreshed mid-trip.
+    if (d.active_trip) restoreActiveTrip(d.active_trip);
   } catch (_) {}
 }
 
@@ -757,6 +759,31 @@ function haversineKm(lat1,lon1,lat2,lon2){
   return 2*R*Math.asin(Math.sqrt(a));
 }
 
+// Switch the console into "trip running" mode. Shared by Start Trip and the
+// reload-restore path; assumes tripStartedAt / pax are already set.
+function enterTripUI() {
+  $('#start-trip').classList.add('hidden');
+  $('#end-trip').classList.remove('hidden');
+  $('#trip-running').classList.remove('hidden');
+  $('#pax-count').textContent = arDigit(pax);
+  $('#meta-occ').textContent = arDigit(Math.round(pax / 60 * 100)) + '٪';
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(updateTimer, 1000);
+  updateTimer();
+}
+
+// Restore an in-progress trip after a page reload (state from /api/driver/me).
+// GPS streaming resumes automatically because onPosition() posts whenever
+// tripId is set — so a driver who refreshes mid-trip keeps recording.
+function restoreActiveTrip(t) {
+  if (!t || !t.id || tripId) return;
+  tripId = t.id;
+  tripStartedAt = t.actual_start ? new Date(t.actual_start).getTime() : Date.now();
+  pax = t.passenger_count || 0;
+  totalKm = 0; lastPos = null;
+  enterTripUI();
+}
+
 // Trip controls
 $('#start-trip').addEventListener('click', async () => {
   if (!token) return;
@@ -782,11 +809,7 @@ $('#start-trip').addEventListener('click', async () => {
   }
   tripStartedAt = Date.now();
   totalKm = 0; pax = 0; lastPos = null;
-  $('#pax-count').textContent = arDigit(0);
-  $('#start-trip').classList.add('hidden');
-  $('#end-trip').classList.remove('hidden');
-  $('#trip-running').classList.remove('hidden');
-  timerInterval = setInterval(updateTimer, 1000);
+  enterTripUI();
   if (cap?.startBackgroundGeolocation) cap.startBackgroundGeolocation((p) => onPosition(p.coords || p));
 });
 
