@@ -363,7 +363,11 @@ async def reset_password(request: ResetPasswordRequest, raw_request: Request):
 async def get_my_profile(current_user: CurrentUser = Depends(get_current_user)):
     """Return the authenticated user's profile."""
     try:
-        users = await _supabase_get(
+        # Service-role read of the caller's OWN row (id comes from the verified
+        # token). The `users` table is RLS-scoped, so an anon/token-scoped read
+        # returns zero rows → spurious "User not found"; the service key avoids
+        # that. Same pattern login() uses to look the user up.
+        users = await _service_get(
             f"users?id=eq.{current_user.user_id}&select=id,email,full_name,full_name_ar,role,phone,is_active,created_at"
         )
         if not users:

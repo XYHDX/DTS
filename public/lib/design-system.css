@@ -16,6 +16,12 @@
  * without any markup change.
  * ============================================================ */
 
+/* Load a dedicated, highly legible Arabic webfont globally (every page imports
+ * this stylesheet). Previously the RTL font-family named 'IBM Plex Sans Arabic'
+ * but it was never actually loaded on the admin/landing pages, so Arabic fell
+ * back to a thin system face. Loading it here makes Arabic crisp everywhere. */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Cairo:wght@400;500;600;700&display=swap');
+
 :root {
   /* ---- National palette — refined per the July 2025 Syrian Identity Team brief.
      Dark teal-green PRIMARY (modernised flag green, more refined and distinguished).
@@ -204,9 +210,10 @@ h1, h2, h3, h4, .display {
   line-height: var(--lh-tight);
   color: var(--color-text);
 }
-/* Arabic should not use Latin serif — looks broken */
+/* Arabic should not use Latin serif — use the dedicated Arabic face so headings
+   match the (now-loaded) Arabic body font and read crisply. */
 [dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3, [dir="rtl"] h4, [dir="rtl"] .display {
-  font-family: var(--font-sans);
+  font-family: 'IBM Plex Sans Arabic', 'Cairo', var(--font-sans);
   font-weight: 700;
   letter-spacing: 0;
 }
@@ -219,7 +226,7 @@ h1, h2, h3, h4, .display {
 }
 
 /* ---- RTL ---- */
-[dir="rtl"] { font-family: 'IBM Plex Sans Arabic', var(--font-sans); }
+[dir="rtl"] { font-family: 'IBM Plex Sans Arabic', 'Cairo', var(--font-sans); }
 
 /* ---- Layout primitives ---- */
 .container        { width: 100%; max-width: var(--container); margin-inline: auto; padding-inline: var(--s-5); }

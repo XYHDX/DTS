@@ -289,7 +289,7 @@ class TestProtectedEndpoints:
             "created_at": "2026-01-01T00:00:00",
         }
         with patch(
-            "api.routers.auth._supabase_get", new=AsyncMock(return_value=[user_record])
+            "api.routers.auth._service_get", new=AsyncMock(return_value=[user_record])
         ):
             resp = client.get(
                 "/api/auth/me", headers={"Authorization": f"Bearer {token}"}
@@ -463,7 +463,7 @@ class TestConcurrentSessions:
             "created_at": "2026-01-01T00:00:00",
         }
         with patch(
-            "api.routers.auth._supabase_get", new=AsyncMock(return_value=[user_record])
+            "api.routers.auth._service_get", new=AsyncMock(return_value=[user_record])
         ):
             resp_a = client.get(
                 "/api/auth/me", headers={"Authorization": f"Bearer {token_a}"}

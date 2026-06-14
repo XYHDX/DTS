@@ -3,10 +3,10 @@
 // stale-while-revalidate for stops/routes/schedules API data,
 // and tile caching for offline map usage.
 
-// v5 — bumped so existing installed clients reinstall the SW, clear old caches,
-// and pick up the new app shell (desktop max-width column). Bump again whenever
-// the shell or /lib/i18n.js changes.
-const CACHE_NAME = 'damascus-transit-v5';
+// v6 — bumped so existing installed clients reinstall the SW, clear old caches,
+// and pick up the updated shared assets (Arabic webfont in design-system.css,
+// clearer language-toggle label in i18n.js). Bump whenever shared assets change.
+const CACHE_NAME = 'damascus-transit-v6';
 const APP_SHELL = [
   '/passenger/',
   '/passenger/index.html',
@@ -18,11 +18,11 @@ const APP_SHELL = [
 ];
 
 // Map tile pattern — cache tiles as they're fetched
-const TILE_CACHE = 'damascus-transit-tiles-v5';
+const TILE_CACHE = 'damascus-transit-tiles-v6';
 const TILE_HOSTS = ['basemaps.cartocdn.com', 'tile.openstreetmap.org'];
 
 // Static data API — stale-while-revalidate (stops/routes/schedules)
-const STATIC_DATA_CACHE = 'damascus-transit-data-v5';
+const STATIC_DATA_CACHE = 'damascus-transit-data-v6';
 const STATIC_DATA_PATTERNS = ['/api/stops', '/api/routes', '/api/schedules'];
 
 // API endpoints — network-only (live data must be fresh)

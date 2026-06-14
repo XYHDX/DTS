@@ -25,21 +25,23 @@ optional_security = HTTPBearer(auto_error=False)
 
 
 def _token_from_request(request: Request) -> Optional[str]:
-    """Extract the JWT from either the Authorization header or the auth cookie.
+    """Extract the JWT, preferring the httpOnly cookie over the Authorization header.
 
-    Preference order: a well-formed ``Authorization: Bearer <token>`` header
-    (used by the native driver app and API clients) first, then the
-    ``dt_token`` httpOnly cookie (used by the browser admin console). A literal
-    ``Bearer null`` / empty header is ignored so the cookie can still win.
+    The browser's ``dt_token`` cookie is the authoritative session for web
+    clients. A stale or foreign ``Authorization: Bearer`` header (e.g. a
+    leftover driver token in a tab's storage that the admin console still
+    sends) must NOT override the real cookie session — otherwise an admin gets
+    403s from the driver token. Native/API clients send only the header and no
+    cookie, so they are unaffected.
     """
+    cookie_token = request.cookies.get(AUTH_COOKIE_NAME)
+    if cookie_token and cookie_token.strip():
+        return cookie_token.strip()
     auth_header = request.headers.get("Authorization", "")
     if auth_header.startswith("Bearer "):
         candidate = auth_header[len("Bearer ") :].strip()
         if candidate and candidate.lower() != "null":
             return candidate
-    cookie_token = request.cookies.get(AUTH_COOKIE_NAME)
-    if cookie_token and cookie_token.strip():
-        return cookie_token.strip()
     return None
 
 
