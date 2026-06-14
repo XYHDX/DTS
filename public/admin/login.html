@@ -303,15 +303,21 @@ $('#login-form').addEventListener('submit', async (ev) => {
                  must_change_password: mj.must_change_password };
       }
     } catch (_) {}
+    const role = (user && user.role) || data.role || selectedRole;
     const storage = remember ? localStorage : sessionStorage;
-    storage.setItem('dt_token', token);
+    // Security hardening (2026-06-14): the browser console now authenticates via
+    // the httpOnly `dt_token` cookie the server set on this response, so we do
+    // NOT persist the JWT in JS-readable storage for web roles (this closes the
+    // XSS token-theft exposure). We keep only the non-secret `dt_user` profile
+    // for UI + the client-side auth cloak. The native driver app uses the
+    // Authorization: Bearer scheme, so it still needs the token.
     storage.setItem('dt_user', JSON.stringify(user));
+    if (role === 'driver') storage.setItem('dt_token', token);
     // If the backend signals must_change_password, force rotation first.
     if (data.must_change_password || user.must_change_password) {
       location.href = '/admin/reset.html?force=1';
       return;
     }
-    const role = (user && user.role) || data.role || selectedRole;
     if (role === 'driver') location.href = '/driver/';
     else location.href = '/admin/';
   } catch (e) {

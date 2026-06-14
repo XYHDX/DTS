@@ -27,6 +27,9 @@ async def _ensure_operator(slug: str) -> Optional[str]:
     seed = _DEFAULT_OPERATORS.get(slug)
     if not seed:
         return None
+    # Strip CR/LF before the slug reaches any log sink (defuses log injection;
+    # slug is already constrained to a known seed key above).
+    safe_slug = str(slug).replace("\r", " ").replace("\n", " ")
     for attempt in range(3):
         try:
             # Use the service-role key so the insert bypasses RLS. The anon
@@ -48,21 +51,25 @@ async def _ensure_operator(slug: str) -> Optional[str]:
                 resp.raise_for_status()
                 result = resp.json()
                 if isinstance(result, list) and result:
-                    logger.info(f"Auto-seeded operator '{slug}'")
+                    logger.info("Auto-seeded operator '%s'", safe_slug)
                     return result[0].get("id") or seed["id"]
                 elif isinstance(result, dict) and result.get("id"):
-                    logger.info(f"Auto-seeded operator '{slug}'")
+                    logger.info("Auto-seeded operator '%s'", safe_slug)
                     return result["id"]
                 else:
                     # PostgREST returned empty/unexpected — use the known id
                     logger.warning(
-                        f"Unexpected seed response for '{slug}': {result!r}, "
-                        f"using default id"
+                        "Unexpected seed response for '%s': %r, using default id",
+                        safe_slug,
+                        result,
                     )
                     return seed["id"]
         except Exception as e:
             logger.error(
-                f"Auto-seed operator '{slug}' attempt {attempt + 1}/3 failed: {e}"
+                "Auto-seed operator '%s' attempt %d/3 failed: %s",
+                safe_slug,
+                attempt + 1,
+                e,
             )
             if attempt < 2:
                 import asyncio

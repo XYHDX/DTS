@@ -5,9 +5,11 @@ import os
 import secrets
 import urllib.parse
 from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
 from api.core.auth import (
+    AUTH_COOKIE_NAME,
+    JWT_EXPIRATION_HOURS,
     CurrentUser,
     create_access_token,
     get_current_user,
@@ -40,8 +42,14 @@ router = APIRouter()
 
 
 @router.post("/api/auth/login", response_model=TokenResponse, tags=["auth"])
-async def login(request: LoginRequest, raw_request: Request):
-    """Authenticate user and return JWT token."""
+async def login(request: LoginRequest, raw_request: Request, response: Response):
+    """Authenticate user and return JWT token.
+
+    The token is returned in the body (for native/Capacitor and API clients
+    that use the ``Authorization: Bearer`` scheme) AND set as an httpOnly
+    cookie (for the browser admin console, so the token is never readable from
+    JavaScript). Either transport is accepted on subsequent requests.
+    """
     client_ip = raw_request.client.host if raw_request.client else "unknown"
     max_req, window = RATE_LIMIT_LOGIN
     if not await _rate_limit_check(f"login:{client_ip}", max_req, window):
@@ -105,6 +113,19 @@ async def login(request: LoginRequest, raw_request: Request):
             vehicle_route_id=vehicle_route_id,
         )
 
+        # Set the httpOnly auth cookie for browser clients. `remember` makes it
+        # persistent (capped at the token's own 24h lifetime); otherwise it's a
+        # session cookie cleared when the browser closes.
+        response.set_cookie(
+            key=AUTH_COOKIE_NAME,
+            value=token,
+            max_age=(JWT_EXPIRATION_HOURS * 3600) if request.remember else None,
+            httponly=True,
+            secure=True,
+            samesite="lax",
+            path="/",
+        )
+
         return TokenResponse(access_token=token, user_id=user["id"], role=user["role"])
 
     except HTTPException:
@@ -115,6 +136,24 @@ async def login(request: LoginRequest, raw_request: Request):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
         )
+
+
+@router.post("/api/auth/logout", response_model=MessageResponse, tags=["auth"])
+async def logout(response: Response):
+    """Clear the browser auth cookie.
+
+    Bearer/native clients simply discard their token client-side; this endpoint
+    exists so the browser console can revoke its httpOnly cookie (which JS can't
+    delete itself).
+    """
+    response.delete_cookie(
+        key=AUTH_COOKIE_NAME,
+        path="/",
+        httponly=True,
+        secure=True,
+        samesite="lax",
+    )
+    return {"message": "Logged out."}
 
 
 @router.post("/api/auth/register", response_model=UserResponse, tags=["auth"])

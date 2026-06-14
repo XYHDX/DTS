@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="620" viewBox="0 0 1040 620" font-family="'Segoe UI',system-ui,sans-serif">
+  <rect width="1040" height="620" fill="#FAFAF7"/>
+  <text x="32" y="40" font-size="22" font-weight="700" fill="#0B0B0B">Security &amp; Role-Based Access Control</text>
+  <text x="32" y="62" font-size="13" fill="#6A6A6A">Enforced server-side via require_role() (403 on mismatch). Client nav gating is UX only.</text>
+
+  <!-- matrix header -->
+  <g font-size="12">
+    <rect x="32" y="84" width="360" height="34" fill="#0E5650"/>
+    <text x="46" y="106" font-size="12" font-weight="700" fill="#fff">Capability  →  Role</text>
+    <rect x="392" y="84" width="124" height="34" fill="#0A302A"/><text x="454" y="106" font-weight="700" fill="#fff" text-anchor="middle">passenger</text>
+    <rect x="516" y="84" width="124" height="34" fill="#0A302A"/><text x="578" y="106" font-weight="700" fill="#fff" text-anchor="middle">driver</text>
+    <rect x="640" y="84" width="180" height="34" fill="#0A302A"/><text x="730" y="106" font-weight="700" fill="#fff" text-anchor="middle">dispatcher(op)</text>
+    <rect x="820" y="84" width="188" height="34" fill="#0A302A"/><text x="914" y="106" font-weight="700" fill="#fff" text-anchor="middle">admin / super</text>
+  </g>
+
+  <!-- rows -->
+  <g font-size="12" fill="#0B0B0B">
+    <!-- row template -->
+    <rect x="32" y="118" width="976" height="30" fill="#FFFFFF" stroke="#EAEAE6"/>
+    <text x="46" y="138">View map / routes / live SSE</text>
+    <text x="454" y="138" fill="#0E5650" text-anchor="middle" font-weight="700">✓</text>
+    <text x="578" y="138" fill="#0E5650" text-anchor="middle" font-weight="700">✓</text>
+    <text x="730" y="138" fill="#0E5650" text-anchor="middle" font-weight="700">✓</text>
+    <text x="914" y="138" fill="#0E5650" text-anchor="middle" font-weight="700">✓</text>
+
+    <rect x="32" y="148" width="976" height="30" fill="#F4F6F2" stroke="#EAEAE6"/>
+    <text x="46" y="168">Start/end trip, post GPS, SOS, ack dispatch</text>
+    <text x="454" y="168" fill="#CE1126" text-anchor="middle">·</text>
+    <text x="578" y="168" fill="#0E5650" text-anchor="middle" font-weight="700">✓ driver-only</text>
+    <text x="730" y="168" fill="#CE1126" text-anchor="middle">✗</text>
+    <text x="914" y="168" fill="#CE1126" text-anchor="middle">✗</text>
+
+    <rect x="32" y="178" width="976" height="30" fill="#FFFFFF" stroke="#EAEAE6"/>
+    <text x="46" y="198">Dispatch trips, manage vehicles/routes, alerts</text>
+    <text x="454" y="198" fill="#CE1126" text-anchor="middle">✗</text>
+    <text x="578" y="198" fill="#CE1126" text-anchor="middle">✗</text>
+    <text x="730" y="198" fill="#0E5650" text-anchor="middle" font-weight="700">✓</text>
+    <text x="914" y="198" fill="#0E5650" text-anchor="middle" font-weight="700">✓</text>
+
+    <rect x="32" y="208" width="976" height="30" fill="#F4F6F2" stroke="#EAEAE6"/>
+    <text x="46" y="228">Approvals queue · Audit log</text>
+    <text x="454" y="228" fill="#CE1126" text-anchor="middle">✗</text>
+    <text x="578" y="228" fill="#CE1126" text-anchor="middle">✗</text>
+    <text x="730" y="228" fill="#CE1126" text-anchor="middle">✗</text>
+    <text x="914" y="228" fill="#0E5650" text-anchor="middle" font-weight="700">✓ admin only</text>
+
+    <rect x="32" y="238" width="976" height="30" fill="#FFFFFF" stroke="#EAEAE6"/>
+    <text x="46" y="258">User management (create/disable users)</text>
+    <text x="454" y="258" fill="#CE1126" text-anchor="middle">✗</text>
+    <text x="578" y="258" fill="#CE1126" text-anchor="middle">✗</text>
+    <text x="730" y="258" fill="#B5651D" text-anchor="middle">nav shown / API ✗</text>
+    <text x="914" y="258" fill="#0E5650" text-anchor="middle" font-weight="700">✓ admin only</text>
+
+    <rect x="32" y="268" width="976" height="30" fill="#F4F6F2" stroke="#EAEAE6"/>
+    <text x="46" y="288">Manage operators / tenants (multi-tenant)</text>
+    <text x="454" y="288" fill="#CE1126" text-anchor="middle">✗</text>
+    <text x="578" y="288" fill="#CE1126" text-anchor="middle">✗</text>
+    <text x="730" y="288" fill="#CE1126" text-anchor="middle">✗</text>
+    <text x="914" y="288" fill="#0E5650" text-anchor="middle" font-weight="700">✓ super_admin</text>
+  </g>
+  <text x="46" y="312" font-size="10.5" fill="#B5651D">⚠ The “Users” nav link has no role filter, so a dispatcher sees it — but every user-management endpoint is require_role("admin"), so the page 403s. Low-severity UX/gating mismatch.</text>
+
+  <!-- controls -->
+  <text x="32" y="350" font-size="14" font-weight="700" fill="#0E5650" letter-spacing="1">CONTROLS IN PLACE  (verified in source)</text>
+  <g font-size="11.5" fill="#0B0B0B">
+    <rect x="32" y="362" width="312" height="78" rx="6" fill="#fff" stroke="#82B5AF"/>
+    <text x="46" y="382" font-weight="700" fill="#0E443B">Authentication</text>
+    <text x="46" y="401">• JWT HS256, 24h expiry, iat-stamped</text>
+    <text x="46" y="418">• Secret strength enforced (≥32, no placeholder)</text>
+    <text x="46" y="435">• bcrypt password hashing</text>
+
+    <rect x="356" y="362" width="316" height="78" rx="6" fill="#fff" stroke="#82B5AF"/>
+    <text x="370" y="382" font-weight="700" fill="#0E443B">Session / revocation</text>
+    <text x="370" y="401">• Deactivation revokes token ≤5s</text>
+    <text x="370" y="418">• Password-change invalidates old tokens (iat)</text>
+    <text x="370" y="435">• 401 → client force-logout to /login</text>
+
+    <rect x="684" y="362" width="324" height="78" rx="6" fill="#fff" stroke="#82B5AF"/>
+    <text x="698" y="382" font-weight="700" fill="#0E443B">Abuse / input</text>
+    <text x="698" y="401">• Login rate-limit + Retry-After (429)</text>
+    <text x="698" y="418">• Turnstile CAPTCHA hook on login</text>
+    <text x="698" y="435">• Pydantic validation; HTML stripped; XSS-escaped</text>
+
+    <rect x="32" y="450" width="312" height="76" rx="6" fill="#fff" stroke="#82B5AF"/>
+    <text x="46" y="470" font-weight="700" fill="#0E443B">Data isolation</text>
+    <text x="46" y="489">• Postgres RLS, per-operator tenancy</text>
+    <text x="46" y="506">• users table never exposed to anon</text>
+    <text x="46" y="523">• Service-role reads server-side only</text>
+
+    <rect x="356" y="450" width="316" height="76" rx="6" fill="#fff" stroke="#82B5AF"/>
+    <text x="370" y="470" font-weight="700" fill="#0E443B">Account recovery</text>
+    <text x="370" y="489">• Forgot-pw: constant 200 (no enumeration)</text>
+    <text x="370" y="506">• Reset tokens hashed, 30-min, single-use</text>
+    <text x="370" y="523">• Replay-protected (used_at set first)</text>
+
+    <rect x="684" y="450" width="324" height="76" rx="6" fill="#fff" stroke="#DBC59B"/>
+    <text x="698" y="470" font-weight="700" fill="#6A4413">Hardening backlog</text>
+    <text x="698" y="489">• JWT stored in localStorage (XSS-exposed)</text>
+    <text x="698" y="506">  → consider httpOnly cookie</text>
+    <text x="698" y="523">• SSRF CodeQL alerts dismissed w/ justification</text>
+  </g>
+
+  <rect x="32" y="544" width="976" height="44" rx="6" fill="#DCEAE7" stroke="#0E5650"/>
+  <text x="46" y="563" font-size="12" font-weight="700" fill="#0E443B">Verdict: RBAC is enforced at the API layer for every privileged route — client gating is defence-in-depth, not the gate.</text>
+  <text x="46" y="580" font-size="11" fill="#0E443B">No privilege-escalation path found. Remaining items are hardening (token storage) and one cosmetic nav mismatch.</text>
+</svg>

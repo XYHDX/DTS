@@ -2,10 +2,9 @@
 // Provides offline support, GPS position queue background sync,
 // and Web Push notifications for driver app.
 
-// v4 — bumped with the v4 redesign so existing clients evict stale shell
-// HTML and CSS from the v2 driver cache. Bump again whenever the assets
-// listed in APP_SHELL change.
-const CACHE_NAME = 'damascus-driver-v4';
+// v5 — bumped so existing clients evict the stale shell. Bump again whenever
+// the assets listed in APP_SHELL change so the update prompt fires.
+const CACHE_NAME = 'damascus-driver-v5';
 const APP_SHELL = [
   '/driver/',
   '/driver/index.html',
@@ -15,12 +14,12 @@ const APP_SHELL = [
 ];
 
 // Static data — stale-while-revalidate (trip manifests, routes)
-const STATIC_DATA_CACHE = 'damascus-driver-data-v4';
+const STATIC_DATA_CACHE = 'damascus-driver-data-v5';
 const STATIC_DATA_PATTERNS = ['/api/routes', '/api/stops'];
 
-// Map tile cache — driver v4 uses OSM tiles directly; cartocdn kept
+// Map tile cache — driver uses OSM tiles directly; cartocdn kept
 // whitelisted so old clients keep their offline tiles.
-const TILE_CACHE = 'damascus-driver-tiles-v4';
+const TILE_CACHE = 'damascus-driver-tiles-v5';
 const TILE_HOSTS = ['tile.openstreetmap.org', 'basemaps.cartocdn.com'];
 
 // IndexedDB for GPS position queue (accessed from SW context)
@@ -29,8 +28,9 @@ const IDB_VERSION = 1;
 const GPS_STORE = 'gps-queue';
 
 // ─── Install: pre-cache app shell ───
+// No skipWaiting() — the driver page shows a "new version" prompt and only
+// activates on the driver's command, so an update never reloads mid-trip.
 self.addEventListener('install', event => {
-  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
       return Promise.allSettled(
@@ -225,8 +225,18 @@ async function flushGpsQueue() {
   }
 }
 
-// ─── Message handler: queue a GPS position from app ───
+// ─── Message handler: queue a GPS position from app / accept update ───
 self.addEventListener('message', event => {
+  // Only honor messages from a same-origin page (ignore cross-origin senders).
+  if (event.source && typeof event.source.url === 'string') {
+    try {
+      if (new URL(event.source.url).origin !== self.location.origin) return;
+    } catch (_) { return; }
+  }
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+    return;
+  }
   if (event.data && event.data.type === 'QUEUE_GPS_POSITION') {
     event.waitUntil(
       openSwIDB().then(db => {

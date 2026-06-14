@@ -338,3 +338,118 @@ class TestSupabaseUrlSsrfGuard:
         with pytest.raises(HTTPException) as ei:
             _supabase_url(bad)
         assert ei.value.status_code == 400
+
+
+# ── Auth token extraction — cookie OR bearer (httpOnly cookie migration) ──────
+
+
+class _StubReq:
+    """Minimal stand-in for starlette.Request used by _token_from_request."""
+
+    def __init__(self, headers=None, cookies=None):
+        self.headers = headers or {}
+        self.cookies = cookies or {}
+
+
+class TestTokenFromRequest:
+    def test_bearer_header_used(self):
+        from api.core.auth import _token_from_request
+
+        assert (
+            _token_from_request(_StubReq(headers={"Authorization": "Bearer abc.def"}))
+            == "abc.def"
+        )
+
+    def test_cookie_used_when_no_header(self):
+        from api.core.auth import _token_from_request, AUTH_COOKIE_NAME
+
+        assert (
+            _token_from_request(_StubReq(cookies={AUTH_COOKIE_NAME: "cookie.jwt"}))
+            == "cookie.jwt"
+        )
+
+    def test_bearer_null_falls_back_to_cookie(self):
+        from api.core.auth import _token_from_request, AUTH_COOKIE_NAME
+
+        req = _StubReq(
+            headers={"Authorization": "Bearer null"},
+            cookies={AUTH_COOKIE_NAME: "cookie.jwt"},
+        )
+        assert _token_from_request(req) == "cookie.jwt"
+
+    def test_header_preferred_over_cookie(self):
+        from api.core.auth import _token_from_request, AUTH_COOKIE_NAME
+
+        req = _StubReq(
+            headers={"Authorization": "Bearer hdr"},
+            cookies={AUTH_COOKIE_NAME: "cke"},
+        )
+        assert _token_from_request(req) == "hdr"
+
+    def test_none_when_absent(self):
+        from api.core.auth import _token_from_request
+
+        assert _token_from_request(_StubReq()) is None
+
+
+class TestProtectedEndpointRequiresAuth:
+    def test_me_without_credentials_is_401(self):
+        c = _client()
+        assert c.get("/api/auth/me").status_code == 401
+
+
+class TestLoginCookie:
+    def test_login_sets_httponly_cookie_and_logout_clears(self, monkeypatch):
+        monkeypatch.setenv("JWT_SECRET", "t" * 48)
+        import api.routers.auth as ar
+
+        async def fake_service_get(q):
+            if q.startswith("users?email="):
+                return [
+                    {
+                        "id": "u-1",
+                        "email": "admin@x.com",
+                        "password_hash": "h",
+                        "role": "admin",
+                        "operator_id": None,
+                        "is_active": True,
+                    }
+                ]
+            return []
+
+        async def ok_rl(*a, **k):
+            return True
+
+        async def ok_ts(*a, **k):
+            return None
+
+        monkeypatch.setattr(ar, "_service_get", fake_service_get)
+        monkeypatch.setattr(ar, "verify_password", lambda p, h: True)
+        monkeypatch.setattr(ar, "_rate_limit_check", ok_rl)
+        monkeypatch.setattr(ar, "verify_turnstile", ok_ts)
+
+        c = _client()
+        r = c.post(
+            "/api/auth/login",
+            json={"email": "admin@x.com", "password": "pw", "remember": True},
+        )
+        assert r.status_code == 200
+        set_cookie = r.headers.get("set-cookie", "")
+        assert "dt_token=" in set_cookie
+        assert "httponly" in set_cookie.lower()
+        # Token still returned in the body for native/bearer clients.
+        assert r.json().get("access_token")
+
+        r2 = c.post("/api/auth/logout")
+        assert r2.status_code == 200
+        assert "dt_token=" in r2.headers.get("set-cookie", "")
+
+
+class TestRouteStopsEndpoint:
+    def test_route_stops_route_is_registered(self):
+        # Hitting the endpoint must NOT 404 (i.e. the route is registered). The
+        # handler degrades to [] when the DB is unavailable, so unit mode returns
+        # a 200 list; either way it must not be a missing-route 404.
+        c = _client()
+        resp = c.get("/api/routes/any-id/stops")
+        assert resp.status_code != 404

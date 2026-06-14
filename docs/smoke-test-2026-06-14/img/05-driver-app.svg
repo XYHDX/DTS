@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="640" viewBox="0 0 1040 640" font-family="'Segoe UI',system-ui,sans-serif">
+  <rect width="1040" height="640" fill="#F0F2EE"/>
+  <text x="32" y="38" font-size="22" font-weight="700" fill="#0B0B0B">Driver PWA — /driver/ (annotated, trip in progress)</text>
+  <text x="32" y="60" font-size="13" fill="#6A6A6A">GPS broadcaster · trip lifecycle · SOS/incident · dispatch banner · Capacitor-wrapped for native.</text>
+
+  <!-- phone -->
+  <rect x="40" y="80" width="380" height="540" rx="26" fill="#FFFFFF" stroke="#0B0B0B" stroke-width="2"/>
+  <rect x="40" y="80" width="126" height="5" fill="#0E5650"/><rect x="166" y="80" width="128" height="5" fill="#fff"/><rect x="294" y="80" width="126" height="5" fill="#0B0B0B"/>
+  <!-- header -->
+  <path d="M40 85 h380 v92 q0 14 -14 14 h-352 q-14 0 -14 -14 z" fill="#0A302A"/>
+  <text x="404" y="116" font-size="15" font-weight="700" fill="#fff" text-anchor="end">مرحباً، سائق دمشق</text>
+  <rect x="250" y="130" width="154" height="44" rx="8" fill="#ffffff14" stroke="#ffffff2a"/>
+  <text x="396" y="148" font-size="11" fill="#C9A95B" text-anchor="end">المركبة المعيّنة</text>
+  <text x="396" y="166" font-size="13" font-weight="700" fill="#fff" text-anchor="end">BUS-101 · المرجة ↔ المزة</text>
+  <circle cx="70" cy="152" r="16" fill="#C9A95B"/><text x="70" y="157" font-size="13" font-weight="700" fill="#061F1B" text-anchor="middle">د</text>
+
+  <!-- trip running card -->
+  <rect x="58" y="206" width="344" height="96" rx="12" fill="#DCEAE7" stroke="#0E5650"/>
+  <circle cx="84" cy="234" r="5" fill="#0E5650"/>
+  <text x="384" y="232" font-size="12" font-weight="700" fill="#0E443B" text-anchor="end">الرحلة جارية</text>
+  <text x="384" y="270" font-size="30" font-weight="700" fill="#0B0B0B" text-anchor="end" font-family="monospace">00:06:42</text>
+  <text x="384" y="290" font-size="10" fill="#115148" text-anchor="end">منذ البدء · GPS يُرسل كل ٥ ث</text>
+
+  <!-- passenger counter -->
+  <rect x="58" y="314" width="344" height="56" rx="10" fill="#fff" stroke="#D9DDD5"/>
+  <text x="384" y="338" font-size="12" fill="#3C3C3C" text-anchor="end">عدد الركاب</text>
+  <text x="384" y="358" font-size="11" fill="#6A6A6A" text-anchor="end">إشغال متوسط</text>
+  <circle cx="84" cy="342" r="18" fill="#0E5650"/><text x="84" y="348" font-size="18" font-weight="700" fill="#fff" text-anchor="middle">−</text>
+  <text x="150" y="349" font-size="20" font-weight="700" fill="#0B0B0B">٢٤</text>
+  <circle cx="210" cy="342" r="18" fill="#0E5650"/><text x="210" y="348" font-size="18" font-weight="700" fill="#fff" text-anchor="middle">+</text>
+
+  <!-- end trip + sos -->
+  <rect x="58" y="384" width="210" height="52" rx="6" fill="#0E5650"/>
+  <text x="163" y="416" font-size="14" font-weight="700" fill="#fff" text-anchor="middle">إنهاء الرحلة</text>
+  <rect x="280" y="384" width="122" height="52" rx="6" fill="#CE1126"/>
+  <text x="341" y="416" font-size="14" font-weight="700" fill="#fff" text-anchor="middle">SOS ⚠</text>
+
+  <!-- dispatch banner -->
+  <rect x="58" y="450" width="344" height="64" rx="10" fill="#F8F1DE" stroke="#C9A95B"/>
+  <text x="384" y="472" font-size="11" font-weight="700" fill="#6A4413" text-anchor="end">رحلة قادمة · ١٤:٣٠</text>
+  <text x="384" y="490" font-size="10" fill="#6A4413" text-anchor="end">المزة → باب توما</text>
+  <rect x="68" y="468" width="92" height="34" rx="6" fill="#C9A95B"/>
+  <text x="114" y="490" font-size="12" font-weight="700" fill="#061F1B" text-anchor="middle">قبول</text>
+
+  <!-- gps footer -->
+  <rect x="58" y="528" width="344" height="40" rx="8" fill="#DCEAE7"/>
+  <circle cx="80" cy="548" r="5" fill="#0E5650"/>
+  <text x="384" y="552" font-size="11" fill="#0E443B" text-anchor="end">GPS متصل · الدقة ١٢م</text>
+
+  <!-- CALLOUTS -->
+  <line x1="402" y1="254" x2="470" y2="254" stroke="#0E5650" stroke-width="2"/>
+  <rect x="470" y="206" width="540" height="92" rx="8" fill="#DCEAE7" stroke="#0E5650"/>
+  <text x="484" y="230" font-size="13" font-weight="700" fill="#0E443B">✓ FIXED &amp; verified live — trip-state restore on reload</text>
+  <text x="484" y="251" font-size="11" fill="#0E443B">/api/driver/me now returns active_trip; on reload the page rehydrates tripId, elapsed timer</text>
+  <text x="484" y="268" font-size="11" fill="#0E443B">(showed correct ٦ min), passenger count, and resumes GPS posting. 3 backend tests + live cache-bust check.</text>
+  <text x="484" y="288" font-size="10" fill="#115148">Note: PWA service-worker cache means returning users get the new build on the next SW cycle.</text>
+
+  <line x1="402" y1="410" x2="470" y2="410" stroke="#0E5650" stroke-width="2"/>
+  <rect x="470" y="312" width="540" height="70" rx="8" fill="#fff" stroke="#D9DDD5"/>
+  <text x="484" y="334" font-size="12" font-weight="700" fill="#0B0B0B">Trip lifecycle &amp; counter — WORKS</text>
+  <text x="484" y="353" font-size="11" fill="#3C3C3C">Start → running (timer + GPS) → End. Passenger ± writes occupancy. All driver</text>
+  <text x="484" y="370" font-size="11" fill="#3C3C3C">endpoints are require_role("driver"); GPS posting gated on an active tripId.</text>
+
+  <rect x="470" y="392" width="540" height="60" rx="8" fill="#DCEAE7" stroke="#0E5650"/>
+  <text x="484" y="414" font-size="12" font-weight="700" fill="#0E443B">✓ FIXED — SOS no longer hangs on web</text>
+  <text x="484" y="433" font-size="11" fill="#0E443B">Camera/photo fallback previously never resolved on desktop browsers; SOS now</text>
+  <text x="484" y="449" font-size="11" fill="#0E443B">submits an incident without blocking. Red .btn--danger, full-width tap target.</text>
+
+  <rect x="470" y="462" width="540" height="52" rx="8" fill="#F8F1DE" stroke="#C9A95B"/>
+  <text x="484" y="483" font-size="12" font-weight="700" fill="#6A4413">Dispatch banner — WORKS</text>
+  <text x="484" y="501" font-size="11" fill="#6A4413">next_trip endpoint surfaces upcoming assignment; “قبول” acks it (verified live).</text>
+
+  <rect x="470" y="524" width="540" height="44" rx="8" fill="#fff" stroke="#D9DDD5"/>
+  <text x="484" y="545" font-size="11" font-weight="700" fill="#0B0B0B">UX note</text>
+  <text x="484" y="561" font-size="10.5" fill="#6A6A6A">Driver flow is the most polished role: large 52px primary actions, clear running-state colour shift, live GPS chip.</text>
+</svg>

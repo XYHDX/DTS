@@ -33,7 +33,7 @@
       icon: '<path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/>' },
     { nav: 'vehicles',  href: '/admin/vehicles.html',    i18n: 'admin.nav.vehicles',  ar: 'المركبات',       en: 'Vehicles',
       icon: '<path d="M3 13l1.5-7h15L21 13M4 13v6h2v-2h12v2h2v-6"/><circle cx="7" cy="16" r="1"/><circle cx="17" cy="16" r="1"/>' },
-    { nav: 'users',     href: '/admin/users.html',       i18n: 'admin.nav.users',     ar: 'المستخدمون',     en: 'Users',
+    { nav: 'users',     href: '/admin/users.html',       i18n: 'admin.nav.users',     ar: 'المستخدمون',     en: 'Users', roles: ['admin', 'super_admin'],
       icon: '<circle cx="9" cy="8" r="4"/><path d="M2 22v-1a7 7 0 0 1 14 0v1"/><circle cx="17" cy="6" r="3"/><path d="M22 22v-1a5 5 0 0 0-5-5"/>' },
     { nav: 'routes',    href: '/admin/routes.html',      i18n: 'admin.nav.routes',    ar: 'الخطوط',         en: 'Routes',
       icon: '<path d="M6 3v18M18 3v18M6 7h12M6 12h12M6 17h12"/>' },
@@ -54,11 +54,13 @@
   // ── Auth gate ───────────────────────────────────────────────────────────────
   let token = null, user = null;
   try {
+    // `token` is usually absent now (web auth is the httpOnly cookie); it's only
+    // present for the native driver path or local dev. `dt_user` is the gate.
     token = localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
     const rawUser = localStorage.getItem(USER_KEY) || sessionStorage.getItem(USER_KEY);
     user  = rawUser ? JSON.parse(rawUser) : null;
   } catch (_) {}
-  if (!token) {
+  if (!user) {
     window.location.replace('/admin/login.html');
     return;
   }
@@ -149,13 +151,19 @@
 
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) logoutBtn.addEventListener('click', function () {
-      try {
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(USER_KEY);
-        sessionStorage.removeItem(TOKEN_KEY);
-        sessionStorage.removeItem(USER_KEY);
-      } catch (_) {}
-      window.location.replace('/admin/login.html');
+      const done = function () {
+        try {
+          localStorage.removeItem(TOKEN_KEY);
+          localStorage.removeItem(USER_KEY);
+          sessionStorage.removeItem(TOKEN_KEY);
+          sessionStorage.removeItem(USER_KEY);
+        } catch (_) {}
+        window.location.replace('/admin/login.html');
+      };
+      // Revoke the httpOnly cookie server-side first (JS can't clear it), then
+      // wipe the local hints regardless of the request outcome.
+      fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' })
+        .then(done, done);
     });
 
     const langBtn = document.getElementById('lang-toggle');
@@ -192,12 +200,16 @@
     },
     fetch: function (url, opts) {
       opts = opts || {};
-      opts.headers = Object.assign({ 'Authorization': 'Bearer ' + token }, opts.headers || {});
+      // Auth travels in the httpOnly cookie (same-origin → sent automatically).
+      // A Bearer header is only attached when a token is present (native/dev).
+      opts.headers = Object.assign({}, opts.headers || {});
+      if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+      if (!opts.credentials) opts.credentials = 'same-origin';
       return fetch(url, opts).then(r => {
         if (r.status === 401) {
           try {
-            localStorage.removeItem(TOKEN_KEY);
-            sessionStorage.removeItem(TOKEN_KEY);
+            localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY);
+            sessionStorage.removeItem(TOKEN_KEY); sessionStorage.removeItem(USER_KEY);
           } catch (_) {}
           window.location.replace('/admin/login.html');
           throw new Error('unauthorized');

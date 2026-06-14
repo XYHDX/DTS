@@ -7,16 +7,41 @@ from typing import Literal, Optional
 
 import bcrypt
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPBearer
-from fastapi.security.http import HTTPAuthorizationCredentials as HTTPAuthCredentials
 from pydantic import BaseModel
 
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 24
 
-security = HTTPBearer()
+# Name of the httpOnly cookie that carries the JWT for browser clients.
+# Native (Capacitor) and any header-based client keep using the
+# `Authorization: Bearer` scheme; web clients use this cookie so the token is
+# never readable from JavaScript (mitigates XSS token theft).
+AUTH_COOKIE_NAME = "dt_token"
+
+security = HTTPBearer(auto_error=False)
 optional_security = HTTPBearer(auto_error=False)
+
+
+def _token_from_request(request: Request) -> Optional[str]:
+    """Extract the JWT from either the Authorization header or the auth cookie.
+
+    Preference order: a well-formed ``Authorization: Bearer <token>`` header
+    (used by the native driver app and API clients) first, then the
+    ``dt_token`` httpOnly cookie (used by the browser admin console). A literal
+    ``Bearer null`` / empty header is ignored so the cookie can still win.
+    """
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        candidate = auth_header[len("Bearer ") :].strip()
+        if candidate and candidate.lower() != "null":
+            return candidate
+    cookie_token = request.cookies.get(AUTH_COOKIE_NAME)
+    if cookie_token and cookie_token.strip():
+        return cookie_token.strip()
+    return None
+
 
 UserRole = Literal["admin", "dispatcher", "driver", "viewer", "super_admin"]
 
@@ -201,10 +226,14 @@ async def _lookup_password_changed_at(user_id: str) -> Optional[datetime]:
     return pwd_changed_at
 
 
-async def get_current_user(
-    credentials: HTTPAuthCredentials = Depends(security),
-) -> CurrentUser:
-    token = credentials.credentials
+async def get_current_user(request: Request) -> CurrentUser:
+    token = _token_from_request(request)
+    if not token:
+        # No credentials at all → 401 Unauthorized (an authenticated user with
+        # the wrong role gets 403 from require_role instead).
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
+        )
     current_user_token.set(token)
     token_payload = verify_token(token)
 
@@ -271,13 +300,11 @@ def require_role(*allowed_roles: UserRole):
     return role_checker
 
 
-def optional_auth(
-    credentials: Optional[HTTPAuthCredentials] = Depends(optional_security),
-) -> Optional[CurrentUser]:
-    if credentials is None:
+def optional_auth(request: Request) -> Optional[CurrentUser]:
+    token = _token_from_request(request)
+    if token is None:
         current_user_token.set(None)
         return None
-    token = credentials.credentials
     current_user_token.set(token)
     token_payload = verify_token(token)
     return CurrentUser(

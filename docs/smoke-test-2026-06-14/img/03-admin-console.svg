@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="660" viewBox="0 0 1040 660" font-family="'Segoe UI',system-ui,sans-serif">
+  <rect width="1040" height="660" fill="#F0F2EE"/>
+  <text x="32" y="38" font-size="22" font-weight="700" fill="#0B0B0B">Operator / Admin Console — /admin/ (annotated)</text>
+  <text x="32" y="60" font-size="13" fill="#6A6A6A">One shell, role-gated nav (_shell.js). Dispatcher = “operator”. Auth cloak (_gate.js) + server-side require_role.</text>
+
+  <!-- shell -->
+  <rect x="32" y="78" width="976" height="556" rx="8" fill="#fff" stroke="#D9DDD5"/>
+  <!-- sidebar -->
+  <rect x="32" y="78" width="232" height="556" rx="8" fill="#0A302A"/>
+  <rect x="258" y="78" width="6" height="556" fill="#C9A95B"/>
+  <rect x="50" y="98" width="34" height="34" rx="6" fill="#fff"/>
+  <text x="94" y="114" font-size="13" font-weight="700" fill="#fff">نقل دمشق</text>
+  <text x="94" y="128" font-size="9" fill="#C9A95B">لوحة الإدارة</text>
+
+  <!-- nav items -->
+  <g font-size="12.5">
+    <rect x="44" y="150" width="208" height="30" rx="4" fill="#ffffff1a"/>
+    <rect x="44" y="150" width="3" height="30" fill="#C9A95B"/>
+    <text x="58" y="170" fill="#fff" font-weight="700">▦ النظرة العامة · Overview</text>
+
+    <text x="58" y="202" fill="#ffffffcc">✓ الموافقات · Approvals</text>
+    <rect x="214" y="190" width="34" height="16" rx="8" fill="#C9A95B"/>
+    <text x="231" y="202" font-size="9" font-weight="700" fill="#0B0B0B" text-anchor="middle">3</text>
+
+    <text x="58" y="234" fill="#ffffffcc">▤ المركبات · Vehicles</text>
+    <text x="58" y="266" fill="#ffffffcc">◔ المستخدمون · Users</text>
+    <text x="58" y="298" fill="#ffffffcc">▥ الخطوط · Routes</text>
+    <text x="58" y="330" fill="#ffffffcc">◷ توزيع الرحلات · Dispatch</text>
+    <text x="58" y="362" fill="#ffffffcc">△ التنبيهات · Alerts</text>
+    <text x="58" y="394" fill="#ffffffcc">▭ المدفوعات · Payments</text>
+    <text x="58" y="426" fill="#ffffffcc">▣ سجل التدقيق · Audit log</text>
+    <text x="58" y="458" fill="#ffffffcc">📈 التحليلات · Analytics</text>
+    <text x="58" y="490" fill="#ffffffcc">? كيفية الاستخدام · Help</text>
+  </g>
+  <!-- user footer -->
+  <line x1="44" y1="556" x2="252" y2="556" stroke="#ffffff22"/>
+  <circle cx="62" cy="582" r="14" fill="#C9A95B"/>
+  <text x="62" y="587" font-size="12" font-weight="700" fill="#061F1B" text-anchor="middle">A</text>
+  <text x="84" y="580" font-size="11" font-weight="700" fill="#fff">مدير النظام</text>
+  <text x="84" y="594" font-size="9" fill="#ffffff88">ADMIN</text>
+  <rect x="44" y="606" width="208" height="22" rx="4" fill="#ffffff10" stroke="#ffffff2a"/>
+  <text x="148" y="621" font-size="10" fill="#fff" text-anchor="middle">تسجيل الخروج</text>
+
+  <!-- main -->
+  <text x="290" y="108" font-size="18" font-weight="700" fill="#0B0B0B">النظرة العامة</text>
+  <rect x="892" y="92" width="100" height="26" rx="4" fill="#DCEAE7"/>
+  <circle cx="908" cy="105" r="4" fill="#0E5650"/>
+  <text x="952" y="109" font-size="10" font-weight="700" fill="#0E443B" text-anchor="middle">مباشر</text>
+
+  <!-- KPIs -->
+  <g>
+    <rect x="290" y="128" width="166" height="74" rx="6" fill="#fff" stroke="#D9DDD5"/>
+    <text x="304" y="150" font-size="10" fill="#6A6A6A">الحافلات العاملة</text>
+    <text x="304" y="180" font-size="26" font-weight="700" fill="#0B0B0B">٦</text>
+    <rect x="470" y="128" width="166" height="74" rx="6" fill="#fff" stroke="#D9DDD5"/>
+    <text x="484" y="150" font-size="10" fill="#6A6A6A">رحلات اليوم</text>
+    <text x="484" y="180" font-size="26" font-weight="700" fill="#0B0B0B">١٢</text>
+    <rect x="650" y="128" width="166" height="74" rx="6" fill="#fff" stroke="#D9DDD5"/>
+    <text x="664" y="150" font-size="10" fill="#6A6A6A">متوسط الإشغال</text>
+    <text x="664" y="180" font-size="26" font-weight="700" fill="#0B0B0B">٤٨٪</text>
+    <rect x="826" y="128" width="166" height="74" rx="6" fill="#fff" stroke="#D9DDD5"/>
+    <text x="840" y="150" font-size="10" fill="#6A6A6A">تنبيهات مفتوحة</text>
+    <text x="840" y="180" font-size="26" font-weight="700" fill="#0B0B0B">٢</text>
+  </g>
+
+  <!-- map + alerts -->
+  <rect x="290" y="214" width="430" height="404" rx="6" fill="#E8EEF0" stroke="#D9DDD5"/>
+  <text x="306" y="236" font-size="12" font-weight="700" fill="#0B0B0B">الخريطة المباشرة</text>
+  <path d="M300 320 h410 M460 250 v360 M560 250 v360" stroke="#cdd8d0" stroke-width="7"/>
+  <circle cx="430" cy="360" r="7" fill="#1F7068" stroke="#fff" stroke-width="2"/>
+  <circle cx="560" cy="430" r="7" fill="#1F7068" stroke="#fff" stroke-width="2"/>
+  <circle cx="520" cy="300" r="7" fill="#1F7068" stroke="#fff" stroke-width="2"/>
+
+  <rect x="734" y="214" width="258" height="404" rx="6" fill="#fff" stroke="#D9DDD5"/>
+  <text x="750" y="236" font-size="12" font-weight="700" fill="#0B0B0B">التنبيهات الأخيرة</text>
+  <line x1="734" y1="248" x2="992" y2="248" stroke="#D9DDD5"/>
+  <rect x="750" y="262" width="26" height="26" rx="4" fill="#fbe1e4"/>
+  <text x="786" y="274" font-size="11" font-weight="700" fill="#0B0B0B">تأخّر BUS-101</text>
+  <text x="786" y="288" font-size="9" fill="#6A6A6A">١٤:٠٢</text>
+
+  <!-- CALLOUTS -->
+  <rect x="44" y="430" width="208" height="36" rx="4" fill="none" stroke="#CE1126" stroke-width="2" stroke-dasharray="4"/>
+  <line x1="44" y1="426" x2="44" y2="408" stroke="#CE1126"/>
+  <text x="46" y="404" font-size="10" font-weight="700" fill="#6e0712">admin-only (hidden from dispatcher)</text>
+  <rect x="44" y="190" width="208" height="20" rx="3" fill="none" stroke="#CE1126" stroke-width="1.5" stroke-dasharray="4"/>
+
+  <text x="290" y="648" font-size="11" fill="#6A6A6A">✓ Verified live (prior session): KPIs, live map markers, alerts feed, AR/EN toggle, logout. Approvals + Audit gated to admin/super_admin in nav AND API.</text>
+</svg>
