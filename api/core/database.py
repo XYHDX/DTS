@@ -17,7 +17,13 @@ logger = logging.getLogger(__name__)
 def _supabase_headers(use_service_key: bool = False) -> dict:
     token = current_user_token.get() if current_user_token else None
 
-    if use_service_key and not token:
+    # Service-key requests must ALWAYS use the service role, even when a user
+    # token is present. Previously the `and not token` condition meant an
+    # authenticated request (which sets current_user_token) silently forwarded
+    # the user JWT instead — so server-trusted reads (admin/dispatcher/driver
+    # dashboards via the _service_* helpers) were still gated by RLS and came
+    # back empty even though the data exists.
+    if use_service_key:
         key = os.getenv("SUPABASE_SERVICE_KEY", "")
         if not key:
             raise HTTPException(
