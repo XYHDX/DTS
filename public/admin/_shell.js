@@ -37,6 +37,8 @@
       icon: '<circle cx="9" cy="8" r="4"/><path d="M2 22v-1a7 7 0 0 1 14 0v1"/><circle cx="17" cy="6" r="3"/><path d="M22 22v-1a5 5 0 0 0-5-5"/>' },
     { nav: 'routes',    href: '/admin/routes.html',      i18n: 'admin.nav.routes',    ar: 'الخطوط',         en: 'Routes',
       icon: '<path d="M6 3v18M18 3v18M6 7h12M6 12h12M6 17h12"/>' },
+    { nav: 'dispatch',  href: '/admin/dispatch.html',    i18n: 'admin.nav.dispatch',  ar: 'توزيع الرحلات',  en: 'Dispatch', roles: ['dispatcher', 'admin', 'super_admin'],
+      icon: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>' },
     { nav: 'alerts',    href: '/admin/alerts.html',      i18n: 'admin.nav.alerts',    ar: 'التنبيهات',      en: 'Alerts',
       icon: '<path d="M12 2 2 22h20L12 2Z"/><path d="M12 9v5"/><circle cx="12" cy="18" r=".5" fill="currentColor"/>' },
     { nav: 'payments',  href: '/admin/payments.html',    i18n: 'admin.nav.payments',  ar: 'المدفوعات',      en: 'Payments',

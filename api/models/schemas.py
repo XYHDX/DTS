@@ -205,6 +205,21 @@ class PassengerCountUpdate(BaseModel):
     passenger_count: int = Field(..., ge=0)
 
 
+class TripDispatch(BaseModel):
+    """Dispatcher schedules/pushes a trip to a driver (migration 013)."""
+
+    vehicle_id: str
+    scheduled_start: datetime
+    route_id: Optional[str] = None  # defaults to the vehicle's assigned route
+    driver_id: Optional[str] = None  # defaults to the vehicle's assigned driver
+    planned_passengers: Optional[int] = Field(None, ge=0)
+    notes: Optional[str] = Field(None, max_length=500)
+
+
+class TripCancel(BaseModel):
+    reason: Optional[str] = Field(None, max_length=500)
+
+
 class VehicleCreate(BaseModel):
     vehicle_id: str
     name: str

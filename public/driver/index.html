@@ -847,11 +847,15 @@ async function dataUrlToBlob(dataUrl) {
 }
 $('#incident-btn').addEventListener('click', async () => {
   if (!token) { alert('سجّل دخول أولاً / Please log in first.'); return; }
+  // Photo capture is a native-app enhancement. On the web we skip it and
+  // report immediately: an SOS must never hang behind a file picker, and the
+  // web fallback's <input type="file"> never resolves when the user cancels.
+  // (captureIncidentPhoto returns a base64 string, not an object — wrap it.)
   let photoDataUrl = null;
   try {
-    if (cap?.captureIncidentPhoto) {
-      const p = await cap.captureIncidentPhoto();
-      photoDataUrl = p?.dataUrl || null;
+    if (cap?.IS_NATIVE && cap?.captureIncidentPhoto) {
+      const b64 = await cap.captureIncidentPhoto();
+      photoDataUrl = b64 ? ('data:image/jpeg;base64,' + b64) : null;
     }
   } catch (_) {}
 

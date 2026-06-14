@@ -113,6 +113,45 @@ async def driver_me(
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
+@router.get("/api/driver/me/next_trip", tags=["driver"])
+async def driver_next_trip(
+    current_user: CurrentUser = Depends(require_role("driver")),
+):
+    """The driver's next not-yet-started trip, for the dispatch banner.
+
+    Returns ``{"trip": <trip>|None}``. A trip appears here once a dispatcher
+    has scheduled/pushed it (status scheduled|dispatched|acked) but before the
+    driver presses Start. This endpoint is read-only and best-effort: any
+    failure (e.g. the trip-dispatch columns/enum from migration 013 are not
+    present on this database yet) yields ``{"trip": None}`` rather than a 500,
+    because the banner is an optional enhancement and must never break the
+    console. Uses the service role so it is unaffected by trips-table RLS.
+    """
+    try:
+        trips = await _service_get(
+            f"trips?driver_id=eq.{current_user.user_id}"
+            "&status=in.(scheduled,dispatched,acked)"
+            "&select=id,status,route_id,scheduled_start,planned_passengers,notes"
+            "&order=scheduled_start.asc.nullslast&limit=1"
+        )
+        if not trips:
+            return {"trip": None}
+        t = trips[0]
+        if t.get("route_id"):
+            routes = await _service_get(
+                f"routes?id=eq.{t['route_id']}&select=id,route_id,name,name_ar,fare_syp"
+            )
+            t["route"] = routes[0] if routes else None
+        else:
+            t["route"] = None
+        return {"trip": t}
+    except Exception:
+        # Dispatch schema may not be migrated yet, or RLS/permissions hiccup —
+        # the banner is optional, so degrade silently instead of 500-ing.
+        logger.info("driver_next_trip: no dispatch data (returning null)")
+        return {"trip": None}
+
+
 @router.post(
     "/api/driver/incident", response_model=StatusTimestampResponse, tags=["driver"]
 )
@@ -355,6 +394,49 @@ async def update_passenger_count(
     except HTTPException:
         raise
     except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )
+
+
+@router.post(
+    "/api/driver/trip/{trip_id}/ack",
+    response_model=TripActionResponse,
+    tags=["driver"],
+)
+async def ack_trip(
+    trip_id: str,
+    current_user: CurrentUser = Depends(require_role("driver")),
+):
+    """Driver acknowledges a dispatched/scheduled trip (banner 'Acknowledge').
+
+    Moves the trip to ``acked`` so dispatch knows the driver has seen it. Scoped
+    to the driver's OWN trip; 404 if it isn't theirs. Pairs with
+    ``GET /api/driver/me/next_trip`` and migration 013's dispatch workflow.
+    """
+    try:
+        rows = await _service_get(
+            f"trips?id=eq.{trip_id}&driver_id=eq.{current_user.user_id}&select=id,status"
+        )
+        if not rows:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Trip not found"
+            )
+        await _service_patch(
+            f"trips?id=eq.{trip_id}",
+            {"status": "acked", "acked_at": datetime.utcnow().isoformat()},
+        )
+        return {
+            "status": "success",
+            "trip_id": trip_id,
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+
+    except HTTPException:
+        raise
+    except Exception:
+        logger.error("ack_trip failed", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",

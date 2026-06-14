@@ -69,9 +69,7 @@ class TestAdminCreateUser:
             "is_active": True,
         }
         with (
-            patch(
-                "api.routers.admin._service_get", new_callable=AsyncMock
-            ) as mock_get,
+            patch("api.routers.admin._service_get", new_callable=AsyncMock) as mock_get,
             patch(
                 "api.routers.admin._service_post", new_callable=AsyncMock
             ) as mock_post,
@@ -193,9 +191,7 @@ class TestAdminCreateVehicle:
             "is_active": True,
         }
         with (
-            patch(
-                "api.routers.admin._service_get", new_callable=AsyncMock
-            ) as mock_get,
+            patch("api.routers.admin._service_get", new_callable=AsyncMock) as mock_get,
             patch(
                 "api.routers.admin._service_post", new_callable=AsyncMock
             ) as mock_post,
@@ -287,9 +283,7 @@ class TestAdminAssignVehicle:
     def test_assign_vehicle_success(self, client, admin_token):
         mock_vehicle = [{"id": "v-001", "vehicle_id": "VH-001"}]
         with (
-            patch(
-                "api.routers.admin._service_get", new_callable=AsyncMock
-            ) as mock_get,
+            patch("api.routers.admin._service_get", new_callable=AsyncMock) as mock_get,
             patch(
                 "api.routers.admin._service_patch", new_callable=AsyncMock
             ) as mock_patch,
@@ -310,9 +304,7 @@ class TestAdminAssignVehicle:
 
     def test_assign_vehicle_not_found(self, client, admin_token):
         with (
-            patch(
-                "api.routers.admin._service_get", new_callable=AsyncMock
-            ) as mock_get,
+            patch("api.routers.admin._service_get", new_callable=AsyncMock) as mock_get,
             patch(
                 "api.routers.admin._service_patch", new_callable=AsyncMock
             ) as mock_patch,
@@ -840,9 +832,7 @@ class TestFormValidation:
 
     def test_assign_vehicle_driver_only_is_valid(self, client, admin_token):
         with (
-            patch(
-                "api.routers.admin._service_get", new_callable=AsyncMock
-            ) as mock_get,
+            patch("api.routers.admin._service_get", new_callable=AsyncMock) as mock_get,
             patch(
                 "api.routers.admin._service_patch", new_callable=AsyncMock
             ) as mock_patch,
@@ -875,4 +865,186 @@ class TestFormValidation:
             json={},
             headers={"Authorization": f"Bearer {driver_token}"},
         )
+        assert r.status_code == 422
+
+
+# ---------------------------------------------------------------------------
+# Trip dispatch (operator → driver)
+# ---------------------------------------------------------------------------
+
+
+class TestTripDispatch:
+    _APPROVED_VEHICLE = [
+        {
+            "id": "v-001",
+            "vehicle_id": "BUS-101",
+            "assigned_driver_id": "drv-1",
+            "assigned_route_id": "rt-1",
+            "approval_status": "approved",
+            "is_active": True,
+        }
+    ]
+
+    def test_dispatch_success(self, client, dispatcher_token):
+        with (
+            patch("api.routers.admin._service_get", new_callable=AsyncMock) as mock_get,
+            patch(
+                "api.routers.admin._service_post", new_callable=AsyncMock
+            ) as mock_post,
+        ):
+            mock_get.side_effect = [self._APPROVED_VEHICLE, []]  # vehicle, no conflict
+            mock_post.side_effect = [
+                {"id": "trip-1", "status": "dispatched"},
+                {"id": "audit-1"},
+            ]
+            r = client.post(
+                "/api/admin/trips/dispatch",
+                json={
+                    "vehicle_id": "v-001",
+                    "scheduled_start": "2026-06-20T09:00:00Z",
+                    "planned_passengers": 20,
+                    "notes": "rush hour",
+                },
+                headers={"Authorization": f"Bearer {dispatcher_token}"},
+            )
+        assert r.status_code == 200
+        assert r.json()["status"] == "dispatched"
+
+    def test_dispatch_vehicle_not_found(self, client, dispatcher_token):
+        with patch(
+            "api.routers.admin._service_get", new_callable=AsyncMock
+        ) as mock_get:
+            mock_get.return_value = []
+            r = client.post(
+                "/api/admin/trips/dispatch",
+                json={"vehicle_id": "ghost", "scheduled_start": "2026-06-20T09:00:00Z"},
+                headers={"Authorization": f"Bearer {dispatcher_token}"},
+            )
+        assert r.status_code == 404
+
+    def test_dispatch_conflict_409(self, client, dispatcher_token):
+        with patch(
+            "api.routers.admin._service_get", new_callable=AsyncMock
+        ) as mock_get:
+            mock_get.side_effect = [self._APPROVED_VEHICLE, [{"id": "existing-trip"}]]
+            r = client.post(
+                "/api/admin/trips/dispatch",
+                json={"vehicle_id": "v-001", "scheduled_start": "2026-06-20T09:00:00Z"},
+                headers={"Authorization": f"Bearer {dispatcher_token}"},
+            )
+        assert r.status_code == 409
+
+    def test_dispatch_no_route_or_driver_422(self, client, dispatcher_token):
+        bare_vehicle = [
+            {
+                "id": "v-002",
+                "vehicle_id": "BUS-102",
+                "assigned_driver_id": None,
+                "assigned_route_id": None,
+                "approval_status": "approved",
+                "is_active": True,
+            }
+        ]
+        with patch(
+            "api.routers.admin._service_get", new_callable=AsyncMock
+        ) as mock_get:
+            mock_get.return_value = bare_vehicle
+            r = client.post(
+                "/api/admin/trips/dispatch",
+                json={"vehicle_id": "v-002", "scheduled_start": "2026-06-20T09:00:00Z"},
+                headers={"Authorization": f"Bearer {dispatcher_token}"},
+            )
+        assert r.status_code == 422
+
+    def test_dispatch_requires_staff_role(self, client):
+        from api.core.auth import create_access_token
+
+        driver_token = create_access_token(
+            user_id="drv-x",
+            email="drvx@transit.sy",
+            role="driver",
+            operator_id="op-001",
+            expires_delta=timedelta(hours=1),
+        )
+        r = client.post(
+            "/api/admin/trips/dispatch",
+            json={"vehicle_id": "v-001", "scheduled_start": "2026-06-20T09:00:00Z"},
+            headers={"Authorization": f"Bearer {driver_token}"},
+        )
+        assert r.status_code == 403
+
+    def test_list_upcoming_enriched(self, client, dispatcher_token):
+        trips = [
+            {
+                "id": "t1",
+                "status": "dispatched",
+                "route_id": "rt-1",
+                "vehicle_id": "v-1",
+                "driver_id": "d-1",
+                "scheduled_start": "2026-06-20T09:00:00Z",
+            }
+        ]
+        with patch(
+            "api.routers.admin._service_get", new_callable=AsyncMock
+        ) as mock_get:
+            mock_get.side_effect = [
+                trips,
+                [{"id": "rt-1", "route_id": "A", "name": "Line A", "name_ar": "خط أ"}],
+                [
+                    {
+                        "id": "v-1",
+                        "vehicle_id": "BUS-1",
+                        "name": "Bus 1",
+                        "name_ar": "ح 1",
+                    }
+                ],
+                [
+                    {
+                        "id": "d-1",
+                        "full_name": "Sami",
+                        "full_name_ar": "سامي",
+                        "email": "s@x.sy",
+                    }
+                ],
+            ]
+            r = client.get(
+                "/api/admin/trips/upcoming",
+                headers={"Authorization": f"Bearer {dispatcher_token}"},
+            )
+        assert r.status_code == 200
+        row = r.json()[0]
+        assert row["route"]["name_ar"] == "خط أ"
+        assert row["driver"]["full_name"] == "Sami"
+
+    def test_cancel_success(self, client, dispatcher_token):
+        with (
+            patch("api.routers.admin._service_get", new_callable=AsyncMock) as mock_get,
+            patch(
+                "api.routers.admin._service_patch", new_callable=AsyncMock
+            ) as mock_patch,
+            patch(
+                "api.routers.admin._service_post", new_callable=AsyncMock
+            ) as mock_post,
+        ):
+            mock_get.return_value = [{"id": "t1", "status": "dispatched"}]
+            mock_patch.return_value = [{"id": "t1"}]
+            mock_post.return_value = {"id": "audit-1"}
+            r = client.post(
+                "/api/admin/trips/t1/cancel",
+                json={"reason": "weather"},
+                headers={"Authorization": f"Bearer {dispatcher_token}"},
+            )
+        assert r.status_code == 200
+        assert r.json()["status"] == "success"
+
+    def test_cancel_in_progress_rejected(self, client, dispatcher_token):
+        with patch(
+            "api.routers.admin._service_get", new_callable=AsyncMock
+        ) as mock_get:
+            mock_get.return_value = [{"id": "t1", "status": "in_progress"}]
+            r = client.post(
+                "/api/admin/trips/t1/cancel",
+                json={},
+                headers={"Authorization": f"Bearer {dispatcher_token}"},
+            )
         assert r.status_code == 422
