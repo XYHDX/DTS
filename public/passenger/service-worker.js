@@ -3,22 +3,26 @@
 // stale-while-revalidate for stops/routes/schedules API data,
 // and tile caching for offline map usage.
 
-const CACHE_NAME = 'damascus-transit-v3';
+// v4 — bumped so existing installed clients reinstall the SW, clear the v3
+// caches, and pick up the new app shell + /lib/i18n.js (install-banner labels,
+// i18n fallback hardening). Bump again whenever the shell or i18n changes.
+const CACHE_NAME = 'damascus-transit-v4';
 const APP_SHELL = [
   '/passenger/',
   '/passenger/index.html',
   '/passenger/manifest.json',
+  '/lib/i18n.js',
   'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap',
   'https://unpkg.com/maplibre-gl@4.1.2/dist/maplibre-gl.css',
   'https://unpkg.com/maplibre-gl@4.1.2/dist/maplibre-gl.js',
 ];
 
 // Map tile pattern — cache tiles as they're fetched
-const TILE_CACHE = 'damascus-transit-tiles-v3';
+const TILE_CACHE = 'damascus-transit-tiles-v4';
 const TILE_HOSTS = ['basemaps.cartocdn.com', 'tile.openstreetmap.org'];
 
 // Static data API — stale-while-revalidate (stops/routes/schedules)
-const STATIC_DATA_CACHE = 'damascus-transit-data-v3';
+const STATIC_DATA_CACHE = 'damascus-transit-data-v4';
 const STATIC_DATA_PATTERNS = ['/api/stops', '/api/routes', '/api/schedules'];
 
 // API endpoints — network-only (live data must be fresh)
