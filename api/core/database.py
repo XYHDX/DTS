@@ -15,12 +15,15 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-# SSRF guard (CWE-918 / CodeQL py/partial-ssrf): PostgREST paths are assembled
-# server-side from table names, operators, and URL-encoded values, so a
-# legitimate path never contains a control char, whitespace, or backslash.
-# Rejecting those — plus any scheme/authority marker — means request data can
-# never redirect a call off the trusted Supabase host.
-_UNSAFE_PATH_CHARS = re.compile(r"[\x00-\x20\\]")
+# SSRF guard (CWE-918 / CodeQL py/partial-ssrf). PostgREST paths are assembled
+# server-side from table names, operators, and URL-encoded values, so every
+# legitimate path matches this strict allowlist: letters, digits, and the
+# punctuation PostgREST actually uses (`?`, `&`, `=`, `,`, `.`, `*`, `(`, `)`,
+# `%`, `-`, `_`, `~`). The set deliberately EXCLUDES `/`, `\`, `@`, `:`, and
+# all whitespace/control chars — i.e. everything an attacker would need to
+# graft a scheme, authority, or new host onto the request. Validating the
+# request-derived path against this positive pattern is the SSRF barrier.
+_SAFE_PATH_RE = re.compile(r"[A-Za-z0-9_.\-~%(),?&=*]+")
 
 
 def _supabase_headers(use_service_key: bool = False) -> dict:
@@ -60,20 +63,15 @@ def _supabase_url(path: str) -> str:
     """Build a PostgREST URL, pinned to the configured Supabase host.
 
     SSRF barrier (CWE-918): ``path`` is built from request-derived values
-    (ids, filters), so it is validated before it can reach an outbound request.
-    We reject a scheme (``://``), an authority/userinfo (leading ``/`` or
-    ``@``), a backslash, or any whitespace/control char (which could enable
-    CRLF request-splitting). As defence in depth, the final URL's host must
-    still match the configured base, so the request can only ever target
-    Supabase.
+    (ids, filters), so it is validated against a strict character allowlist
+    before it can reach an outbound request. A path containing a scheme,
+    authority/userinfo, host separator, or whitespace/control char fails the
+    allowlist and is rejected, so request data can never redirect the call to a
+    different host or protocol. As defence in depth, the final URL's host must
+    also still equal the configured Supabase host.
     """
     base = os.getenv("SUPABASE_URL", "")
-    if (
-        not isinstance(path, str)
-        or "://" in path
-        or path.startswith(("/", "@"))
-        or _UNSAFE_PATH_CHARS.search(path) is not None
-    ):
+    if not isinstance(path, str) or _SAFE_PATH_RE.fullmatch(path) is None:
         raise HTTPException(status_code=400, detail="Invalid query path")
     url = f"{base}/rest/v1/{path}"
     if urlparse(url).netloc != urlparse(base).netloc:
