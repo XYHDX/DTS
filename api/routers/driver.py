@@ -96,6 +96,23 @@ async def driver_me(
                 f"routes?id=eq.{v['assigned_route_id']}&select=id,route_id,name,name_ar,fare_syp"
             )
             route = routes[0] if routes else None
+
+        # Active-trip rehydration: if the driver already has an in-progress trip
+        # (e.g. they refreshed the console mid-trip), surface it so the UI can
+        # restore the "trip running" state instead of resetting to Start Trip.
+        # Best-effort — never fail driver bootstrap over this.
+        active_trip = None
+        try:
+            atrips = await _service_get(
+                f"trips?driver_id=eq.{current_user.user_id}&status=eq.in_progress"
+                "&select=id,actual_start,passenger_count,route_id"
+                "&order=actual_start.desc.nullslast&limit=1"
+            )
+            if atrips:
+                active_trip = atrips[0]
+        except Exception:
+            active_trip = None
+
         return {
             "vehicle": {
                 "id": v["id"],
@@ -107,6 +124,7 @@ async def driver_me(
                 "is_active": v.get("is_active", True),
             },
             "route": route,
+            "active_trip": active_trip,
         }
     except Exception:
         logger.error("driver_me failed", exc_info=True)
