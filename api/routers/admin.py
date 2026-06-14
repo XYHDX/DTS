@@ -33,6 +33,8 @@ from api.models.schemas import (
     UserResponse,
     RouteCreate,
     RouteUpdate,
+    TripCancel,
+    TripDispatch,
     UserUpdate,
     VehicleApprovalRequest,
     VehicleAssign,
@@ -939,6 +941,206 @@ async def list_trips(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
         )
+
+
+# ── Trip dispatch (operator → driver) ───────────────────────────────────────────
+
+
+@router.get("/api/admin/trips/upcoming", response_model=List[dict], tags=["admin"])
+async def list_upcoming_trips(
+    current_user: CurrentUser = Depends(
+        require_role("admin", "dispatcher", "super_admin")
+    ),
+):
+    """Dispatch queue: scheduled/dispatched/acked trips for the operator,
+    enriched with route, vehicle, and driver labels for the console."""
+    try:
+        op_suffix = ""
+        if current_user.role != "super_admin" and current_user.operator_id:
+            op_suffix = f"&{_op_filter(current_user.operator_id)}"
+        trips = await _service_get(
+            "trips?status=in.(scheduled,dispatched,acked)"
+            "&select=id,status,route_id,vehicle_id,driver_id,scheduled_start,"
+            "planned_passengers,notes,dispatched_at,acked_at"
+            "&order=scheduled_start.asc.nullslast" + op_suffix
+        )
+        if not trips:
+            return []
+
+        def _ids(key):
+            return {t[key] for t in trips if t.get(key)}
+
+        routes, vehicles, drivers = {}, {}, {}
+        rid, vid, did = _ids("route_id"), _ids("vehicle_id"), _ids("driver_id")
+        if rid:
+            for r in await _service_get(
+                f"routes?id=in.({','.join(rid)})&select=id,route_id,name,name_ar"
+            ):
+                routes[r["id"]] = r
+        if vid:
+            for v in await _service_get(
+                f"vehicles?id=in.({','.join(vid)})&select=id,vehicle_id,name,name_ar"
+            ):
+                vehicles[v["id"]] = v
+        if did:
+            for u in await _service_get(
+                f"users?id=in.({','.join(did)})&select=id,full_name,full_name_ar,email"
+            ):
+                drivers[u["id"]] = u
+        for t in trips:
+            t["route"] = routes.get(t.get("route_id"))
+            t["vehicle"] = vehicles.get(t.get("vehicle_id"))
+            t["driver"] = drivers.get(t.get("driver_id"))
+        return trips
+    except Exception:
+        logger.error("list_upcoming_trips failed", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.post("/api/admin/trips/dispatch", response_model=dict, tags=["admin"])
+async def dispatch_trip(
+    body: TripDispatch,
+    current_user: CurrentUser = Depends(require_role("admin", "dispatcher")),
+):
+    """Schedule + push a trip to a driver.
+
+    Resolves the route/driver from the vehicle when not supplied, refuses to
+    double-book a driver within ±30 minutes, and records the trip as
+    `dispatched` so the driver console shows the acknowledge banner.
+    """
+    try:
+        veh = await _service_get(
+            f"vehicles?id=eq.{urllib.parse.quote(body.vehicle_id, safe='')}"
+            "&select=id,vehicle_id,assigned_driver_id,assigned_route_id,"
+            "approval_status,is_active"
+            f"{_own_op_filter(current_user)}"
+        )
+        if not veh:
+            raise HTTPException(
+                status_code=404, detail="Vehicle not found in your operator."
+            )
+        v = veh[0]
+        if v.get("is_active") is False or (
+            v.get("approval_status") and v["approval_status"] != "approved"
+        ):
+            raise HTTPException(
+                status_code=422, detail="Vehicle is not approved/active to operate."
+            )
+        route_id = body.route_id or v.get("assigned_route_id")
+        driver_id = body.driver_id or v.get("assigned_driver_id")
+        if not route_id:
+            raise HTTPException(
+                status_code=422,
+                detail="No route given and the vehicle has no assigned route.",
+            )
+        if not driver_id:
+            raise HTTPException(
+                status_code=422,
+                detail="No driver given and the vehicle has no assigned driver.",
+            )
+
+        # Double-booking guard: same driver within ±30 min of an open trip.
+        lo = (body.scheduled_start - timedelta(minutes=30)).isoformat()
+        hi = (body.scheduled_start + timedelta(minutes=30)).isoformat()
+        conflicts = await _service_get(
+            f"trips?driver_id=eq.{urllib.parse.quote(driver_id, safe='')}"
+            "&status=in.(scheduled,dispatched,acked,in_progress)"
+            f"&scheduled_start=gte.{urllib.parse.quote(lo, safe='')}"
+            f"&scheduled_start=lte.{urllib.parse.quote(hi, safe='')}"
+            "&select=id"
+        )
+        if conflicts:
+            raise HTTPException(
+                status_code=409,
+                detail="That driver already has a trip within 30 minutes of this time.",
+            )
+
+        now = datetime.utcnow().isoformat()
+        trip = {
+            "vehicle_id": v["id"],
+            "route_id": route_id,
+            "driver_id": driver_id,
+            "status": "dispatched",
+            "scheduled_start": body.scheduled_start.isoformat(),
+            "planned_passengers": body.planned_passengers,
+            "notes": body.notes,
+            "dispatched_by_user_id": current_user.user_id,
+            "dispatched_at": now,
+            "operator_id": current_user.operator_id,
+        }
+        created = await _service_post("trips", trip)
+        created = (
+            created if isinstance(created, dict) else (created[0] if created else {})
+        )
+        if not created:
+            raise HTTPException(status_code=500, detail="Failed to create trip")
+
+        await _service_post(
+            "audit_log",
+            {
+                "admin_id": current_user.user_id,
+                "action": "trip_dispatched",
+                "details": (
+                    f"Trip dispatched: vehicle {v.get('vehicle_id')} → driver "
+                    f"{driver_id} on route {route_id} at "
+                    f"{body.scheduled_start.isoformat()}"
+                ),
+                "operator_id": current_user.operator_id,
+            },
+        )
+        return created
+    except HTTPException:
+        raise
+    except Exception:
+        logger.error("dispatch_trip failed", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.post(
+    "/api/admin/trips/{trip_id}/cancel",
+    response_model=StatusTimestampResponse,
+    tags=["admin"],
+)
+async def cancel_trip(
+    trip_id: str,
+    body: TripCancel,
+    current_user: CurrentUser = Depends(require_role("admin", "dispatcher")),
+):
+    """Cancel a not-yet-started trip (scheduled/dispatched/acked)."""
+    try:
+        rows = await _service_get(
+            f"trips?id=eq.{urllib.parse.quote(trip_id, safe='')}"
+            "&select=id,status"
+            f"{_own_op_filter(current_user)}"
+        )
+        if not rows:
+            raise HTTPException(status_code=404, detail="Trip not found")
+        if rows[0].get("status") in ("in_progress", "completed", "cancelled"):
+            raise HTTPException(
+                status_code=422,
+                detail="Only a trip that hasn't started can be cancelled.",
+            )
+        await _service_patch(
+            f"trips?id=eq.{urllib.parse.quote(trip_id, safe='')}"
+            f"{_own_op_filter(current_user)}",
+            {"status": "cancelled", "cancellation_reason": body.reason},
+        )
+        await _service_post(
+            "audit_log",
+            {
+                "admin_id": current_user.user_id,
+                "action": "trip_cancelled",
+                "details": f"Trip {trip_id} cancelled"
+                + (f": {body.reason}" if body.reason else ""),
+                "operator_id": current_user.operator_id,
+            },
+        )
+        return {"status": "success", "timestamp": datetime.utcnow().isoformat()}
+    except HTTPException:
+        raise
+    except Exception:
+        logger.error("cancel_trip failed", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # ── Analytics ──────────────────────────────────────────────────────────────────

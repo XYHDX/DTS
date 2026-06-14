@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0E5650">
+<title>توزيع الرحلات — لوحة الإدارة — نقل دمشق</title>
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200;300;400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/lib/design-system.css">
+<link rel="stylesheet" href="/admin/_layout.css">
+<script src="/admin/_gate.js"></script>
+</head>
+<body data-page="dispatch">
+
+<!-- Universal utility bar -->
+<div class="utility-bar">
+  <div class="container">
+    <span class="gov" data-i18n="hero.eyebrow">الجمهورية العربية السورية</span>
+    <span class="right">
+      <a href="/" data-i18n="header.home">الرئيسية</a>
+      <span class="sep"></span>
+      <a href="/passenger/" data-i18n="header.passenger">للركاب</a>
+      <span class="sep"></span>
+      <a href="/driver/" data-i18n="header.driver">للسائقين</a>
+      <span class="sep"></span>
+      <a href="/admin/login.html" data-i18n="header.admin">الإدارة</a>
+    </span>
+  </div>
+</div>
+
+<div class="admin-shell">
+
+  <aside class="sidebar" aria-label="القائمة الجانبية">
+    <a href="/" class="sidebar__brand">
+      <span class="sidebar__brand-mark" aria-hidden="true">
+        <picture>
+          <source srcset="/assets/identity/sy-emblem-eagle.avif" type="image/avif">
+          <img src="/assets/identity/sy-emblem-eagle.png" alt="">
+        </picture>
+      </span>
+      <span class="sidebar__brand-text">
+        <b data-i18n="admin.brand">نقل دمشق</b>
+        <small data-i18n="admin.brandSub">لوحة الإدارة</small>
+      </span>
+    </a>
+
+    <nav data-shell-nav aria-label="إدارة"></nav>
+
+    <div class="sidebar__footer">
+      <div class="sidebar__user">
+        <div class="avatar-circle" id="user-initial">؟</div>
+        <div>
+          <div class="name" id="user-name">—</div>
+          <div class="role" id="user-role">—</div>
+        </div>
+      </div>
+      <button class="sidebar__logout" id="logout-btn" data-i18n="admin.logout">تسجيل الخروج</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="pagetitle">
+        <h1 data-i18n="admin.dispatch.title">توزيع الرحلات</h1>
+        <p data-i18n="admin.dispatch.sub">جدوِل رحلة وادفعها إلى سائق؛ تظهر له فوراً لتأكيدها.</p>
+      </div>
+      <div class="cluster">
+        <button id="btn-dispatch" class="btn btn--primary" type="button" style="padding:8px 14px;background:#0E5650;color:#fff;border:0;border-radius:8px;cursor:pointer;">+ توزيع رحلة / Dispatch trip</button>
+        <button class="lang-toggle" id="lang-toggle" data-i18n-toggle aria-label="Toggle language">EN</button>
+        <span class="badge badge--success"><span class="live-dot" aria-hidden="true"></span><span data-i18n="admin.live"> مباشر</span></span>
+      </div>
+    </div>
+
+    <section class="data-table-card">
+      <table class="data-table" aria-label="dispatch queue">
+        <thead>
+          <tr>
+            <th data-i18n="admin.dispatch.driver">السائق</th>
+            <th data-i18n="admin.dispatch.vehicle">المركبة</th>
+            <th data-i18n="admin.dispatch.route">الخط</th>
+            <th data-i18n="admin.dispatch.when">الموعد</th>
+            <th data-i18n="admin.dispatch.pax">ركاب مخططون</th>
+            <th data-i18n="admin.dispatch.status">الحالة</th>
+            <th>—</th>
+          </tr>
+        </thead>
+        <tbody id="rows">
+          <tr><td colspan="7"><div class="skeleton" style="width:100%;height:1.2em"></div></td></tr>
+          <tr><td colspan="7"><div class="skeleton" style="width:100%;height:1.2em"></div></td></tr>
+          <tr><td colspan="7"><div class="skeleton" style="width:100%;height:1.2em"></div></td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+</div>
+
+<script src="/lib/i18n.js"></script>
+<script src="/admin/_shell.js" defer></script>
+<script>
+(function () {
+  'use strict';
+  let TRIPS = [], VEHICLES = [], ROUTES = [], DRIVERS = [];
+  function isAr(){ return (document.documentElement.lang||'ar').slice(0,2)==='ar'; }
+  function esc(s){ return window.ADMIN_AUTH.esc(s); }
+
+  const STATUS = {
+    scheduled:  ['مجدولة','Scheduled','is-offline'],
+    dispatched: ['مُرسَلة','Dispatched','is-warn'],
+    acked:      ['مُؤكَّدة','Acknowledged','is-active'],
+  };
+  function statusPill(s){
+    const m = STATUS[s] || [s, s, 'is-offline'];
+    return '<span class="status-pill '+m[2]+'">'+esc(isAr()?m[0]:m[1])+'</span>';
+  }
+  function fmtWhen(iso){
+    if (!iso) return '—';
+    try { return new Date(iso).toLocaleString(isAr()?'ar-SY':'en-GB',{dateStyle:'short',timeStyle:'short'}); }
+    catch(_) { return esc(iso); }
+  }
+  function nameOf(obj, code){
+    if (!obj) return '—';
+    const n = isAr() ? (obj.name_ar||obj.name||obj.full_name_ar||obj.full_name) : (obj.name||obj.name_ar||obj.full_name||obj.full_name_ar);
+    return esc(n || code || '—');
+  }
+
+  function render(){
+    const tbody = document.getElementById('rows');
+    if (!TRIPS.length){
+      tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">'+
+        (isAr()?'لا رحلات قادمة. وزِّع رحلة جديدة للبدء.':'No upcoming trips. Dispatch one to get started.')+'</div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = TRIPS.map(function(t){
+      const drv = t.driver ? (isAr()?(t.driver.full_name_ar||t.driver.full_name):(t.driver.full_name||t.driver.full_name_ar)) : null;
+      const veh = t.vehicle ? (t.vehicle.vehicle_id||nameOf(t.vehicle)) : null;
+      const canCancel = ['scheduled','dispatched','acked'].indexOf(t.status) >= 0;
+      return '<tr>'+
+        '<td>'+esc(drv||'—')+'</td>'+
+        '<td class="cell-mono">'+esc(veh||'—')+'</td>'+
+        '<td>'+nameOf(t.route)+'</td>'+
+        '<td>'+fmtWhen(t.scheduled_start)+'</td>'+
+        '<td>'+(t.planned_passengers!=null?esc(String(t.planned_passengers)):'—')+'</td>'+
+        '<td>'+statusPill(t.status)+'</td>'+
+        '<td>'+(canCancel?'<button class="js-cancel" data-id="'+esc(t.id)+'" style="padding:5px 10px;border:1px solid #cbd5e1;background:transparent;color:#b91c1c;border-radius:7px;cursor:pointer;font:inherit;">'+(isAr()?'إلغاء':'Cancel')+'</button>':'')+'</td>'+
+      '</tr>';
+    }).join('');
+    tbody.querySelectorAll('.js-cancel').forEach(function(b){ b.addEventListener('click', onCancel); });
+  }
+
+  function load(){
+    if (!window.ADMIN_AUTH) return;
+    Promise.all([
+      window.ADMIN_AUTH.fetch('/api/admin/trips/upcoming').then(r=>r.ok?r.json():[]),
+      window.ADMIN_AUTH.fetch('/api/admin/vehicles').then(r=>r.ok?r.json():[]),
+      window.ADMIN_AUTH.fetch('/api/admin/routes').then(r=>r.ok?r.json():[]),
+      window.ADMIN_AUTH.fetch('/api/admin/users').then(r=>r.ok?r.json():[]),
+    ]).then(function(parts){
+      TRIPS    = Array.isArray(parts[0])?parts[0]:[];
+      VEHICLES = (Array.isArray(parts[1])?parts[1]:[]).filter(v=>(v.approval_status||'approved')==='approved' && v.is_active!==false);
+      ROUTES   = Array.isArray(parts[2])?parts[2]:[];
+      DRIVERS  = (Array.isArray(parts[3])?parts[3]:[]).filter(u=>u.role==='driver' && u.is_active!==false);
+      render();
+    }).catch(function(){
+      document.getElementById('rows').innerHTML='<tr><td colspan="7"><div class="empty-state">'+
+        (isAr()?'تعذّر تحميل الرحلات.':'Could not load trips.')+'</div></td></tr>';
+    });
+  }
+
+  function openDispatchForm(){
+    if (!VEHICLES.length){
+      window.ADMIN_AUTH.toast('لا مركبات معتمدة. اعتمد مركبة أولاً.','No approved vehicles. Approve one first.','error');
+      return;
+    }
+    const vehOpts = VEHICLES.map(function(v){
+      return { value: v.id, label: (v.vehicle_id||'') + ' — ' + (v.name||v.name_ar||''), label_ar: (v.vehicle_id||'') + ' — ' + (v.name_ar||v.name||'') };
+    });
+    const routeOpts = [{ value:'', label:'(use vehicle’s route)', label_ar:'(خط المركبة الافتراضي)' }].concat(
+      ROUTES.map(function(r){ return { value:r.id, label:(r.route_id?r.route_id+' — ':'')+(r.name||r.name_ar||''), label_ar:(r.route_id?r.route_id+' — ':'')+(r.name_ar||r.name||'') }; })
+    );
+    const drvOpts = [{ value:'', label:'(use vehicle’s driver)', label_ar:'(سائق المركبة الافتراضي)' }].concat(
+      DRIVERS.map(function(u){ return { value:u.id, label:(u.full_name||u.email||u.id), label_ar:(u.full_name_ar||u.full_name||u.email||u.id) }; })
+    );
+    // Default the datetime to ~15 min from now, in the input's local format.
+    const now = new Date(Date.now() + 15*60000 - (new Date()).getTimezoneOffset()*60000);
+    const defWhen = now.toISOString().slice(0,16);
+
+    window.ADMIN_AUTH.openForm({
+      title: isAr()?'توزيع رحلة':'Dispatch a trip',
+      subtitle: isAr()?'اختر المركبة والموعد. يُستخدم خط/سائق المركبة ما لم تحدّد غير ذلك.':'Pick a vehicle and time. The vehicle’s route/driver are used unless overridden.',
+      fields: [
+        { name:'vehicle_id', label:'Vehicle', label_ar:'المركبة', type:'select', required:true, options:vehOpts },
+        { name:'scheduled_start', label:'Scheduled time', label_ar:'الموعد', type:'datetime-local', required:true, value:defWhen },
+        { name:'route_id', label:'Route (optional)', label_ar:'الخط (اختياري)', type:'select', options:routeOpts },
+        { name:'driver_id', label:'Driver (optional)', label_ar:'السائق (اختياري)', type:'select', options:drvOpts },
+        { name:'planned_passengers', label:'Planned passengers (optional)', label_ar:'ركاب مخططون (اختياري)', type:'number', min:0, max:300 },
+        { name:'notes', label:'Notes (optional)', label_ar:'ملاحظات (اختياري)', type:'textarea' },
+      ],
+      onSubmit: async function(values){
+        if (!values.scheduled_start) return { error: isAr()?'الموعد مطلوب':'Scheduled time is required' };
+        const body = { vehicle_id: values.vehicle_id };
+        try { body.scheduled_start = new Date(values.scheduled_start).toISOString(); }
+        catch(_) { return { error: isAr()?'موعد غير صالح':'Invalid time' }; }
+        if (values.route_id) body.route_id = values.route_id;
+        if (values.driver_id) body.driver_id = values.driver_id;
+        if (values.planned_passengers != null && values.planned_passengers !== '') body.planned_passengers = Number(values.planned_passengers);
+        if (values.notes) body.notes = values.notes;
+        const r = await window.ADMIN_AUTH.fetch('/api/admin/trips/dispatch', {
+          method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body),
+        });
+        if (!r.ok){ const j = await r.json().catch(()=>({detail:'Dispatch failed'})); return { error: j.detail || 'Dispatch failed' }; }
+        window.ADMIN_AUTH.toast('تم توزيع الرحلة','Trip dispatched','success');
+      },
+      onAfter: load,
+    });
+  }
+
+  async function onCancel(ev){
+    const id = ev.currentTarget.getAttribute('data-id');
+    if (!id) return;
+    const reason = window.prompt(isAr()?'سبب الإلغاء (اختياري):':'Cancellation reason (optional):', '');
+    if (reason === null) return; // user dismissed
+    ev.currentTarget.disabled = true;
+    try {
+      const r = await window.ADMIN_AUTH.fetch('/api/admin/trips/'+encodeURIComponent(id)+'/cancel', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ reason: reason || null }),
+      });
+      if (!r.ok){ const j = await r.json().catch(()=>({detail:'Cancel failed'})); throw new Error(j.detail||'Cancel failed'); }
+      window.ADMIN_AUTH.toast('أُلغيت الرحلة','Trip cancelled','success');
+      load();
+    } catch(e){
+      window.ADMIN_AUTH.toast('فشل الإلغاء','Cancel failed','error');
+      ev.currentTarget.disabled = false;
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    load();
+    const btn = document.getElementById('btn-dispatch');
+    if (btn) btn.addEventListener('click', openDispatchForm);
+    document.addEventListener('i18n:change', render);
+  });
+})();
+</script>
+</body>
+</html>

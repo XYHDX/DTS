@@ -279,6 +279,19 @@
    */
   function _webCameraFallback() {
     return new Promise((resolve) => {
+      // Settle-once guard: a file <input> NEVER fires 'change' when the user
+      // cancels the picker, so without this the Promise (and any awaiting
+      // caller, e.g. the driver SOS button) would hang forever. We resolve on
+      // selection, on the modern 'cancel' event, and as a final safety net
+      // when focus returns to the window after the dialog closes.
+      let settled = false;
+      const done = (v) => {
+        if (settled) return;
+        settled = true;
+        try { input.remove(); } catch (_) {}
+        resolve(v);
+      };
+
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = 'image/*';
@@ -288,18 +301,26 @@
 
       input.addEventListener('change', () => {
         const file = input.files && input.files[0];
-        if (!file) { resolve(null); return; }
+        if (!file) { done(null); return; }
         const reader = new FileReader();
         reader.onload = () => {
           const dataUrl = reader.result;
           // Strip the data: prefix to match native base64 output
-          const base64 = dataUrl ? dataUrl.split(',')[1] : null;
-          resolve(base64);
+          done(dataUrl ? dataUrl.split(',')[1] : null);
         };
-        reader.onerror = () => resolve(null);
+        reader.onerror = () => done(null);
         reader.readAsDataURL(file);
-        document.body.removeChild(input);
       });
+
+      input.addEventListener('cancel', () => done(null));
+      // Fallback for browsers without the 'cancel' event: when the picker
+      // closes, focus returns to the window. Give a real selection time to
+      // surface its 'change' event before treating it as a cancel.
+      window.addEventListener(
+        'focus',
+        () => setTimeout(() => done(null), 2500),
+        { once: true },
+      );
 
       input.click();
     });

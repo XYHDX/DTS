@@ -355,12 +355,14 @@ class TestLocationSharing:
                 "api.routers.driver._service_rpc", new_callable=AsyncMock
             ) as mock_rpc,
         ):
-            mock_get.return_value = [{
-                "id": "v-bus-001",
-                "assigned_route_id": "route-line-a",
-                "approval_status": "approved",
-                "is_active": True,
-            }]
+            mock_get.return_value = [
+                {
+                    "id": "v-bus-001",
+                    "assigned_route_id": "route-line-a",
+                    "approval_status": "approved",
+                    "is_active": True,
+                }
+            ]
             mock_rpc.return_value = {}
             r = client.post(
                 "/api/driver/position",
@@ -385,12 +387,14 @@ class TestLocationSharing:
                 "api.routers.driver._service_rpc", new_callable=AsyncMock
             ) as mock_rpc,
         ):
-            mock_get.return_value = [{
-                "id": "v-bus-001",
-                "assigned_route_id": "route-line-a",
-                "approval_status": "approved",
-                "is_active": True,
-            }]
+            mock_get.return_value = [
+                {
+                    "id": "v-bus-001",
+                    "assigned_route_id": "route-line-a",
+                    "approval_status": "approved",
+                    "is_active": True,
+                }
+            ]
             mock_rpc.return_value = {}
             r = client.post(
                 "/api/driver/position",
@@ -438,12 +442,14 @@ class TestLocationSharing:
                 "api.routers.driver._service_rpc", new_callable=AsyncMock
             ) as mock_rpc,
         ):
-            mock_get.return_value = [{
-                "id": "v-bus-001",
-                "assigned_route_id": "route-line-a",
-                "approval_status": "approved",
-                "is_active": True,
-            }]
+            mock_get.return_value = [
+                {
+                    "id": "v-bus-001",
+                    "assigned_route_id": "route-line-a",
+                    "approval_status": "approved",
+                    "is_active": True,
+                }
+            ]
             mock_rpc.side_effect = fk_error
             r = client.post(
                 "/api/driver/position",
@@ -619,4 +625,110 @@ class TestPassengerCount:
             "/api/driver/trip/passenger-count",
             json={"passenger_count": 10},
         )
+        assert r.status_code in (401, 403)
+
+
+class TestDispatchBanner:
+    """GET /api/driver/me/next_trip + POST /api/driver/trip/{id}/ack."""
+
+    def test_next_trip_returns_null_when_none(self, client, driver_token):
+        """No pending trip → 200 {trip: null} (never 404, never 500)."""
+        with patch(
+            "api.routers.driver._service_get", new_callable=AsyncMock
+        ) as mock_get:
+            mock_get.return_value = []
+            r = client.get(
+                "/api/driver/me/next_trip",
+                headers={"Authorization": f"Bearer {driver_token}"},
+            )
+        assert r.status_code == 200
+        assert r.json() == {"trip": None}
+
+    def test_next_trip_returns_trip_with_route(self, client, driver_token):
+        """A dispatched trip is returned with its route embedded."""
+        trip = {
+            "id": "trip-disp-1",
+            "status": "dispatched",
+            "route_id": "route-line-a",
+            "scheduled_start": "2026-06-14T09:00:00Z",
+            "planned_passengers": 20,
+            "notes": "rush hour",
+        }
+        route = [
+            {
+                "id": "route-line-a",
+                "route_id": "A",
+                "name": "Line A",
+                "name_ar": "خط أ",
+                "fare_syp": 2000,
+            }
+        ]
+        with patch(
+            "api.routers.driver._service_get", new_callable=AsyncMock
+        ) as mock_get:
+            mock_get.side_effect = [[trip], route]
+            r = client.get(
+                "/api/driver/me/next_trip",
+                headers={"Authorization": f"Bearer {driver_token}"},
+            )
+        assert r.status_code == 200
+        data = r.json()["trip"]
+        assert data["id"] == "trip-disp-1"
+        assert data["route"]["name_ar"] == "خط أ"
+
+    def test_next_trip_degrades_to_null_on_db_error(self, client, driver_token):
+        """If the dispatch schema isn't migrated, degrade to null (not 500)."""
+        with patch(
+            "api.routers.driver._service_get", new_callable=AsyncMock
+        ) as mock_get:
+            mock_get.side_effect = Exception("enum value 'dispatched' does not exist")
+            r = client.get(
+                "/api/driver/me/next_trip",
+                headers={"Authorization": f"Bearer {driver_token}"},
+            )
+        assert r.status_code == 200
+        assert r.json() == {"trip": None}
+
+    def test_next_trip_requires_driver_role(self, client, admin_token):
+        """A non-driver token is rejected."""
+        r = client.get(
+            "/api/driver/me/next_trip",
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        assert r.status_code == 403
+
+    def test_ack_trip_success(self, client, driver_token):
+        """Acknowledging the driver's own trip returns success."""
+        with (
+            patch(
+                "api.routers.driver._service_get", new_callable=AsyncMock
+            ) as mock_get,
+            patch(
+                "api.routers.driver._service_patch", new_callable=AsyncMock
+            ) as mock_patch,
+        ):
+            mock_get.return_value = [{"id": "trip-disp-1", "status": "dispatched"}]
+            mock_patch.return_value = [{"id": "trip-disp-1"}]
+            r = client.post(
+                "/api/driver/trip/trip-disp-1/ack",
+                headers={"Authorization": f"Bearer {driver_token}"},
+            )
+        assert r.status_code == 200
+        assert r.json()["trip_id"] == "trip-disp-1"
+
+    def test_ack_trip_not_owned_returns_404(self, client, driver_token):
+        """Acknowledging a trip that isn't the driver's returns 404."""
+        with patch(
+            "api.routers.driver._service_get", new_callable=AsyncMock
+        ) as mock_get:
+            mock_get.return_value = []
+            r = client.post(
+                "/api/driver/trip/someone-elses/ack",
+                headers={"Authorization": f"Bearer {driver_token}"},
+            )
+        assert r.status_code == 404
+
+    def test_ack_trip_requires_auth(self, client):
+        """Unauthenticated ack is rejected."""
+        r = client.post("/api/driver/trip/trip-disp-1/ack")
         assert r.status_code in (401, 403)

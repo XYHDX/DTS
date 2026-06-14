@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import Response
 
 from api.core.cache import RATE_LIMIT_READ, _get_client_ip, _rate_limit_check
-from api.core.database import _supabase_get
+from api.core.database import _service_get, _supabase_get
 from api.core.geo import parse_location
 import logging
 
@@ -169,7 +169,10 @@ async def _build_gtfs_rt_feed():
     routes_raw = await _supabase_get("routes?select=id,route_id")
     route_id_by_uuid = {r["id"]: r["route_id"] for r in (routes_raw or [])}
 
-    trips_raw = await _supabase_get(
+    # Service role: the GTFS-RT feed is a server-generated aggregation, and the
+    # trips table is RLS-protected (migration 013), so an anon read would come
+    # back empty once those policies are enabled.
+    trips_raw = await _service_get(
         "trips?select=id,vehicle_id,route_id,actual_start&status=eq.in_progress"
     )
     trips_by_vehicle = {t["vehicle_id"]: t for t in (trips_raw or [])}

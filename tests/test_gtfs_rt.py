@@ -129,6 +129,25 @@ def _clear_gtfs_rt_cache():
     _gtfs_rt_cache["content_type"] = None
 
 
+@pytest.fixture(autouse=True)
+def _route_service_get_to_supabase_mock():
+    """Make the feed builder's service-role reads use the same per-test mock.
+
+    The GTFS-RT feed reads the `trips` table with the service role (so it works
+    once migration 013's RLS is enabled), while every test patches
+    ``_supabase_get``. Delegate ``_service_get`` to whatever ``_supabase_get`` is
+    at call time so the existing per-test mocks serve both, without each test
+    having to patch two helpers.
+    """
+    import api.routers.gtfs as g
+
+    async def _delegate(path, params=None):
+        return await g._supabase_get(path, params)
+
+    with patch.object(g, "_service_get", new_callable=AsyncMock, side_effect=_delegate):
+        yield
+
+
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
