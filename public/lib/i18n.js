@@ -29,7 +29,7 @@
       'header.passenger':     'للركاب',
       'header.driver':        'للسائقين',
       'header.admin':         'دخول الإدارة',
-      'header.toggleLang':    'EN',
+      'header.toggleLang':    'English',
       'header.live':          'مباشر',
 
       'hero.eyebrow':         'الجمهورية العربية السورية · نظام النقل العام',
@@ -307,7 +307,7 @@
       'header.passenger':     'Passengers',
       'header.driver':        'Drivers',
       'header.admin':         'Admin sign-in',
-      'header.toggleLang':    'ع',
+      'header.toggleLang':    'العربية',
       'header.live':          'Live',
 
       'hero.eyebrow':         'Syrian Arab Republic · Public Transit',

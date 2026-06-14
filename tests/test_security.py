@@ -377,14 +377,16 @@ class TestTokenFromRequest:
         )
         assert _token_from_request(req) == "cookie.jwt"
 
-    def test_header_preferred_over_cookie(self):
+    def test_cookie_preferred_over_header(self):
+        # The httpOnly cookie is the authoritative web session; a stale/foreign
+        # Bearer header (e.g. a leftover driver token) must NOT override it.
         from api.core.auth import _token_from_request, AUTH_COOKIE_NAME
 
         req = _StubReq(
             headers={"Authorization": "Bearer hdr"},
             cookies={AUTH_COOKIE_NAME: "cke"},
         )
-        assert _token_from_request(req) == "hdr"
+        assert _token_from_request(req) == "cke"
 
     def test_none_when_absent(self):
         from api.core.auth import _token_from_request

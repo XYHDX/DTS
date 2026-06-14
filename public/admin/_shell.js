@@ -169,7 +169,7 @@
     const langBtn = document.getElementById('lang-toggle');
     if (langBtn && window.I18N) {
       const updateLabel = function () {
-        langBtn.textContent = window.I18N.lang === 'ar' ? 'EN' : 'AR';
+        langBtn.textContent = window.I18N.lang === 'ar' ? 'English' : 'العربية';
       };
       updateLabel();
       document.addEventListener('i18n:change', function () {

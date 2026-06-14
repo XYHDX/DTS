@@ -337,13 +337,13 @@
 // re-render the dynamic JS-built UI (alerts list, KPI numbers).
 document.addEventListener('i18n:change', function () {
   const btn = document.getElementById('lang-toggle');
-  if (btn) btn.textContent = (window.I18N && window.I18N.lang === 'ar') ? 'EN' : 'AR';
+  if (btn) btn.textContent = (window.I18N && window.I18N.lang === 'ar') ? 'English' : 'العربية';
   if (typeof loadKpis === 'function')   loadKpis();
   if (typeof loadAlerts === 'function') loadAlerts();
 });
 document.addEventListener('DOMContentLoaded', function () {
   const btn = document.getElementById('lang-toggle');
-  if (btn && window.I18N) btn.textContent = window.I18N.lang === 'ar' ? 'EN' : 'AR';
+  if (btn && window.I18N) btn.textContent = window.I18N.lang === 'ar' ? 'English' : 'العربية';
 });
 const $ = (s,r=document) => r.querySelector(s);
 const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:8000' : '';

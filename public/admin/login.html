@@ -312,7 +312,17 @@ $('#login-form').addEventListener('submit', async (ev) => {
     // for UI + the client-side auth cloak. The native driver app uses the
     // Authorization: Bearer scheme, so it still needs the token.
     storage.setItem('dt_user', JSON.stringify(user));
-    if (role === 'driver') storage.setItem('dt_token', token);
+    if (role === 'driver') {
+      storage.setItem('dt_token', token);
+    } else {
+      // Web roles authenticate via the httpOnly cookie. Purge any leftover
+      // token (e.g. from a prior driver login in this tab) so it can't be sent
+      // as a Bearer header and override the cookie session (the cause of admin 403s).
+      try {
+        localStorage.removeItem('dt_token');
+        sessionStorage.removeItem('dt_token');
+      } catch (_) {}
+    }
     // If the backend signals must_change_password, force rotation first.
     if (data.must_change_password || user.must_change_password) {
       location.href = '/admin/reset.html?force=1';
