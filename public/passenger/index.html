@@ -128,6 +128,21 @@
     font-size: var(--fs-sm);
   }
   .install-banner.show { display: flex; }
+
+  /* Desktop: this is a mobile-first PWA, so on wide screens present it as a
+     centered phone-width column on a muted backdrop instead of stretching the
+     search bar / cards / tab bar edge-to-edge. Mobile (<640px) is untouched. */
+  @media (min-width: 640px) {
+    html { background: var(--color-surface-2); }
+    body {
+      max-width: 600px;
+      margin-inline: auto;
+      min-height: 100vh;
+      background: var(--color-bg);
+      box-shadow: var(--sh-lg);
+    }
+    .tabbar { max-width: 600px; margin-inline: auto; }
+  }
 </style>
 </head>
 <body>
