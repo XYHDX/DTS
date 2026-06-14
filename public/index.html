@@ -275,8 +275,8 @@
     <div class="map-wrap reveal">
       <div id="map" class="map" role="application" aria-label="خريطة الحافلات المباشرة"></div>
       <div class="map-legend" aria-hidden="true">
-        <div class="row"><span class="swatch swatch--bus"></span><span>حافلة</span></div>
-        <div class="row"><span class="swatch swatch--stop"></span><span>محطة</span></div>
+        <div class="row"><span class="swatch swatch--bus"></span><span data-i18n="map.legendBus">حافلة</span></div>
+        <div class="row"><span class="swatch swatch--stop"></span><span data-i18n="map.legendStop">محطة</span></div>
       </div>
     </div>
   </section>
@@ -284,8 +284,8 @@
   <!-- Routes -->
   <section class="routes-section" aria-labelledby="routes-h">
     <div class="header-row reveal">
-      <h2 id="routes-h" style="font-size:24px;font-weight:700;margin:0;font-family:var(--font-sans)">الخطوط الرئيسية</h2>
-      <a href="/passenger/" class="btn btn--link">عرض الكل ←</a>
+      <h2 id="routes-h" data-i18n="routes.mainTitle" style="font-size:24px;font-weight:700;margin:0;font-family:var(--font-sans)">الخطوط الرئيسية</h2>
+      <a href="/passenger/" class="btn btn--link" data-i18n="routes.viewAll">عرض الكل ←</a>
     </div>
     <div class="grid" id="route-list" aria-busy="true">
       <div class="route-card"><div class="skeleton" style="width:100%;height:48px"></div></div>
@@ -297,29 +297,29 @@
   <!-- Features -->
   <section class="features-section" aria-labelledby="features-h">
     <div class="header-row reveal" style="margin-bottom: 32px">
-      <h2 id="features-h" style="font-size:24px;font-weight:700;margin:0;font-family:var(--font-sans)">لماذا نقل دمشق؟</h2>
+      <h2 id="features-h" data-i18n="features.title" style="font-size:24px;font-weight:700;margin:0;font-family:var(--font-sans)">لماذا نقل دمشق؟</h2>
     </div>
     <div class="grid">
       <article class="feature reveal">
         <div class="feature__icon" aria-hidden="true">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6m0 0a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0 14v6"/></svg>
         </div>
-        <h3>تتبع لحظي</h3>
-        <p>مواقع الحافلات تُبَث عبر SSE كل ٥ ثوانٍ. أوقات الوصول دقيقة محسوبة من PostGIS.</p>
+        <h3 data-i18n="features.live.title">تتبع لحظي</h3>
+        <p data-i18n="features.live.body">مواقع الحافلات تُبَث عبر SSE كل ٥ ثوانٍ. أوقات الوصول دقيقة محسوبة من PostGIS.</p>
       </article>
       <article class="feature reveal">
         <div class="feature__icon" aria-hidden="true">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 10h18"/></svg>
         </div>
-        <h3>يعمل دون اتصال</h3>
-        <p>تطبيق ويب تقدُّمي (PWA) يخزن المحطات والخطوط محلياً ويعمل بدون شبكة.</p>
+        <h3 data-i18n="features.offline.title">يعمل دون اتصال</h3>
+        <p data-i18n="features.offline.body">تطبيق ويب تقدُّمي (PWA) يخزن المحطات والخطوط محلياً ويعمل بدون شبكة.</p>
       </article>
       <article class="feature reveal">
         <div class="feature__icon" aria-hidden="true">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
         </div>
-        <h3>خصوصية وأمان</h3>
-        <p>JWT مع RBAC، تشفير bcrypt، CSP صارم، ومراقبة الأخطاء عبر Sentry.</p>
+        <h3 data-i18n="features.security.title">خصوصية وأمان</h3>
+        <p data-i18n="features.security.body">JWT مع RBAC، تشفير bcrypt، CSP صارم، ومراقبة الأخطاء عبر Sentry.</p>
       </article>
     </div>
   </section>
@@ -419,24 +419,28 @@ async function loadRoutes() {
   const routes = await getJson('/api/routes');
   const wrap = $('#route-list');
   wrap.setAttribute('aria-busy', 'false');
+  const t = (k, fb) => (window.I18N ? I18N.t(k) : (fb || k));
+  const ar = (document.documentElement.lang || 'ar').slice(0, 2) === 'ar';
   if (!routes || !routes.length) {
-    wrap.innerHTML = '<div class="route-card muted center" style="grid-template-columns:1fr">لا توجد خطوط حالياً.</div>';
+    wrap.innerHTML = '<div class="route-card muted center" style="grid-template-columns:1fr">' + t('routes.none', 'لا توجد خطوط حالياً.') + '</div>';
     return;
   }
   wrap.innerHTML = routes.slice(0, 8).map(r => {
-    const code = esc(r.code || r.short_name || (r.id+'').slice(0,3));
-    const name = esc(r.name_ar || r.name || 'خط');
-    const meta = esc((r.from || '') + ' ↔ ' + (r.to || r.name_en || ''));
-    const stops = esc(fmt(r.stops_count));
+    // Use the real human route code (route_id), not a UUID prefix, and the
+    // correct stop_count field (was r.stops_count → always undefined).
+    const code = esc(r.route_id || r.code || (r.id+'').slice(0,3));
+    const name = esc(ar ? (r.name_ar || r.name || 'خط') : (r.name || r.name_ar || 'Route'));
+    const meta = esc(ar ? (r.name || '') : (r.name_ar || ''));
+    const stops = esc(fmt(r.stop_count));
     const safeId = encodeURIComponent(r.id);
     return `
       <a class="route-card" href="/passenger/?route=${safeId}">
         <span class="route-card__chip">${code}</span>
         <div>
           <div class="route-card__name">${name}</div>
-          <div class="route-card__meta">${meta}</div>
+          ${meta ? `<div class="route-card__meta">${meta}</div>` : ''}
         </div>
-        <span class="badge badge--brand">${stops} محطة</span>
+        <span class="badge badge--brand">${stops} ${t('routes.stopsCount', 'محطة')}</span>
       </a>`;
   }).join('');
 }

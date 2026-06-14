@@ -3,7 +3,7 @@
 // stale-while-revalidate for stops/routes/schedules API data,
 // and tile caching for offline map usage.
 
-const CACHE_NAME = 'damascus-transit-v2';
+const CACHE_NAME = 'damascus-transit-v3';
 const APP_SHELL = [
   '/passenger/',
   '/passenger/index.html',
@@ -14,19 +14,21 @@ const APP_SHELL = [
 ];
 
 // Map tile pattern — cache tiles as they're fetched
-const TILE_CACHE = 'damascus-transit-tiles-v2';
-const TILE_HOSTS = ['basemaps.cartocdn.com'];
+const TILE_CACHE = 'damascus-transit-tiles-v3';
+const TILE_HOSTS = ['basemaps.cartocdn.com', 'tile.openstreetmap.org'];
 
 // Static data API — stale-while-revalidate (stops/routes/schedules)
-const STATIC_DATA_CACHE = 'damascus-transit-data-v2';
+const STATIC_DATA_CACHE = 'damascus-transit-data-v3';
 const STATIC_DATA_PATTERNS = ['/api/stops', '/api/routes', '/api/schedules'];
 
 // API endpoints — network-only (live data must be fresh)
 const LIVE_API_PATTERNS = ['/api/vehicles', '/api/stream'];
 
 // ─── Install: pre-cache app shell ───
+// NOTE: we intentionally do NOT call skipWaiting() here. A freshly installed
+// SW waits, and the page surfaces a "new version available" prompt; only when
+// the user accepts (SKIP_WAITING message below) does it take over + reload.
 self.addEventListener('install', event => {
-  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
       return Promise.allSettled(
@@ -34,6 +36,17 @@ self.addEventListener('install', event => {
       );
     })
   );
+});
+
+// ─── Accept the page's request to activate the waiting SW immediately ───
+self.addEventListener('message', event => {
+  // Only honor messages from a same-origin page (ignore cross-origin senders).
+  if (event.source && typeof event.source.url === 'string') {
+    try {
+      if (new URL(event.source.url).origin !== self.location.origin) return;
+    } catch (_) { return; }
+  }
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 // ─── Activate: clear old caches ───

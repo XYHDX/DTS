@@ -15,8 +15,9 @@ from api.core.cache import (
     _tenant_cache_key,
 )
 from api.core.database import _supabase_get
+from api.core.geo import parse_location
 from api.core.tenancy import _op_filter, resolve_read_scope
-from api.models.schemas import RouteResponse
+from api.models.schemas import RouteResponse, StopResponse
 
 logger = logging.getLogger(__name__)
 
@@ -142,3 +143,67 @@ async def get_route(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
         )
+
+
+@router.get(
+    "/api/routes/{route_id}/stops",
+    response_model=List[StopResponse],
+    tags=["routes"],
+)
+async def get_route_stops(
+    route_id: str,
+    operator: Optional[str] = Query(None, description="Operator slug"),
+    current_user: Optional[CurrentUser] = Depends(optional_auth),
+):
+    """Return the ordered list of stops served by a route (by stop_sequence).
+
+    Powers the passenger route-detail view so tapping a route card opens a real
+    stop list (previously a dead-end deep link).
+    """
+    try:
+        op_id = await resolve_read_scope(operator, current_user)
+
+        cache_key = f"transit:route_stops:{route_id}:{op_id or 'all'}"
+        cached = await _cache_get(cache_key)
+        if cached is not None:
+            return cached
+
+        # Embed the related stop row via the route_stops → stops FK, ordered by
+        # the canonical stop_sequence so the list reads start → end.
+        rows = await _supabase_get(
+            f"route_stops?route_id=eq.{route_id}"
+            "&select=stop_sequence,stops(id,stop_id,name,name_ar,location,has_shelter,is_active)"
+            "&order=stop_sequence.asc"
+        )
+
+        result: List[StopResponse] = []
+        for row in rows or []:
+            stop = row.get("stops") or {}
+            if not stop or stop.get("is_active") is False:
+                continue
+            lat, lon = parse_location(stop.get("location"))
+            result.append(
+                StopResponse(
+                    id=stop["id"],
+                    stop_id=stop["stop_id"],
+                    name=stop["name"],
+                    name_ar=stop["name_ar"],
+                    latitude=lat,
+                    longitude=lon,
+                    has_shelter=stop.get("has_shelter", False),
+                    is_active=stop.get("is_active", True),
+                )
+            )
+
+        await _cache_set(
+            cache_key, [r.model_dump() for r in result], CACHE_TTL_ROUTES_STOPS
+        )
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        # Degrade gracefully — an empty list renders an "empty" detail view
+        # rather than a 500 that breaks the passenger screen.
+        return []

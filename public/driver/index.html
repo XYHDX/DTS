@@ -925,8 +925,48 @@ $('#incident-btn').addEventListener('click', async () => {
 // Boot
 window.addEventListener('DOMContentLoaded', () => {
   if (token && user) { showTrip(); setupGPS(); /* showTrip() also hydrates + starts poll */ } else showLogin();
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/driver/service-worker.js').catch(()=>{});
+  registerDriverSW();
 });
+
+// Service worker + "new version" prompt. Never auto-reloads (a driver could be
+// mid-trip); the reload only happens after the driver taps Update, and the
+// in-progress trip is restored on the next load.
+function registerDriverSW() {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('/driver/service-worker.js').then((reg) => {
+    if (reg.waiting && navigator.serviceWorker.controller) showDriverUpdate(reg);
+    reg.addEventListener('updatefound', () => {
+      const sw = reg.installing;
+      if (!sw) return;
+      sw.addEventListener('statechange', () => {
+        if (sw.state === 'installed' && navigator.serviceWorker.controller) showDriverUpdate(reg);
+      });
+    });
+  }).catch(() => {});
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloaded) return; reloaded = true; location.reload();
+  });
+}
+function showDriverUpdate(reg) {
+  if (document.getElementById('sw-update')) return;
+  const ar = (document.documentElement.lang || 'ar').slice(0, 2) === 'ar';
+  const bar = document.createElement('div');
+  bar.id = 'sw-update';
+  bar.style.cssText = 'position:fixed;inset-inline:12px;bottom:16px;z-index:9999;background:#0E5650;color:#fff;padding:12px 16px;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.3);display:flex;gap:12px;align-items:center;justify-content:space-between;font-family:inherit';
+  const span = document.createElement('span');
+  span.textContent = ar ? 'يتوفر إصدار جديد' : 'A new version is available';
+  const btn = document.createElement('button');
+  btn.className = 'btn btn--sm btn--gold-solid';
+  btn.textContent = ar ? 'تحديث' : 'Update';
+  btn.addEventListener('click', () => {
+    if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+    else location.reload();
+  });
+  bar.appendChild(span);
+  bar.appendChild(btn);
+  document.body.appendChild(bar);
+}
 </script>
 </body>
 </html>

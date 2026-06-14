@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="760" viewBox="0 0 1040 760" font-family="'Segoe UI',system-ui,sans-serif">
+  <rect width="1040" height="760" fill="#FAFAF7"/>
+  <!-- flag strip -->
+  <rect x="0" y="0" width="346" height="6" fill="#0E5650"/>
+  <rect x="346" y="0" width="348" height="6" fill="#FFFFFF" stroke="#D9DDD5" stroke-width="0.5"/>
+  <rect x="694" y="0" width="346" height="6" fill="#0B0B0B"/>
+  <text x="32" y="44" font-size="24" font-weight="700" fill="#0B0B0B">Design System — Syrian National Identity</text>
+  <text x="32" y="68" font-size="13" fill="#6A6A6A">design-system.css · the single source of truth for every colour, button, type size, radius &amp; spacing token</text>
+
+  <!-- PALETTE -->
+  <text x="32" y="104" font-size="14" font-weight="700" fill="#0E5650" letter-spacing="1">PALETTE</text>
+  <!-- green ramp -->
+  <g>
+    <rect x="32"  y="118" width="86" height="58" rx="4" fill="#061F1B"/>
+    <rect x="122" y="118" width="86" height="58" rx="4" fill="#0A302A"/>
+    <rect x="212" y="118" width="86" height="58" rx="4" fill="#0E5650" stroke="#0B0B0B" stroke-width="2"/>
+    <rect x="302" y="118" width="86" height="58" rx="4" fill="#1F7068"/>
+    <rect x="392" y="118" width="86" height="58" rx="4" fill="#4A9189"/>
+    <rect x="482" y="118" width="86" height="58" rx="4" fill="#82B5AF"/>
+    <text x="32"  y="192" font-size="10" fill="#3C3C3C">950</text>
+    <text x="122" y="192" font-size="10" fill="#3C3C3C">900</text>
+    <text x="212" y="192" font-size="10" font-weight="700" fill="#0E5650">#0E5650 ★ primary</text>
+    <text x="392" y="192" font-size="10" fill="#3C3C3C">400</text>
+    <text x="482" y="192" font-size="10" fill="#3C3C3C">300</text>
+  </g>
+  <!-- gold ramp -->
+  <g>
+    <rect x="600" y="118" width="86" height="58" rx="4" fill="#7A5D26"/>
+    <rect x="690" y="118" width="86" height="58" rx="4" fill="#9C7A3A"/>
+    <rect x="780" y="118" width="86" height="58" rx="4" fill="#C9A95B" stroke="#0B0B0B" stroke-width="2"/>
+    <rect x="870" y="118" width="86" height="58" rx="4" fill="#E2CB93"/>
+    <rect x="960" y="118" width="48" height="58" rx="4" fill="#F8F1DE" stroke="#D9DDD5"/>
+    <text x="780" y="192" font-size="10" font-weight="700" fill="#9C7A3A">#C9A95B ★ gold</text>
+    <text x="600" y="192" font-size="10" fill="#3C3C3C">800</text>
+  </g>
+  <!-- semantic row -->
+  <g>
+    <rect x="32"  y="208" width="120" height="44" rx="4" fill="#CE1126"/>
+    <text x="42" y="234" font-size="11" font-weight="700" fill="#fff">#CE1126 red ★</text>
+    <rect x="164" y="208" width="120" height="44" rx="4" fill="#0E5650"/>
+    <text x="174" y="234" font-size="11" font-weight="700" fill="#fff">success</text>
+    <rect x="296" y="208" width="120" height="44" rx="4" fill="#B5651D"/>
+    <text x="306" y="234" font-size="11" font-weight="700" fill="#fff">warning</text>
+    <rect x="428" y="208" width="120" height="44" rx="4" fill="#1F4E79"/>
+    <text x="438" y="234" font-size="11" font-weight="700" fill="#fff">info</text>
+    <rect x="560" y="208" width="130" height="44" rx="4" fill="#FFFFFF" stroke="#D9DDD5"/>
+    <text x="570" y="234" font-size="11" fill="#0B0B0B">surface #FFF</text>
+    <rect x="702" y="208" width="130" height="44" rx="4" fill="#FAFAF7" stroke="#D9DDD5"/>
+    <text x="712" y="234" font-size="11" fill="#0B0B0B">bg #FAFAF7</text>
+    <rect x="844" y="208" width="164" height="44" rx="4" fill="#0B0B0B"/>
+    <text x="854" y="234" font-size="11" font-weight="700" fill="#fff">ink #0B0B0B</text>
+  </g>
+
+  <!-- BUTTONS -->
+  <text x="32" y="296" font-size="14" font-weight="700" fill="#0E5650" letter-spacing="1">BUTTON TAXONOMY  ·  radius 4px · min-height 44px (tap target) · weight 600</text>
+  <!-- primary -->
+  <rect x="32" y="312" width="150" height="44" rx="4" fill="#0E5650"/>
+  <text x="107" y="339" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">.btn (primary)</text>
+  <!-- gold-solid -->
+  <rect x="196" y="312" width="150" height="44" rx="4" fill="#C9A95B"/>
+  <text x="271" y="339" font-size="13" font-weight="700" fill="#061F1B" text-anchor="middle">.btn--gold-solid</text>
+  <!-- ghost -->
+  <rect x="360" y="312" width="140" height="44" rx="4" fill="none" stroke="#0E5650" stroke-width="1.5"/>
+  <text x="430" y="339" font-size="13" font-weight="700" fill="#0E5650" text-anchor="middle">.btn--ghost</text>
+  <!-- outline -->
+  <rect x="514" y="312" width="140" height="44" rx="4" fill="none" stroke="#D9DDD5" stroke-width="1.5"/>
+  <text x="584" y="339" font-size="13" font-weight="700" fill="#0B0B0B" text-anchor="middle">.btn--outline</text>
+  <!-- danger -->
+  <rect x="668" y="312" width="140" height="44" rx="4" fill="#CE1126"/>
+  <text x="738" y="339" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">.btn--danger</text>
+  <!-- link -->
+  <text x="822" y="339" font-size="13" font-weight="700" fill="#0E5650" text-decoration="underline">.btn--link →</text>
+
+  <!-- sizes -->
+  <rect x="32" y="372" width="92" height="28" rx="4" fill="#0E5650"/>
+  <text x="78" y="391" font-size="11" font-weight="700" fill="#fff" text-anchor="middle">sm · 36px</text>
+  <rect x="138" y="368" width="120" height="44" rx="4" fill="#0E5650"/>
+  <text x="198" y="395" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">md · 44px</text>
+  <rect x="272" y="364" width="140" height="52" rx="4" fill="#0E5650"/>
+  <text x="342" y="395" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">lg · 52px</text>
+  <rect x="426" y="360" width="160" height="56" rx="6" fill="#0E5650"/>
+  <text x="506" y="394" font-size="14" font-weight="700" fill="#fff" text-anchor="middle">xl · 56px</text>
+  <text x="610" y="392" font-size="12" fill="#6A6A6A">+ .btn--pill (999px), .btn--icon-only, .is-loading spinner</text>
+
+  <!-- TYPE SCALE -->
+  <text x="32" y="452" font-size="14" font-weight="700" fill="#0E5650" letter-spacing="1">TYPE SCALE</text>
+  <text x="32" y="488" font-size="14" fill="#0B0B0B">xs 13 · sm 15 · md 17 (base)</text>
+  <text x="32" y="516" font-size="20" fill="#0B0B0B">lg 20 · xl 24</text>
+  <text x="32" y="552" font-size="32" fill="#0B0B0B">2xl 32 · 3xl 42</text>
+  <text x="32" y="604" font-size="48" fill="#0B0B0B">4xl 56</text>
+  <text x="470" y="488" font-size="12" fill="#6A6A6A">Latin headlines → Source Serif 4 (serif)</text>
+  <text x="470" y="510" font-size="12" fill="#6A6A6A">Arabic / UI → Readex Pro · IBM Plex Sans Arabic</text>
+  <text x="470" y="532" font-size="12" fill="#6A6A6A">Mono → JetBrains Mono</text>
+  <text x="470" y="554" font-size="12" fill="#6A6A6A">RTL headings never use Latin serif (auto-swap to sans)</text>
+
+  <!-- RADIUS + SPACING -->
+  <text x="700" y="452" font-size="14" font-weight="700" fill="#0E5650" letter-spacing="1">RADIUS</text>
+  <rect x="700" y="466" width="44" height="44" rx="4"  fill="none" stroke="#0E5650" stroke-width="1.5"/>
+  <rect x="752" y="466" width="44" height="44" rx="6"  fill="none" stroke="#0E5650" stroke-width="1.5"/>
+  <rect x="804" y="466" width="44" height="44" rx="10" fill="none" stroke="#0E5650" stroke-width="1.5"/>
+  <rect x="856" y="466" width="44" height="44" rx="16" fill="none" stroke="#0E5650" stroke-width="1.5"/>
+  <circle cx="934" cy="488" r="22" fill="none" stroke="#0E5650" stroke-width="1.5"/>
+  <text x="700" y="528" font-size="10" fill="#3C3C3C">sm4 md6 lg10 xl16 pill</text>
+
+  <!-- badges -->
+  <text x="32" y="648" font-size="14" font-weight="700" fill="#0E5650" letter-spacing="1">BADGES &amp; LIVE STATUS</text>
+  <rect x="32" y="662" width="92" height="26" rx="4" fill="#DCEAE7" stroke="#82B5AF"/>
+  <text x="78" y="679" font-size="11" font-weight="700" fill="#0E443B" text-anchor="middle">success</text>
+  <rect x="134" y="662" width="92" height="26" rx="4" fill="#F4E8D9" stroke="#DBC59B"/>
+  <text x="180" y="679" font-size="11" font-weight="700" fill="#6A4413" text-anchor="middle">warn</text>
+  <rect x="236" y="662" width="92" height="26" rx="4" fill="#fbe1e4" stroke="#EBB5BA"/>
+  <text x="282" y="679" font-size="11" font-weight="700" fill="#6e0712" text-anchor="middle">danger</text>
+  <circle cx="356" cy="675" r="6" fill="#0E5650"/>
+  <circle cx="356" cy="675" r="11" fill="none" stroke="#0E5650" stroke-opacity="0.4" stroke-width="2"/>
+  <text x="374" y="679" font-size="12" fill="#3C3C3C">live-dot (pulse) — “متصل / connected”</text>
+
+  <text x="32" y="726" font-size="11" fill="#6A6A6A">Accessibility: 3px gold focus ring · skip-to-content link · prefers-reduced-motion honoured · 44px min tap targets · dark-mode tokens defined</text>
+  <rect x="0" y="744" width="1040" height="16" fill="#0E5650"/>
+  <text x="1024" y="755" font-size="9" fill="#C9A95B" text-anchor="end">نقل دمشق · Damascus Transit · v5.0</text>
+</svg>

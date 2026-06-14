@@ -131,18 +131,28 @@
       const np2 = document.getElementById('new2').value;
       if (np1 !== np2) { err.textContent = 'كلمتا المرور غير متطابقتين — passwords do not match'; return; }
       if (np1 === cur) { err.textContent = 'كلمة المرور الجديدة يجب أن تختلف — must differ from current'; return; }
+      // Web auth is the httpOnly cookie (sent automatically on same-origin);
+      // a Bearer header is only added if a token happens to be present (native/dev).
       const tk = localStorage.getItem('dt_token') || sessionStorage.getItem('dt_token');
-      if (!tk) { location.replace('/admin/login.html'); return; }
       try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (tk) headers['Authorization'] = 'Bearer ' + tk;
         const r = await fetch('/api/auth/change-password', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tk },
+          headers: headers,
+          credentials: 'same-origin',
           body: JSON.stringify({ current_password: cur, new_password: np1 }),
         });
+        if (r.status === 401) { location.replace('/admin/login.html'); return; }
         const data = await r.json().catch(() => ({}));
         if (!r.ok) { err.textContent = (data && data.detail) || 'فشل التغيير — change failed'; return; }
-        // Changing the password revokes the old token by design — sign in again.
-        try { localStorage.removeItem('dt_token'); sessionStorage.removeItem('dt_token'); } catch (_) {}
+        // Changing the password revokes the old token by design — clear both the
+        // local hints and the httpOnly cookie, then sign in again.
+        try {
+          localStorage.removeItem('dt_token'); sessionStorage.removeItem('dt_token');
+          localStorage.removeItem('dt_user'); sessionStorage.removeItem('dt_user');
+        } catch (_) {}
+        try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }); } catch (_) {}
         ok.textContent = 'تم التغيير — سجّل الدخول بكلمة المرور الجديدة. Redirecting…';
         setTimeout(() => { location.href = '/admin/login.html'; }, 1200);
       } catch (_) { err.textContent = 'تعذر الاتصال بالخادم — network error'; }

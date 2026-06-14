@@ -349,24 +349,32 @@ const $ = (s,r=document) => r.querySelector(s);
 const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:8000' : '';
 const arDigit = (n) => (n==null || isNaN(n)) ? '—' : Number(n).toLocaleString('ar-EG',{maximumFractionDigits:0});
 
-// Auth guard
+// Auth guard. The JWT lives in an httpOnly cookie (sent automatically on
+// same-origin requests); `token` is usually absent now and only present for
+// native/dev. Gate the UI on the non-secret `dt_user` hint.
 const token = localStorage.getItem('dt_token') || sessionStorage.getItem('dt_token');
 const user = JSON.parse(localStorage.getItem('dt_user') || sessionStorage.getItem('dt_user') || 'null');
-if (!token) { location.href = '/admin/login.html'; }
+if (!user) { location.href = '/admin/login.html'; }
 if (user) {
   $('#user-name').textContent = user.name || user.email || 'المسؤول';
   $('#user-role').textContent = user.role || '—';
   $('#user-initial').textContent = (user.name || user.email || '?').slice(0,1).toUpperCase();
 }
 $('#logout-btn').addEventListener('click', () => {
-  localStorage.removeItem('dt_token'); localStorage.removeItem('dt_user');
-  sessionStorage.removeItem('dt_token'); sessionStorage.removeItem('dt_user');
-  location.href = '/admin/login.html';
+  const done = () => {
+    localStorage.removeItem('dt_token'); localStorage.removeItem('dt_user');
+    sessionStorage.removeItem('dt_token'); sessionStorage.removeItem('dt_user');
+    location.href = '/admin/login.html';
+  };
+  // Clear the httpOnly cookie server-side first, then wipe local hints.
+  fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }).then(done, done);
 });
 
 async function api(path) {
   try {
-    const r = await fetch(API_BASE + path, { headers: { 'Authorization':'Bearer '+token, 'Accept':'application/json' }});
+    const headers = { 'Accept':'application/json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;  // cookie covers web
+    const r = await fetch(API_BASE + path, { headers, credentials: 'same-origin' });
     if (r.status === 401) { location.href = '/admin/login.html'; return null; }
     if (!r.ok) throw new Error('HTTP '+r.status);
     return await r.json();

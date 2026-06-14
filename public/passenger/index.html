@@ -148,7 +148,7 @@
   </div>
   <p class="muted" data-i18n="passenger.sub" style="margin:0 0 var(--s-4);color:rgba(255,255,255,.78);font-size:var(--fs-sm)">ابحث عن محطتك أو خطك أو شاهد أقرب الحافلات.</p>
   <form class="search-bar" id="search-form" role="search">
-    <input id="q" type="search" data-i18n-placeholder="passenger.searchHint" placeholder="اسم محطة أو خط (مثال: مزة، باب توما)" aria-label="بحث">
+    <input id="q" name="q" type="search" autocomplete="off" data-i18n-placeholder="passenger.searchHint" placeholder="اسم محطة أو خط (مثال: مزة، باب توما)" aria-label="بحث">
     <button type="submit" data-i18n-aria-label="passenger.searchHint" aria-label="بحث">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
     </button>
@@ -161,12 +161,25 @@
   <button class="btn btn--sm" id="install-btn">تثبيت</button>
 </div>
 
+<!-- Route detail — shown when a route card is tapped or ?route=<id> is present -->
+<section class="panel hidden" id="route-detail-panel" aria-live="polite"></section>
+
+<!-- Search results — shown after the user searches -->
+<section class="panel hidden" id="search-results-panel">
+  <div class="cluster between">
+    <h2 class="section-title" data-i18n="passenger.searchResults">نتائج البحث</h2>
+    <button id="search-clear" class="btn btn--ghost btn--sm" data-i18n="common.close">إغلاق</button>
+  </div>
+  <div id="search-results"></div>
+</section>
+
+<div id="home-sections">
 <section class="panel">
   <div class="cluster between">
-    <h2 class="section-title">أقرب المحطات إليك</h2>
+    <h2 class="section-title" data-i18n="passenger.nearest">أقرب المحطات إليك</h2>
     <button id="locate-btn" class="btn btn--ghost btn--sm">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg>
-      موقعي
+      <span data-i18n="passenger.locate">موقعي</span>
     </button>
   </div>
   <div id="nearest-stops" aria-busy="true">
@@ -176,7 +189,7 @@
 </section>
 
 <section class="panel">
-  <h2 class="section-title">الخطوط الشائعة</h2>
+  <h2 class="section-title" data-i18n="passenger.popular">الخطوط الشائعة</h2>
   <div id="popular-routes">
     <div class="stop-card"><div class="skeleton" style="width:48px;height:1.2em;border-radius:6px"></div><div class="skeleton" style="width:70%;height:1em"></div></div>
     <div class="stop-card"><div class="skeleton" style="width:48px;height:1.2em;border-radius:6px"></div><div class="skeleton" style="width:70%;height:1em"></div></div>
@@ -184,44 +197,49 @@
 </section>
 
 <section class="panel">
-  <h2 class="section-title">حافلات قريبة</h2>
-  <div class="map-block">
+  <h2 class="section-title" data-i18n="passenger.nearby">حافلات قريبة</h2>
+  <div class="map-block" style="position:relative">
     <div id="mini-map" class="map" role="application" aria-label="خريطة الحافلات"></div>
+    <div class="map-legend" aria-hidden="true" style="position:absolute;inset-inline-start:10px;top:10px;background:var(--color-surface);border-radius:var(--r-sm);padding:8px 10px;box-shadow:var(--sh-sm);font-size:var(--fs-xs);z-index:5">
+      <div style="display:flex;gap:6px;align-items:center"><span style="width:10px;height:10px;border-radius:50%;background:#00876f;border:2px solid #fff;display:inline-block"></span><span data-i18n="map.legendBus">حافلة</span></div>
+      <div style="display:flex;gap:6px;align-items:center;margin-top:3px"><span style="width:10px;height:10px;border-radius:50%;background:var(--gold-600)"></span><span data-i18n="map.legendStop">محطة</span></div>
+    </div>
   </div>
 </section>
 
 <section class="panel">
-  <h2 class="section-title">روابط سريعة</h2>
+  <h2 class="section-title" data-i18n="passenger.quick">روابط سريعة</h2>
   <div class="quick-actions">
     <a href="/api/gtfs" class="qa-btn">
       <div class="qa-btn__icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h10"/></svg></div>
-      <div class="font-bold">جدول GTFS</div>
-      <div class="text-xs muted">بيانات الخطوط القابلة للتنزيل</div>
+      <div class="font-bold" data-i18n="passenger.gtfs">جدول GTFS</div>
+      <div class="text-xs muted" data-i18n="passenger.gtfsSub">بيانات الخطوط القابلة للتنزيل</div>
     </a>
     <a href="/" class="qa-btn">
       <div class="qa-btn__icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12 12 3l9 9"/><path d="M5 10v10h14V10"/></svg></div>
-      <div class="font-bold">الرئيسية</div>
-      <div class="text-xs muted">العودة للوحة العامة</div>
+      <div class="font-bold" data-i18n="passenger.home">الرئيسية</div>
+      <div class="text-xs muted" data-i18n="passenger.homeSub">العودة للوحة العامة</div>
     </a>
   </div>
 </section>
+</div><!-- /#home-sections -->
 
 <nav class="tabbar" style="--tabbar-cols:4" aria-label="تنقل سفلي">
   <a href="/passenger/" class="is-active" aria-current="page">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12 12 3l9 9"/><path d="M5 10v10h14V10"/></svg>
-    <span>الرئيسية</span>
+    <span data-i18n="passenger.tabHome">الرئيسية</span>
   </a>
   <a href="#" id="nav-nearest">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 22s7-7 7-12a7 7 0 0 0-14 0c0 5 7 12 7 12Z"/></svg>
-    <span>قريب</span>
+    <span data-i18n="passenger.tabNearby">قريب</span>
   </a>
   <a href="#popular-routes">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 4v16M4 9h16"/></svg>
-    <span>الخطوط</span>
+    <span data-i18n="passenger.tabRoutes">الخطوط</span>
   </a>
   <a href="/admin/login.html">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>
-    <span>حسابي</span>
+    <span data-i18n="passenger.tabAccount">حسابي</span>
   </a>
 </nav>
 
@@ -230,14 +248,41 @@
 'use strict';
 const $ = (s, r=document) => r.querySelector(s);
 const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:8000' : '';
-const arDigit = (n) => Number(n).toLocaleString('ar-EG');
+const isAr = () => (document.documentElement.lang || 'ar').slice(0,2) === 'ar';
+const arDigit = (n) => Number(n).toLocaleString(isAr() ? 'ar-EG' : 'en-US');
+const tt = (k, fb) => { try { return (window.I18N && I18N.t) ? I18N.t(k) : (fb || k); } catch (_) { return fb || k; } };
+const escH = (x) => String(x==null?'':x).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let _allRoutes = [];
+
+// Shared route-card markup (popular list + search results). Uses the real
+// `route_id` for the code chip and the correct `stop_count` field.
+function routeCardHTML(r) {
+  const code  = escH(r.route_id || r.code || (r.id+'').slice(0,3));
+  const name  = escH(isAr() ? (r.name_ar || r.name || 'خط') : (r.name || r.name_ar || 'Route'));
+  const sub   = escH(isAr() ? (r.name || '') : (r.name_ar || ''));
+  const count = (r.stop_count != null) ? r.stop_count : (r.stops_count || 0);
+  return `
+    <a class="stop-card" style="text-decoration:none" href="/passenger/?route=${encodeURIComponent(r.id)}">
+      <span class="dist" style="background:var(--gold-100);color:var(--gold-700)">${code}</span>
+      <div>
+        <div class="font-bold" style="color:var(--color-text)">${name}</div>
+        ${sub ? `<div class="text-xs muted">${sub}</div>` : ''}
+      </div>
+      <span class="badge badge--brand">${arDigit(count)} ${tt('routes.stopsCount','محطة')}</span>
+    </a>`;
+}
 
 async function getJson(path) {
   try {
     const r = await fetch(API_BASE + path, { headers: {'Accept':'application/json'} });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     return await r.json();
-  } catch (e) { console.warn(path, e); return null; }
+  } catch (e) {
+    // Constant format string — never pass the (possibly user-controlled) path
+    // as the first console arg (avoids a tainted-format-string sink).
+    console.warn('request failed:', path, e);
+    return null;
+  }
 }
 
 // ----- Offline detection -----
@@ -257,7 +302,7 @@ async function loadNearest(lat, lon) {
   const stops = await getJson(`/api/stops/nearest?lat=${lat}&lon=${lon}&radius_m=1500`);
   wrap.setAttribute('aria-busy', 'false');
   if (!stops || !stops.length) {
-    wrap.innerHTML = '<div class="stop-card muted">لا توجد محطات قريبة ضمن ١.٥ كم.</div>';
+    wrap.innerHTML = '<div class="stop-card muted">' + tt('passenger.noStops','لا توجد محطات قريبة ضمن ١٫٥ كم.') + '</div>';
     return;
   }
   // XSS fix (2026-06-11): API fields are escaped before HTML insertion.
@@ -279,21 +324,112 @@ async function loadPopularRoutes() {
   const routes = await getJson('/api/routes');
   const wrap = $('#popular-routes');
   if (!routes || !routes.length) {
-    wrap.innerHTML = '<div class="stop-card muted">لا توجد خطوط متاحة.</div>';
+    wrap.innerHTML = '<div class="stop-card muted">' + tt('routes.none','لا توجد خطوط متاحة.') + '</div>';
     return;
   }
-  // XSS fix (2026-06-11): API fields are escaped before HTML insertion.
-  const escH = (x) => String(x==null?'':x).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  wrap.innerHTML = routes.slice(0, 6).map(r => `
-    <a class="stop-card" style="text-decoration:none" href="/passenger/?route=${encodeURIComponent(r.id)}">
-      <span class="dist" style="background:var(--gold-100);color:var(--gold-700)">${escH(r.code || r.short_name || (r.id+'').slice(0,3))}</span>
-      <div>
-        <div class="font-bold" style="color:var(--color-text)">${escH(r.name_ar || r.name || 'خط')}</div>
-        <div class="text-xs muted">${escH(r.from || '')} ↔ ${escH(r.to || r.name_en || '')}</div>
-      </div>
-      <span class="badge badge--brand">${arDigit(r.stops_count || 0)} محطة</span>
-    </a>
-  `).join('');
+  _allRoutes = routes;
+  // XSS-safe: routeCardHTML escapes every interpolated field.
+  wrap.innerHTML = routes.slice(0, 6).map(routeCardHTML).join('');
+}
+
+// ───── View toggling: home ⇄ search results ⇄ route detail ─────
+function showHome() {
+  const h = $('#home-sections'); if (h) h.classList.remove('hidden');
+  const sr = $('#search-results-panel'); if (sr) sr.classList.add('hidden');
+  const rd = $('#route-detail-panel'); if (rd) rd.classList.add('hidden');
+}
+function showOnly(sel) {
+  const h = $('#home-sections'); if (h) h.classList.add('hidden');
+  const sr = $('#search-results-panel'); if (sr) sr.classList.toggle('hidden', sel !== '#search-results-panel');
+  const rd = $('#route-detail-panel'); if (rd) rd.classList.toggle('hidden', sel !== '#route-detail-panel');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ───── Search (routes + stops) ─────
+async function runSearch(q) {
+  q = (q || '').trim();
+  const out = $('#search-results');
+  if (!q) { out.innerHTML = '<div class="stop-card muted">' + tt('passenger.searchPrompt') + '</div>'; showOnly('#search-results-panel'); return; }
+  out.innerHTML = '<div class="stop-card muted">' + tt('common.loading','جاري التحميل…') + '</div>';
+  showOnly('#search-results-panel');
+  const [routes, stops] = await Promise.all([
+    (_allRoutes.length ? Promise.resolve(_allRoutes) : getJson('/api/routes')),
+    getJson('/api/stops'),
+  ]);
+  if (routes && routes.length) _allRoutes = routes;
+  const needle = q.toLowerCase();
+  const norm = (s) => String(s == null ? '' : s).toLowerCase();
+  const mr = (routes || []).filter(r => norm(r.name_ar).includes(needle) || norm(r.name).includes(needle) || norm(r.route_id).includes(needle));
+  const ms = (stops || []).filter(s => norm(s.name_ar).includes(needle) || norm(s.name).includes(needle)).slice(0, 12);
+  if (!mr.length && !ms.length) { out.innerHTML = '<div class="stop-card muted">' + tt('passenger.searchEmpty') + '</div>'; return; }
+  let html = '';
+  if (mr.length) {
+    html += '<div class="text-xs muted" style="margin:4px 0 6px;font-weight:700">' + tt('passenger.routesGroup') + '</div>';
+    html += mr.slice(0, 8).map(routeCardHTML).join('');
+  }
+  if (ms.length) {
+    html += '<div class="text-xs muted" style="margin:12px 0 6px;font-weight:700">' + tt('passenger.stopsGroup') + '</div>';
+    html += ms.map(stopResultHTML).join('');
+  }
+  out.innerHTML = html;
+}
+function stopResultHTML(s) {
+  const id = escH(s.id || s.stop_id);
+  const name = escH(isAr() ? (s.name_ar || s.name) : (s.name || s.name_ar));
+  return `
+    <button class="stop-card" type="button" style="width:100%;text-align:start;border:1px solid var(--color-border);background:var(--color-surface)" data-stop="${id}">
+      <span class="dist" style="background:var(--brand-100);color:var(--brand-700)">◉</span>
+      <div><div class="font-bold">${name}</div>
+      <div class="text-xs muted eta-slot" data-eta-for="${id}">${tt('passenger.tapForEta')}</div></div>
+      <span></span>
+    </button>`;
+}
+async function loadStopEta(stopId, slot) {
+  slot.textContent = tt('passenger.loadingEta','…');
+  const data = await getJson('/api/stops/' + encodeURIComponent(stopId) + '/eta?limit=3');
+  if (!data || !data.arrivals || !data.arrivals.length) { slot.textContent = tt('passenger.noEta'); return; }
+  slot.textContent = data.arrivals.map(a => {
+    const label = isAr() ? (a.route_name_ar || a.vehicle_name_ar || a.vehicle_id) : (a.route_name || a.vehicle_name || a.vehicle_id);
+    return escH(label) + ' ~' + arDigit(a.eta_minutes) + ' ' + (isAr() ? 'د' : 'min');
+  }).join(' · ');
+}
+
+// ───── Route detail (?route=<id> or tapping a route card) ─────
+async function renderRouteDetail(routeId) {
+  const panel = $('#route-detail-panel');
+  if (!panel) return;
+  panel.innerHTML = '<div class="stop-card muted">' + tt('common.loading','جاري التحميل…') + '</div>';
+  showOnly('#route-detail-panel');
+  const [route, stops] = await Promise.all([
+    getJson('/api/routes/' + encodeURIComponent(routeId)),
+    getJson('/api/routes/' + encodeURIComponent(routeId) + '/stops'),
+  ]);
+  if (!route) { panel.innerHTML = '<div class="stop-card muted">' + tt('error.notFound','لم يُعثر على الخط.') + '</div>'; return; }
+  const code = escH(route.route_id || (route.id+'').slice(0,3));
+  const name = escH(isAr() ? (route.name_ar || route.name) : (route.name || route.name_ar));
+  const count = (route.stop_count != null) ? route.stop_count : (stops ? stops.length : 0);
+  let html = ''
+    + '<a href="/passenger/" class="btn btn--ghost btn--sm" style="margin-bottom:12px">' + tt('passenger.back') + '</a>'
+    + '<div class="cluster" style="gap:10px;align-items:center;margin-bottom:6px">'
+    +   '<span class="dist" style="background:var(--gold-100);color:var(--gold-700)">' + code + '</span>'
+    +   '<h2 class="section-title" style="margin:0">' + name + '</h2>'
+    + '</div>'
+    + '<div class="text-xs muted" style="margin-bottom:14px">' + arDigit(count) + ' ' + tt('routes.stopsCount','محطة') + '</div>'
+    + '<div class="section-title" style="font-size:var(--fs-sm)">' + tt('passenger.routeStops') + '</div>';
+  if (!stops || !stops.length) {
+    html += '<div class="stop-card muted">' + tt('passenger.noRouteStops') + '</div>';
+  } else {
+    html += stops.map((s, i) => {
+      const id = escH(s.id || s.stop_id);
+      const sn = escH(isAr() ? (s.name_ar || s.name) : (s.name || s.name_ar));
+      return '<button class="stop-card" type="button" style="width:100%;text-align:start;background:var(--color-surface)" data-stop="' + id + '">'
+        + '<span class="dist" style="background:var(--brand-100);color:var(--brand-700)">' + arDigit(i + 1) + '</span>'
+        + '<div><div class="font-bold">' + sn + '</div>'
+        + '<div class="text-xs muted eta-slot" data-eta-for="' + id + '">' + tt('passenger.tapForEta') + '</div></div>'
+        + '<span></span></button>';
+    }).join('');
+  }
+  panel.innerHTML = html;
 }
 
 // ----- Map -----
@@ -365,8 +501,17 @@ function requestLocation() {
 }
 
 // Language toggle is handled by lib/i18n.js via data-i18n-toggle on the button.
-// Re-fetch localised lists when the user switches:
-document.addEventListener('i18n:change', () => { loadPopularRoutes(); });
+// Re-render localised lists AND whichever dynamic view is open when switching.
+document.addEventListener('i18n:change', () => {
+  loadPopularRoutes();
+  const rd = $('#route-detail-panel'), sr = $('#search-results-panel');
+  if (rd && !rd.classList.contains('hidden')) {
+    const id = new URLSearchParams(location.search).get('route');
+    if (id) renderRouteDetail(id);
+  } else if (sr && !sr.classList.contains('hidden')) {
+    runSearch($('#q') ? $('#q').value : '');
+  }
+});
 
 // ----- PWA install -----
 let deferred;
@@ -385,15 +530,68 @@ $('#install-btn').addEventListener('click', async () => {
 
 // ----- Boot -----
 window.addEventListener('DOMContentLoaded', () => {
-  initMap();
+  const routeId = new URLSearchParams(location.search).get('route');
+
+  const form = $('#search-form');
+  if (form) form.addEventListener('submit', (e) => { e.preventDefault(); runSearch($('#q') ? $('#q').value : ''); });
+  const clearBtn = $('#search-clear');
+  if (clearBtn) clearBtn.addEventListener('click', () => { if ($('#q')) $('#q').value = ''; showHome(); });
+
+  // Delegated: tapping a stop card (search result or route stop) loads its ETA.
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-stop]'); if (!b) return;
+    const id = b.getAttribute('data-stop'); const slot = b.querySelector('.eta-slot');
+    if (id && slot) loadStopEta(id, slot);
+  });
+
   loadPopularRoutes();
+  if (routeId) renderRouteDetail(routeId); else showHome();
+
+  initMap();
   requestLocation();
   setTimeout(openStream, 800);
-  // Register service worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/passenger/service-worker.js').catch(()=>{});
-  }
+  registerSW();
 });
+
+// ----- Service worker registration + "new version" prompt -----
+function registerSW() {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('/passenger/service-worker.js').then((reg) => {
+    if (reg.waiting && navigator.serviceWorker.controller) showUpdateToast(reg);
+    reg.addEventListener('updatefound', () => {
+      const sw = reg.installing;
+      if (!sw) return;
+      sw.addEventListener('statechange', () => {
+        // A new SW finished installing while a page is already controlled →
+        // an update is ready and waiting. Offer it instead of silently caching.
+        if (sw.state === 'installed' && navigator.serviceWorker.controller) showUpdateToast(reg);
+      });
+    });
+  }).catch(() => {});
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloaded) return; reloaded = true; location.reload();
+  });
+}
+function showUpdateToast(reg) {
+  if (document.getElementById('sw-update')) return;
+  const bar = document.createElement('div');
+  bar.id = 'sw-update';
+  bar.className = 'toast';
+  bar.style.cssText = 'display:flex;gap:12px;align-items:center;justify-content:space-between';
+  const span = document.createElement('span');
+  span.textContent = tt('passenger.updateReady');
+  const btn = document.createElement('button');
+  btn.className = 'btn btn--sm';
+  btn.textContent = tt('passenger.updateBtn');
+  btn.addEventListener('click', () => {
+    if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+    else location.reload();
+  });
+  bar.appendChild(span);
+  bar.appendChild(btn);
+  document.body.appendChild(bar);
+}
 </script>
 <script src="/lib/i18n.js" defer></script>
 </body>

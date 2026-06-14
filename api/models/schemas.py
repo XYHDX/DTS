@@ -24,6 +24,8 @@ class HealthResponse(BaseModel):
 class LoginRequest(BaseModel):
     email: str = Field(..., max_length=254)
     password: str = Field(..., min_length=1, max_length=128)
+    # When true, the browser auth cookie is persisted (vs a session cookie).
+    remember: bool = False
 
     @field_validator("email")
     @classmethod

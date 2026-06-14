@@ -12,9 +12,12 @@
  */
 (function () {
   'use strict';
+  // The JWT now lives in an httpOnly cookie that JS cannot read, so the cloak
+  // gates on the non-secret `dt_user` profile hint instead. Real auth is still
+  // enforced by the API (the cookie) — this is only a flash-of-chrome guard.
   try {
-    var token = localStorage.getItem('dt_token') || sessionStorage.getItem('dt_token');
-    if (!token) {
+    var hasSession = localStorage.getItem('dt_user') || sessionStorage.getItem('dt_user');
+    if (!hasSession) {
       // Replace so the back button doesn't bring the user back to the
       // empty admin chrome.
       location.replace('/admin/login.html');
