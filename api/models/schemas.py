@@ -288,10 +288,16 @@ class AlertResolve(BaseModel):
 
 
 class PaymentInitiateRequest(BaseModel):
-    """Passenger scanned a vehicle QR and wants to pay the fare."""
+    """Passenger scanned a vehicle QR and wants to pay the fare.
+
+    amount_syp is optional: on fixed-fare routes the server fills in the
+    route fare (the client may not change it), so the passenger app can
+    simply send the scanned QR. It is required only for vehicles with no
+    fixed fare (e.g. taxis).
+    """
 
     qr: str = Field(..., min_length=16, max_length=1024)  # signed QR payload
-    amount_syp: int = Field(..., gt=0, le=1_000_000)
+    amount_syp: Optional[int] = Field(None, gt=0, le=1_000_000)
 
 
 class PaymentInitiateResponse(BaseModel):
@@ -372,23 +378,29 @@ class NearestStop(BaseModel):
 
 
 class TraccarPosition(BaseModel):
-    deviceId: int
-    latitude: float
-    longitude: float
+    # deviceId is a free-form string so trackers can identify themselves by
+    # their own hardware chip ID (e.g. "DTS-A1B2C3D4E5F6"). It is matched
+    # against vehicles.gps_device_id (TEXT). Must stay a str: the router
+    # URL-encodes it, and urllib.parse.quote() raises on a non-str.
+    deviceId: str = Field(..., min_length=1, max_length=128)
+    latitude: float = Field(..., ge=-90, le=90)
+    longitude: float = Field(..., ge=-180, le=180)
     altitude: Optional[float] = None
     speed: Optional[float] = None
     heading: Optional[float] = None
     accuracy: Optional[float] = None
-    timestamp: int
+    # Optional: the position endpoint stamps its own server time on upsert, so
+    # a device that lacks a clock can omit this.
+    timestamp: Optional[int] = None
 
 
 class TraccarEvent(BaseModel):
     eventId: Optional[int] = None
     type: str
-    serverTime: int
-    deviceId: int
-    deviceName: str
-    data: dict
+    serverTime: Optional[int] = None
+    deviceId: str = Field(..., min_length=1, max_length=128)
+    deviceName: Optional[str] = None
+    data: dict = Field(default_factory=dict)
 
 
 class OperatorCreate(BaseModel):

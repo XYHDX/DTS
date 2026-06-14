@@ -133,7 +133,7 @@ async def get_vehicle_qr(
     """
     quoted = urllib.parse.quote(vehicle_id, safe="")
     rows = await _supabase_get(
-        f"vehicles?id=eq.{quoted}&select=id,vehicle_id,operator_id,approval_status,is_active"
+        f"vehicles?id=eq.{quoted}&select=id,vehicle_id,operator_id,approval_status,is_active,assigned_route_id"
     )
     if not rows:
         raise HTTPException(status_code=404, detail="Vehicle not found")
@@ -157,9 +157,22 @@ async def get_vehicle_qr(
             detail="Vehicle is not approved to operate — no payment QR issued.",
         )
 
+    # Look up the route fare so the driver/operator can see it and the
+    # passenger app can show "Pay N SYP" before confirming.
+    fare_syp = None
+    rid = v.get("assigned_route_id")
+    if rid:
+        routes = await _supabase_get(
+            f"routes?id=eq.{urllib.parse.quote(rid, safe='')}&select=fare_syp"
+        )
+        raw_fare = (routes or [{}])[0].get("fare_syp")
+        if raw_fare:
+            fare_syp = int(raw_fare)
+
     return {
         "vehicle_code": v.get("vehicle_id"),
         "payload": _build_qr_payload(v["id"], v.get("operator_id") or ""),
+        "fare_syp": fare_syp,
         "sandbox": _is_sandbox(),
     }
 
@@ -207,24 +220,39 @@ async def initiate_payment(body: PaymentInitiateRequest, raw_request: Request):
             detail="This vehicle is not approved to collect fares.",
         )
 
-    # Fixed-fare enforcement
+    # Fixed-fare enforcement. On a fixed-fare route the price is server-set;
+    # an amount supplied by the client may only confirm it, never change it.
+    # If the client omits the amount, we fill in the route fare. Vehicles with
+    # no fixed fare (e.g. taxis) must supply the amount.
     route_id = v.get("assigned_route_id")
+    fare = None
     if route_id:
         routes = await _service_get(
             f"routes?id=eq.{urllib.parse.quote(route_id, safe='')}&select=id,fare_syp"
         )
-        fare = (routes or [{}])[0].get("fare_syp")
-        if fare and int(fare) > 0 and body.amount_syp != int(fare):
+        raw_fare = (routes or [{}])[0].get("fare_syp")
+        fare = int(raw_fare) if raw_fare else None
+
+    if fare and fare > 0:
+        if body.amount_syp is not None and body.amount_syp != fare:
             raise HTTPException(
                 status_code=422,
-                detail=f"Fare for this route is {int(fare)} SYP.",
+                detail=f"Fare for this route is {fare} SYP.",
             )
+        amount = fare
+    else:
+        if not body.amount_syp or body.amount_syp <= 0:
+            raise HTTPException(
+                status_code=422,
+                detail="Amount is required for this vehicle.",
+            )
+        amount = body.amount_syp
 
     payment = {
         "operator_id": operator_id,
         "vehicle_id": v["id"],
         "route_id": route_id,
-        "amount_syp": body.amount_syp,
+        "amount_syp": amount,
         "status": "pending",
         "qr_nonce": nonce,
         "sandbox": _is_sandbox(),
@@ -238,20 +266,18 @@ async def initiate_payment(body: PaymentInitiateRequest, raw_request: Request):
     # Sham Cash payment URI with the merchant account; in sandbox it is a
     # clearly-marked test link.
     if _is_sandbox():
-        deeplink = (
-            f"shamcash://sandbox/pay?ref={created['id']}&amount={body.amount_syp}"
-        )
+        deeplink = f"shamcash://sandbox/pay?ref={created['id']}&amount={amount}"
     else:
         merchant = os.getenv("SHAM_CASH_MERCHANT_ID", "")
         deeplink = (
             f"shamcash://pay?merchant={urllib.parse.quote(merchant)}"
-            f"&ref={created['id']}&amount={body.amount_syp}&currency=SYP"
+            f"&ref={created['id']}&amount={amount}&currency=SYP"
         )
 
     return PaymentInitiateResponse(
         payment_id=created["id"],
         status="pending",
-        amount_syp=body.amount_syp,
+        amount_syp=amount,
         vehicle_code=v.get("vehicle_id"),
         deeplink=deeplink,
         sandbox=_is_sandbox(),
@@ -356,6 +382,46 @@ async def sandbox_confirm(
     if not _is_sandbox():
         raise HTTPException(status_code=404, detail="Not available in live mode.")
     return await _confirm_payment(payload)
+
+
+@router.post("/api/pay/sandbox/selfpay/{payment_id}", tags=["payments"])
+async def sandbox_selfpay(payment_id: str, raw_request: Request):
+    """SANDBOX ONLY — let a passenger complete a demo payment themselves.
+
+    Real payments are confirmed by Sham Cash's signed webhook. This endpoint
+    exists so the passenger app can demonstrate the full pay loop end-to-end
+    before merchant credentials exist. It moves no real money, 404s in live
+    mode, and is rate-limited. The payment_id (an unguessable UUID returned by
+    /api/pay/initiate) is the access capability.
+    """
+    if not _is_sandbox():
+        raise HTTPException(status_code=404, detail="Not available in live mode.")
+
+    client_ip = _get_client_ip(raw_request)
+    max_req, window = RATE_LIMIT_READ
+    if not await _rate_limit_check(f"payselfpay:{client_ip}", max_req, window):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many attempts. Try again later.",
+            headers={"Retry-After": str(window)},
+        )
+
+    rows = await _service_get(
+        f"payments?id=eq.{urllib.parse.quote(payment_id, safe='')}"
+        f"&select=id,amount_syp,status"
+    )
+    if not rows:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    p = rows[0]
+
+    sim = ShamCashWebhookPayload(
+        payment_id=p["id"],
+        provider_ref=f"SANDBOX-{secrets.token_hex(6)}",
+        result="success",
+        amount_syp=p["amount_syp"],
+        payer_hint="sandbox",
+    )
+    return await _confirm_payment(sim)
 
 
 @router.get("/api/admin/payments", tags=["payments"])
