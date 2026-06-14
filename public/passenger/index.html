@@ -156,9 +156,9 @@
 </header>
 
 <div id="install-banner" class="install-banner" role="region" aria-label="تثبيت التطبيق">
-  <strong>ثبّت التطبيق</strong>
-  <span class="muted">للوصول السريع وأداء أفضل خارج المتصفح.</span>
-  <button class="btn btn--sm" id="install-btn">تثبيت</button>
+  <strong data-i18n="passenger.install">ثبّت التطبيق</strong>
+  <span class="muted" data-i18n="passenger.installSub">للوصول السريع وأداء أفضل خارج المتصفح.</span>
+  <button class="btn btn--sm" id="install-btn" data-i18n="passenger.installBtn">تثبيت</button>
 </div>
 
 <!-- Route detail — shown when a route card is tapped or ?route=<id> is present -->
@@ -250,7 +250,16 @@ const $ = (s, r=document) => r.querySelector(s);
 const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:8000' : '';
 const isAr = () => (document.documentElement.lang || 'ar').slice(0,2) === 'ar';
 const arDigit = (n) => Number(n).toLocaleString(isAr() ? 'ar-EG' : 'en-US');
-const tt = (k, fb) => { try { return (window.I18N && I18N.t) ? I18N.t(k) : (fb || k); } catch (_) { return fb || k; } };
+// Returns the translation; if the key is missing (e.g. a stale cached i18n.js),
+// falls back to the provided text instead of showing the raw key.
+const tt = (k, fb) => {
+  try {
+    const v = (window.I18N && I18N.t) ? I18N.t(k) : k;
+    return (v === k && fb != null) ? fb : v;
+  } catch (_) { return fb != null ? fb : k; }
+};
+// Bilingual fallback helper (used as the 2nd arg to tt()).
+const bf = (ar, en) => (isAr() ? ar : en);
 const escH = (x) => String(x==null?'':x).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let _allRoutes = [];
 
@@ -349,7 +358,7 @@ function showOnly(sel) {
 async function runSearch(q) {
   q = (q || '').trim();
   const out = $('#search-results');
-  if (!q) { out.innerHTML = '<div class="stop-card muted">' + tt('passenger.searchPrompt') + '</div>'; showOnly('#search-results-panel'); return; }
+  if (!q) { out.innerHTML = '<div class="stop-card muted">' + tt('passenger.searchPrompt', bf('اكتب اسم محطة أو خط للبحث.', 'Type a stop or route name to search.')) + '</div>'; showOnly('#search-results-panel'); return; }
   out.innerHTML = '<div class="stop-card muted">' + tt('common.loading','جاري التحميل…') + '</div>';
   showOnly('#search-results-panel');
   const [routes, stops] = await Promise.all([
@@ -361,14 +370,14 @@ async function runSearch(q) {
   const norm = (s) => String(s == null ? '' : s).toLowerCase();
   const mr = (routes || []).filter(r => norm(r.name_ar).includes(needle) || norm(r.name).includes(needle) || norm(r.route_id).includes(needle));
   const ms = (stops || []).filter(s => norm(s.name_ar).includes(needle) || norm(s.name).includes(needle)).slice(0, 12);
-  if (!mr.length && !ms.length) { out.innerHTML = '<div class="stop-card muted">' + tt('passenger.searchEmpty') + '</div>'; return; }
+  if (!mr.length && !ms.length) { out.innerHTML = '<div class="stop-card muted">' + tt('passenger.searchEmpty', bf('لا نتائج مطابقة.', 'No matching results.')) + '</div>'; return; }
   let html = '';
   if (mr.length) {
-    html += '<div class="text-xs muted" style="margin:4px 0 6px;font-weight:700">' + tt('passenger.routesGroup') + '</div>';
+    html += '<div class="text-xs muted" style="margin:4px 0 6px;font-weight:700">' + tt('passenger.routesGroup', bf('الخطوط', 'Routes')) + '</div>';
     html += mr.slice(0, 8).map(routeCardHTML).join('');
   }
   if (ms.length) {
-    html += '<div class="text-xs muted" style="margin:12px 0 6px;font-weight:700">' + tt('passenger.stopsGroup') + '</div>';
+    html += '<div class="text-xs muted" style="margin:12px 0 6px;font-weight:700">' + tt('passenger.stopsGroup', bf('المحطات', 'Stops')) + '</div>';
     html += ms.map(stopResultHTML).join('');
   }
   out.innerHTML = html;
@@ -380,14 +389,14 @@ function stopResultHTML(s) {
     <button class="stop-card" type="button" style="width:100%;text-align:start;border:1px solid var(--color-border);background:var(--color-surface)" data-stop="${id}">
       <span class="dist" style="background:var(--brand-100);color:var(--brand-700)">◉</span>
       <div><div class="font-bold">${name}</div>
-      <div class="text-xs muted eta-slot" data-eta-for="${id}">${tt('passenger.tapForEta')}</div></div>
+      <div class="text-xs muted eta-slot" data-eta-for="${id}">${tt('passenger.tapForEta', bf('اضغط لعرض مواعيد الوصول', 'Tap to see arrivals'))}</div></div>
       <span></span>
     </button>`;
 }
 async function loadStopEta(stopId, slot) {
   slot.textContent = tt('passenger.loadingEta','…');
   const data = await getJson('/api/stops/' + encodeURIComponent(stopId) + '/eta?limit=3');
-  if (!data || !data.arrivals || !data.arrivals.length) { slot.textContent = tt('passenger.noEta'); return; }
+  if (!data || !data.arrivals || !data.arrivals.length) { slot.textContent = tt('passenger.noEta', bf('لا حافلات قريبة الآن.', 'No buses nearby right now.')); return; }
   slot.textContent = data.arrivals.map(a => {
     const label = isAr() ? (a.route_name_ar || a.vehicle_name_ar || a.vehicle_id) : (a.route_name || a.vehicle_name || a.vehicle_id);
     return escH(label) + ' ~' + arDigit(a.eta_minutes) + ' ' + (isAr() ? 'د' : 'min');
@@ -409,15 +418,15 @@ async function renderRouteDetail(routeId) {
   const name = escH(isAr() ? (route.name_ar || route.name) : (route.name || route.name_ar));
   const count = (route.stop_count != null) ? route.stop_count : (stops ? stops.length : 0);
   let html = ''
-    + '<a href="/passenger/" class="btn btn--ghost btn--sm" style="margin-bottom:12px">' + tt('passenger.back') + '</a>'
+    + '<a href="/passenger/" class="btn btn--ghost btn--sm" style="margin-bottom:12px">' + tt('passenger.back', bf('→ رجوع', '← Back')) + '</a>'
     + '<div class="cluster" style="gap:10px;align-items:center;margin-bottom:6px">'
     +   '<span class="dist" style="background:var(--gold-100);color:var(--gold-700)">' + code + '</span>'
     +   '<h2 class="section-title" style="margin:0">' + name + '</h2>'
     + '</div>'
     + '<div class="text-xs muted" style="margin-bottom:14px">' + arDigit(count) + ' ' + tt('routes.stopsCount','محطة') + '</div>'
-    + '<div class="section-title" style="font-size:var(--fs-sm)">' + tt('passenger.routeStops') + '</div>';
+    + '<div class="section-title" style="font-size:var(--fs-sm)">' + tt('passenger.routeStops', bf('محطات الخط', 'Route stops')) + '</div>';
   if (!stops || !stops.length) {
-    html += '<div class="stop-card muted">' + tt('passenger.noRouteStops') + '</div>';
+    html += '<div class="stop-card muted">' + tt('passenger.noRouteStops', bf('لا توجد محطات لهذا الخط.', 'No stops for this route.')) + '</div>';
   } else {
     html += stops.map((s, i) => {
       const id = escH(s.id || s.stop_id);
@@ -425,7 +434,7 @@ async function renderRouteDetail(routeId) {
       return '<button class="stop-card" type="button" style="width:100%;text-align:start;background:var(--color-surface)" data-stop="' + id + '">'
         + '<span class="dist" style="background:var(--brand-100);color:var(--brand-700)">' + arDigit(i + 1) + '</span>'
         + '<div><div class="font-bold">' + sn + '</div>'
-        + '<div class="text-xs muted eta-slot" data-eta-for="' + id + '">' + tt('passenger.tapForEta') + '</div></div>'
+        + '<div class="text-xs muted eta-slot" data-eta-for="' + id + '">' + tt('passenger.tapForEta', bf('اضغط لعرض مواعيد الوصول', 'Tap to see arrivals')) + '</div></div>'
         + '<span></span></button>';
     }).join('');
   }
@@ -580,10 +589,10 @@ function showUpdateToast(reg) {
   bar.className = 'toast';
   bar.style.cssText = 'display:flex;gap:12px;align-items:center;justify-content:space-between';
   const span = document.createElement('span');
-  span.textContent = tt('passenger.updateReady');
+  span.textContent = tt('passenger.updateReady', bf('يتوفر إصدار جديد', 'A new version is available'));
   const btn = document.createElement('button');
   btn.className = 'btn btn--sm';
-  btn.textContent = tt('passenger.updateBtn');
+  btn.textContent = tt('passenger.updateBtn', bf('تحديث', 'Update'));
   btn.addEventListener('click', () => {
     if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
     else location.reload();

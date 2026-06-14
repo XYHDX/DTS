@@ -594,27 +594,35 @@
     return Object.prototype.hasOwnProperty.call(table, key) ? table[key] : key;
   }
 
+  // True only when the key actually exists in the active table. Used so that a
+  // missing/stale key never overwrites the in-HTML fallback text with the raw
+  // key (e.g. while a service worker still serves an older cached i18n.js).
+  function has(key) {
+    const table = DICT[current] || DICT.ar;
+    return Object.prototype.hasOwnProperty.call(table, key);
+  }
+
   function bind(root) {
     root = root || document;
     root.querySelectorAll('[data-i18n]').forEach((el) => {
       const k = el.getAttribute('data-i18n');
-      if (k) el.textContent = t(k);
+      if (k && has(k)) el.textContent = t(k);
     });
     root.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
       const k = el.getAttribute('data-i18n-placeholder');
-      if (k) el.setAttribute('placeholder', t(k));
+      if (k && has(k)) el.setAttribute('placeholder', t(k));
     });
     root.querySelectorAll('[data-i18n-aria-label]').forEach((el) => {
       const k = el.getAttribute('data-i18n-aria-label');
-      if (k) el.setAttribute('aria-label', t(k));
+      if (k && has(k)) el.setAttribute('aria-label', t(k));
     });
     root.querySelectorAll('[data-i18n-title]').forEach((el) => {
       const k = el.getAttribute('data-i18n-title');
-      if (k) el.setAttribute('title', t(k));
+      if (k && has(k)) el.setAttribute('title', t(k));
     });
     root.querySelectorAll('[data-i18n-alt]').forEach((el) => {
       const k = el.getAttribute('data-i18n-alt');
-      if (k) el.setAttribute('alt', t(k));
+      if (k && has(k)) el.setAttribute('alt', t(k));
     });
   }
 
