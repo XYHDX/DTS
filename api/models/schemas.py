@@ -288,10 +288,16 @@ class AlertResolve(BaseModel):
 
 
 class PaymentInitiateRequest(BaseModel):
-    """Passenger scanned a vehicle QR and wants to pay the fare."""
+    """Passenger scanned a vehicle QR and wants to pay the fare.
+
+    amount_syp is optional: on fixed-fare routes the server fills in the
+    route fare (the client may not change it), so the passenger app can
+    simply send the scanned QR. It is required only for vehicles with no
+    fixed fare (e.g. taxis).
+    """
 
     qr: str = Field(..., min_length=16, max_length=1024)  # signed QR payload
-    amount_syp: int = Field(..., gt=0, le=1_000_000)
+    amount_syp: Optional[int] = Field(None, gt=0, le=1_000_000)
 
 
 class PaymentInitiateResponse(BaseModel):

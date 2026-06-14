@@ -2,9 +2,10 @@
 // Provides offline support, GPS position queue background sync,
 // and Web Push notifications for driver app.
 
-// v5 — bumped so existing clients evict the stale shell. Bump again whenever
-// the assets listed in APP_SHELL change so the update prompt fires.
-const CACHE_NAME = 'damascus-driver-v5';
+// v6 — bumped for the driver-page update: clearer GPS status (no false
+// "enable GPS"), aligned page container, and the scannable Sham Cash pay QR.
+// Bump again whenever the assets listed in APP_SHELL change.
+const CACHE_NAME = 'damascus-driver-v6';
 const APP_SHELL = [
   '/driver/',
   '/driver/index.html',
@@ -14,12 +15,12 @@ const APP_SHELL = [
 ];
 
 // Static data — stale-while-revalidate (trip manifests, routes)
-const STATIC_DATA_CACHE = 'damascus-driver-data-v5';
+const STATIC_DATA_CACHE = 'damascus-driver-data-v6';
 const STATIC_DATA_PATTERNS = ['/api/routes', '/api/stops'];
 
 // Map tile cache — driver uses OSM tiles directly; cartocdn kept
 // whitelisted so old clients keep their offline tiles.
-const TILE_CACHE = 'damascus-driver-tiles-v5';
+const TILE_CACHE = 'damascus-driver-tiles-v6';
 const TILE_HOSTS = ['tile.openstreetmap.org', 'basemaps.cartocdn.com'];
 
 // IndexedDB for GPS position queue (accessed from SW context)

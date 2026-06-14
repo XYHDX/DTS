@@ -141,6 +141,68 @@ class TestQrIntegrity:
         assert r.status_code == 422
         assert "5000" in r.json()["detail"]
 
+    def test_fixed_fare_amount_optional(self, client):
+        """Passenger may omit the amount; the server fills in the route fare."""
+        vehicle = {**APPROVED_VEHICLE, "assigned_route_id": "route-1"}
+
+        async def fake_get(query):
+            if query.startswith("vehicles?"):
+                return [vehicle]
+            if query.startswith("routes?"):
+                return [{"id": "route-1", "fare_syp": 5000}]
+            return []
+
+        async def fake_post(table, data):
+            return {**data, "id": "pay-00000002", "expires_at": "2099-01-01T00:00:00Z"}
+
+        with (
+            patch("api.routers.payments._service_get", side_effect=fake_get),
+            patch("api.routers.payments._service_post", side_effect=fake_post),
+        ):
+            r = client.post("/api/pay/initiate", json={"qr": _make_qr()})
+        assert r.status_code == 200, r.text
+        assert r.json()["amount_syp"] == 5000
+
+
+# ---------------------------------------------------------------------------
+# Sandbox self-pay (passenger-completed demo payment)
+# ---------------------------------------------------------------------------
+
+
+class TestSandboxSelfPay:
+    def test_selfpay_confirms_pending_in_sandbox(self, client):
+        state = {"status": "pending"}
+
+        async def fake_get(query):
+            return [
+                {
+                    "id": "pay-00000003",
+                    "status": state["status"],
+                    "amount_syp": 5000,
+                    "expires_at": "2099-01-01T00:00:00Z",
+                }
+            ]
+
+        async def fake_patch(query, data):
+            state["status"] = data["status"]
+            return [{"id": "pay-00000003", **data}]
+
+        with (
+            patch("api.routers.payments._service_get", side_effect=fake_get),
+            patch("api.routers.payments._service_patch", side_effect=fake_patch),
+        ):
+            r = client.post("/api/pay/sandbox/selfpay/pay-00000003")
+        assert r.status_code == 200, r.text
+        assert r.json()["status"] == "confirmed"
+
+    def test_selfpay_disabled_in_live_mode(self, client):
+        os.environ["SHAM_CASH_MODE"] = "live"
+        try:
+            r = client.post("/api/pay/sandbox/selfpay/pay-00000003")
+            assert r.status_code == 404
+        finally:
+            os.environ.pop("SHAM_CASH_MODE", None)
+
 
 # ---------------------------------------------------------------------------
 # Webhook security + idempotency

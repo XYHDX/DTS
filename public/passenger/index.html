@@ -258,6 +258,69 @@
   </a>
 </nav>
 
+<!-- ===== Sham Cash fare payment (passenger) ===== -->
+<style>
+  .pay-fab{position:fixed;inset-block-end:calc(66px + env(safe-area-inset-bottom));inset-inline-end:16px;z-index:60;display:inline-flex;align-items:center;gap:8px;background:var(--national-green-700,#0E5650);color:#fff;border:none;border-radius:var(--r-pill,999px);padding:12px 18px;font-weight:700;font-family:inherit;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.25);cursor:pointer}
+  .pay-fab:hover{background:var(--national-green-900,#0a3d39)}
+  .pay-fab svg{width:20px;height:20px}
+  .pay-overlay{position:fixed;inset:0;z-index:100;background:#000;display:flex;flex-direction:column}
+  .pay-overlay.hidden{display:none}
+  .pay-overlay__bar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:calc(env(safe-area-inset-top) + 12px) 16px 12px;color:#fff;background:rgba(0,0,0,.6);position:relative;z-index:2}
+  #pay-video{flex:1;width:100%;object-fit:cover;background:#000}
+  .pay-scan-frame{position:absolute;inset:0;margin:auto;width:240px;height:240px;border:3px solid rgba(255,255,255,.9);border-radius:16px;box-shadow:0 0 0 100vmax rgba(0,0,0,.45);pointer-events:none}
+  .pay-scan-hint{position:absolute;inset-block-end:48px;inset-inline:0;text-align:center;color:#fff;font-size:14px;padding:0 24px;z-index:2}
+  .pay-x{background:rgba(255,255,255,.16);color:#fff;border:none;width:36px;height:36px;border-radius:50%;font-size:17px;line-height:1;cursor:pointer}
+  .pay-x--dark{position:absolute;inset-block-start:12px;inset-inline-end:12px;background:rgba(0,0,0,.07);color:#333}
+  .pay-overlay--sheet{background:rgba(0,0,0,.55);justify-content:center;align-items:center;padding:20px}
+  .pay-card{position:relative;background:#fff;border-radius:18px;padding:30px 22px 24px;width:100%;max-width:360px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .pay-card__brand{display:inline-block;background:#0E5650;color:#fff;font-weight:700;font-size:12px;padding:4px 12px;border-radius:999px;margin-bottom:12px;letter-spacing:.02em}
+  .pay-card h3{margin:0 0 4px;font-size:20px}
+  .pay-amount{font-size:34px;font-weight:800;color:#0E5650;margin:8px 0;font-family:var(--font-mono,inherit)}
+  .pay-cur{font-size:16px;font-weight:600;color:#555}
+  .pay-muted{color:#666;font-size:13px;margin-bottom:6px}
+  .pay-sandbox{background:#fef3c7;color:#92400e;border-radius:8px;padding:6px 10px;font-size:12px;margin:12px 0}
+  .pay-error{color:#b91c1c;font-size:13px;margin-top:10px}
+  .pay-done .pay-check{width:64px;height:64px;border-radius:50%;background:#16a34a;color:#fff;font-size:34px;display:grid;place-items:center;margin:4px auto 12px}
+  #pay-confirm{margin-top:14px}
+</style>
+
+<button id="pay-fab" class="pay-fab" data-i18n-aria-label="pay.fab" aria-label="ادفع الأجرة" title="ادفع الأجرة">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>
+  <span data-i18n="pay.fab">ادفع الأجرة</span>
+</button>
+
+<div id="pay-scanner" class="pay-overlay hidden" role="dialog" aria-modal="true" aria-label="مسح رمز الدفع">
+  <div class="pay-overlay__bar">
+    <strong data-i18n="pay.scanTitle">امسح رمز الحافلة</strong>
+    <button id="pay-scan-close" class="pay-x" aria-label="إغلاق">✕</button>
+  </div>
+  <video id="pay-video" playsinline muted></video>
+  <div class="pay-scan-frame" aria-hidden="true"></div>
+  <p id="pay-scan-hint" class="pay-scan-hint" data-i18n="pay.scanHint">وجّه الكاميرا نحو رمز QR في الحافلة</p>
+</div>
+
+<div id="pay-sheet" class="pay-overlay pay-overlay--sheet hidden" role="dialog" aria-modal="true" aria-label="دفع الأجرة">
+  <div class="pay-card">
+    <button id="pay-sheet-close" class="pay-x pay-x--dark" aria-label="إغلاق">✕</button>
+    <div id="pay-state-pay">
+      <span class="pay-card__brand">شام كاش</span>
+      <h3 data-i18n="pay.title">دفع الأجرة</h3>
+      <div class="pay-amount"><span id="pay-amount">—</span> <span class="pay-cur" data-i18n="pay.syp">ل.س</span></div>
+      <div id="pay-vehicle" class="pay-muted"></div>
+      <div id="pay-sandbox-note" class="pay-sandbox hidden" data-i18n="pay.sandbox">وضع التجربة — لا أموال حقيقية</div>
+      <button id="pay-confirm" class="btn btn--lg btn--block btn--primary" data-i18n="pay.confirm">تأكيد الدفع</button>
+      <p id="pay-error" class="pay-error hidden"></p>
+    </div>
+    <div id="pay-state-done" class="hidden pay-done">
+      <div class="pay-check" aria-hidden="true">✓</div>
+      <h3 data-i18n="pay.done">تم الدفع بنجاح</h3>
+      <div class="pay-amount"><span id="pay-done-amount">—</span> <span class="pay-cur" data-i18n="pay.syp">ل.س</span></div>
+      <button id="pay-done-close" class="btn btn--lg btn--block" data-i18n="common.close">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script>
 'use strict';
@@ -536,6 +599,149 @@ document.addEventListener('i18n:change', () => {
     runSearch($('#q') ? $('#q').value : '');
   }
 });
+
+// ----- Sham Cash fare payment (passenger) -----
+(function(){
+  const API = (typeof API_BASE !== 'undefined') ? API_BASE : '';
+  const tr = (k, fb) => (window.I18N && I18N.t && I18N.t(k)) || fb;
+  const dig = (n) => (typeof arDigit === 'function') ? arDigit(n) : String(n);
+  let scanStream = null, scanRAF = null, currentPaymentId = null, pollTimer = null;
+
+  function extractToken(text){
+    if (!text) return null;
+    try {
+      if (text.indexOf('pay=') !== -1){
+        const u = new URL(text, location.origin);
+        const p = u.searchParams.get('pay');
+        if (p) return p;
+      }
+    } catch(_){}
+    const i = text.indexOf('DTSPAY|');
+    return i !== -1 ? text.slice(i) : text.trim();
+  }
+
+  function showErr(msg){ const e=$('#pay-error'); if(e){ e.textContent=msg; e.classList.remove('hidden'); } }
+
+  async function startPay(token, amount){
+    const sheet = $('#pay-sheet'); if (!sheet || !token) return;
+    $('#pay-state-pay').classList.remove('hidden');
+    $('#pay-state-done').classList.add('hidden');
+    $('#pay-error').classList.add('hidden');
+    $('#pay-confirm').disabled = false;
+    $('#pay-amount').textContent = '—';
+    sheet.classList.remove('hidden');
+    try {
+      const body = { qr: token };
+      if (amount) body.amount_syp = amount;
+      const r = await fetch(API + '/api/pay/initiate', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+      });
+      const data = await r.json().catch(()=>({}));
+      if (!r.ok){
+        if (r.status === 422 && /amount/i.test(data.detail||'') && !amount){
+          const a = prompt(tr('pay.askAmount','أدخل مبلغ الأجرة (ل.س):'));
+          const n = parseInt(a, 10);
+          if (n > 0) return startPay(token, n);
+          closeSheet(); return;
+        }
+        showErr(data.detail || tr('pay.failed','تعذّر بدء الدفع')); return;
+      }
+      currentPaymentId = data.payment_id;
+      $('#pay-amount').textContent = dig(data.amount_syp);
+      $('#pay-vehicle').textContent = data.vehicle_code ? (tr('pay.vehicle','المركبة') + ': ' + data.vehicle_code) : '';
+      $('#pay-sandbox-note').classList.toggle('hidden', !data.sandbox);
+    } catch(e){ showErr(tr('pay.failed','تعذّر بدء الدفع')); }
+  }
+
+  async function confirmPay(){
+    if (!currentPaymentId) return;
+    $('#pay-confirm').disabled = true;
+    $('#pay-error').classList.add('hidden');
+    try {
+      const r = await fetch(API + '/api/pay/sandbox/selfpay/' + encodeURIComponent(currentPaymentId), { method:'POST' });
+      if (!r.ok){
+        const d = await r.json().catch(()=>({}));
+        showErr(d.detail || tr('pay.failed','تعذّر إتمام الدفع'));
+        $('#pay-confirm').disabled = false; return;
+      }
+      pollStatus(0);
+    } catch(e){ showErr(tr('pay.failed','تعذّر إتمام الدفع')); $('#pay-confirm').disabled = false; }
+  }
+
+  async function pollStatus(n){
+    try {
+      const r = await fetch(API + '/api/pay/status/' + encodeURIComponent(currentPaymentId));
+      const d = await r.json().catch(()=>({}));
+      if (d.status === 'confirmed'){ paid(d.amount_syp); return; }
+    } catch(_){}
+    if (n < 8) pollTimer = setTimeout(()=>pollStatus(n+1), 700);
+    else paid();
+  }
+
+  function paid(amount){
+    $('#pay-state-pay').classList.add('hidden');
+    $('#pay-state-done').classList.remove('hidden');
+    const target = $('#pay-done-amount');
+    if (target) target.textContent = amount ? dig(amount) : ($('#pay-amount') ? $('#pay-amount').textContent : '');
+  }
+
+  function closeSheet(){
+    const s=$('#pay-sheet'); if(s) s.classList.add('hidden');
+    currentPaymentId=null; if(pollTimer){ clearTimeout(pollTimer); pollTimer=null; }
+  }
+
+  async function openScanner(){
+    const ov = $('#pay-scanner'); if (!ov) return;
+    ov.classList.remove('hidden');
+    const video = $('#pay-video');
+    try {
+      scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+      video.srcObject = scanStream; await video.play();
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      const tick = () => {
+        if (!scanStream) return;
+        if (video.readyState === video.HAVE_ENOUGH_DATA && window.jsQR){
+          canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const imgd = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const code = jsQR(imgd.data, imgd.width, imgd.height, { inversionAttempts: 'dontInvert' });
+          if (code && code.data){ const tok = extractToken(code.data); closeScanner(); startPay(tok); return; }
+        }
+        scanRAF = requestAnimationFrame(tick);
+      };
+      scanRAF = requestAnimationFrame(tick);
+    } catch(e){
+      closeScanner();
+      alert(tr('pay.noCamera','تعذّر فتح الكاميرا. تأكد من السماح بالوصول إليها، ثم حاول مجدداً.'));
+    }
+  }
+
+  function closeScanner(){
+    const ov=$('#pay-scanner'); if(ov) ov.classList.add('hidden');
+    if (scanRAF){ cancelAnimationFrame(scanRAF); scanRAF=null; }
+    if (scanStream){ scanStream.getTracks().forEach(t=>t.stop()); scanStream=null; }
+  }
+
+  const on = (sel, fn) => { const el = $(sel); if (el) el.addEventListener('click', fn); };
+  on('#pay-fab', openScanner);
+  on('#pay-scan-close', closeScanner);
+  on('#pay-confirm', confirmPay);
+  on('#pay-sheet-close', closeSheet);
+  on('#pay-done-close', closeSheet);
+
+  // Deep link: /passenger/?pay=<token> — scanned by an ordinary phone camera.
+  try {
+    const params = new URLSearchParams(location.search);
+    const payTok = params.get('pay');
+    if (payTok){
+      params.delete('pay');
+      const qs = params.toString();
+      history.replaceState({}, '', location.pathname + (qs ? '?'+qs : ''));
+      setTimeout(()=>startPay(extractToken(payTok)), 400);
+    }
+  } catch(_){}
+})();
 
 // ----- PWA install -----
 let deferred;
