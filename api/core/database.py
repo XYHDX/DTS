@@ -1,6 +1,8 @@
 import logging
 import os
+import re
 from typing import Optional
+from urllib.parse import urlparse
 
 import httpx
 from fastapi import HTTPException
@@ -12,6 +14,13 @@ except ImportError:
 
 
 logger = logging.getLogger(__name__)
+
+# SSRF guard (CWE-918 / CodeQL py/partial-ssrf): PostgREST paths are assembled
+# server-side from table names, operators, and URL-encoded values, so a
+# legitimate path never contains a control char, whitespace, or backslash.
+# Rejecting those — plus any scheme/authority marker — means request data can
+# never redirect a call off the trusted Supabase host.
+_UNSAFE_PATH_CHARS = re.compile(r"[\x00-\x20\\]")
 
 
 def _supabase_headers(use_service_key: bool = False) -> dict:
@@ -48,8 +57,28 @@ def _supabase_headers(use_service_key: bool = False) -> dict:
 
 
 def _supabase_url(path: str) -> str:
+    """Build a PostgREST URL, pinned to the configured Supabase host.
+
+    SSRF barrier (CWE-918): ``path`` is built from request-derived values
+    (ids, filters), so it is validated before it can reach an outbound request.
+    We reject a scheme (``://``), an authority/userinfo (leading ``/`` or
+    ``@``), a backslash, or any whitespace/control char (which could enable
+    CRLF request-splitting). As defence in depth, the final URL's host must
+    still match the configured base, so the request can only ever target
+    Supabase.
+    """
     base = os.getenv("SUPABASE_URL", "")
-    return f"{base}/rest/v1/{path}"
+    if (
+        not isinstance(path, str)
+        or "://" in path
+        or path.startswith(("/", "@"))
+        or _UNSAFE_PATH_CHARS.search(path) is not None
+    ):
+        raise HTTPException(status_code=400, detail="Invalid query path")
+    url = f"{base}/rest/v1/{path}"
+    if urlparse(url).netloc != urlparse(base).netloc:
+        raise HTTPException(status_code=400, detail="Invalid query path")
+    return url
 
 
 async def _supabase_get(path: str, params: Optional[dict] = None) -> list:

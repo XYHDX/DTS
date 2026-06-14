@@ -288,3 +288,38 @@ class TestRateLimitHeaders:
             resp = c.get("/api/gtfs/static/agency.txt")
         assert resp.status_code == 429
         assert "retry-after" in {k.lower() for k in resp.headers}
+
+
+# ── SSRF guard on the PostgREST URL builder (CWE-918 / py/partial-ssrf) ───────
+
+
+class TestSupabaseUrlSsrfGuard:
+    """_supabase_url must pin requests to the configured Supabase host."""
+
+    def test_valid_path_builds_url(self):
+        from api.core.database import _supabase_url
+
+        url = _supabase_url("trips?id=eq.abc&select=id,notes")
+        assert (
+            url == "http://mock-supabase.local/rest/v1/trips?id=eq.abc&select=id,notes"
+        )
+
+    @pytest.mark.parametrize(
+        "bad",
+        [
+            "http://evil.com/x",  # absolute URL / scheme
+            "trips://evil",  # scheme marker
+            "/etc/passwd",  # leading slash (authority/abs path)
+            "@evil.com/x",  # userinfo marker
+            "trips?id=eq.1 OR x",  # raw whitespace
+            "trips\r\nHost: evil",  # CRLF request splitting
+            "trips\\..\\x",  # backslash
+        ],
+    )
+    def test_unsafe_path_rejected(self, bad):
+        from fastapi import HTTPException
+        from api.core.database import _supabase_url
+
+        with pytest.raises(HTTPException) as ei:
+            _supabase_url(bad)
+        assert ei.value.status_code == 400
