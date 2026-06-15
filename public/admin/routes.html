@@ -54,10 +54,15 @@
     <div class="topbar">
       <div class="pagetitle">
         <h1 data-i18n="admin.routes.title">الخطوط</h1>
-        <p data-i18n="admin.routes.sub">خطوط النقل العام في دمشق مع لون التعريف وعدد الحافلات.</p>
+        <p data-i18n="admin.routes.sub">خطوط النقل العام في دمشق، ملوّنة حسب نوع المركبة.</p>
+        <div class="route-legend" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:13px;color:var(--color-text-soft,#555)">
+          <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:3px;background:#0E5650;display:inline-block"></span><span data-i18n="admin.routes.legendBus">حافلة</span></span>
+          <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:3px;background:#C9A227;display:inline-block"></span><span data-i18n="admin.routes.legendMicro">ميكروباص</span></span>
+          <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:3px;background:#CE1126;display:inline-block"></span><span data-i18n="admin.routes.legendTaxi">تكسي</span></span>
+        </div>
       </div>
       <div class="cluster">
-        <button id="btn-add-route" type="button" style="padding:8px 14px;background:#0E5650;color:#fff;border:0;border-radius:8px;cursor:pointer;">+ إضافة خط / Add route</button>
+        <button id="btn-add-route" type="button" data-i18n="admin.routes.add" style="padding:8px 14px;background:#0E5650;color:#fff;border:0;border-radius:8px;cursor:pointer;">+ إضافة خط</button>
         <button class="lang-toggle" id="lang-toggle" data-i18n-toggle aria-label="Toggle language">EN</button>
       </div>
     </div>
@@ -67,6 +72,7 @@
         <thead>
           <tr>
             <th data-i18n="admin.routes.color">اللون</th>
+            <th data-i18n="admin.routes.type">النوع</th>
             <th data-i18n="admin.routes.short">رمز الخط</th>
             <th data-i18n="admin.routes.name">الاسم</th>
             <th data-i18n="admin.routes.stops">عدد المحطات</th>
@@ -76,8 +82,8 @@
           </tr>
         </thead>
         <tbody id="rows">
-          <tr><td colspan="7"><div class="skeleton" style="width:100%;height:1.2em"></div></td></tr>
-          <tr><td colspan="7"><div class="skeleton" style="width:100%;height:1.2em"></div></td></tr>
+          <tr><td colspan="8"><div class="skeleton" style="width:100%;height:1.2em"></div></td></tr>
+          <tr><td colspan="8"><div class="skeleton" style="width:100%;height:1.2em"></div></td></tr>
         </tbody>
       </table>
     </section>
@@ -92,12 +98,23 @@
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
+  // Routes are coloured by vehicle type for an at-a-glance read of the network:
+  // green = bus, gold = microbus, red = taxi (the national palette).
+  const TYPE_COLORS = { bus: '#0E5650', microbus: '#C9A227', taxi: '#CE1126' };
+  const TYPE_LABELS = {
+    bus:      { ar: 'حافلة',   en: 'Bus' },
+    microbus: { ar: 'ميكروباص', en: 'Microbus' },
+    taxi:     { ar: 'تكسي',    en: 'Taxi' },
+  };
+  function typeColor(t) { return TYPE_COLORS[t] || '#0E5650'; }
+  function typeLabel(t, isAr) { const l = TYPE_LABELS[t]; return l ? (isAr ? l.ar : l.en) : (t || '—'); }
+
   let DATA = { routes: [], vehicles: [] };
   function render() {
     const tbody = document.getElementById('rows');
     const routes = DATA.routes;
     if (!routes || routes.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">' +
+      tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state">' +
         (window.I18N ? window.I18N.t('admin.routes.empty') : 'No routes yet.') + '</div></td></tr>';
       return;
     }
@@ -118,12 +135,14 @@
       const isActive = r.is_active !== false;
       const stops = (r.stop_ids && r.stop_ids.length) || r.stops_count || '—';
       const count = countByRoute[r.id] || 0;
-      const color = r.color || '#0E5650';
+      const rtype = r.route_type || 'bus';
+      const color = typeColor(rtype);
       const actions = canEdit
         ? '<button class="js-del" data-id="' + escapeHtml(r.id || '') + '" style="background:transparent;border:0;color:#b91c1c;cursor:pointer;font-size:13px;">' + (isAr ? 'حذف' : 'Delete') + '</button>'
         : '<span class="cell-muted">—</span>';
       return '<tr>' +
         '<td><span class="cell-color" style="background:' + escapeHtml(color) + '"></span></td>' +
+        '<td>' + escapeHtml(typeLabel(rtype, isAr)) + '</td>' +
         '<td class="cell-mono">' + escapeHtml(r.route_id || r.short_name || r.code || '—') + '</td>' +
         '<td>' + escapeHtml(name) + '</td>' +
         '<td>' + stops + '</td>' +
@@ -152,19 +171,20 @@
     const isAr = (document.documentElement.lang || 'ar').slice(0,2) === 'ar';
     window.ADMIN_AUTH.openForm({
       title:    isAr ? 'إضافة خط جديد' : 'Add new route',
-      subtitle: isAr ? 'الرمز فريد. اللون يستخدم على الخريطة.' : 'Code is unique. Color is shown on the live map.',
+      subtitle: isAr ? 'الرمز فريد. لون الخط يُحدّد تلقائياً حسب نوع المركبة.' : 'Code is unique. The route colour is set automatically by vehicle type.',
       fields: [
         { name:'route_id', label:'Route code', label_ar:'رمز الخط', required:true, placeholder:'R103' },
         { name:'name',     label:'Name (English)', label_ar:'الاسم (إنجليزي)', required:true, placeholder:'Baramkeh → Mezzeh' },
         { name:'name_ar',  label:'Name (Arabic)',  label_ar:'الاسم (عربي)',  required:true, placeholder:'البرامكة → المزة' },
-        { name:'route_type', label:'Type', label_ar:'النوع', type:'select', required:true, value:'bus',
-          options:[{value:'bus',label:'Bus',label_ar:'حافلة'},{value:'microbus',label:'Microbus',label_ar:'ميكروباص'},{value:'taxi',label:'Taxi',label_ar:'تكسي'}]},
-        { name:'color',    label:'Color (#RRGGBB)', label_ar:'اللون (#RRGGBB)', value:'#0E5650', placeholder:'#0E5650' },
+        { name:'route_type', label:'Type (sets colour)', label_ar:'النوع (يحدّد اللون)', type:'select', required:true, value:'bus',
+          options:[{value:'bus',label:'Bus · green',label_ar:'حافلة · أخضر'},{value:'microbus',label:'Microbus · gold',label_ar:'ميكروباص · ذهبي'},{value:'taxi',label:'Taxi · red',label_ar:'تكسي · أحمر'}]},
         { name:'distance_km', label:'Distance (km)', label_ar:'المسافة (كم)', type:'number', step:'0.1', min:0, max:500, value:5 },
         { name:'avg_duration_min', label:'Avg duration (min)', label_ar:'المدة الوسطية (دقيقة)', type:'number', min:0, max:600, value:25 },
         { name:'fare_syp', label:'Fare (SYP)', label_ar:'الأجرة (ل.س)', type:'number', min:0, max:100000, value:500 },
       ],
       onSubmit: async function (values) {
+        // Colour follows vehicle type (green/gold/red) so the map stays consistent.
+        values.color = typeColor(values.route_type);
         const r = await window.ADMIN_AUTH.fetch('/api/admin/routes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

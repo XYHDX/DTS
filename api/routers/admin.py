@@ -149,9 +149,7 @@ async def list_users(
 
 @router.get("/api/admin/settings", tags=["admin"])
 async def get_settings(
-    current_user: CurrentUser = Depends(
-        require_role("admin", "dispatcher", "super_admin")
-    ),
+    current_user: CurrentUser = Depends(require_role("admin", "super_admin")),
 ):
     """Dashboard settings (Sham Cash mode + merchant) for the current operator.
 
@@ -160,8 +158,10 @@ async def get_settings(
     """
     sham = {"mode": "sandbox", "merchant_id": ""}
     if current_user.operator_id:
+        # select=* (not select=settings) so a DB without the optional settings
+        # column degrades to defaults instead of erroring.
         rows = await _service_get(
-            f"operators?id=eq.{urllib.parse.quote(current_user.operator_id, safe='')}&select=settings"
+            f"operators?id=eq.{urllib.parse.quote(current_user.operator_id, safe='')}&select=*"
         )
         sc = ((rows or [{}])[0].get("settings") or {}).get("sham_cash") or {}
         sham["mode"] = sc.get("mode") or "sandbox"
@@ -179,9 +179,7 @@ async def get_settings(
 @router.put("/api/admin/settings", tags=["admin"])
 async def update_settings(
     body: ShamCashSettingsUpdate,
-    current_user: CurrentUser = Depends(
-        require_role("admin", "dispatcher", "super_admin")
-    ),
+    current_user: CurrentUser = Depends(require_role("admin", "super_admin")),
 ):
     """Persist the Sham Cash mode + merchant ID on the operator (JSONB settings)."""
     if not current_user.operator_id:
@@ -190,7 +188,7 @@ async def update_settings(
             detail="No operator scope for settings.",
         )
     quoted = urllib.parse.quote(current_user.operator_id, safe="")
-    rows = await _service_get(f"operators?id=eq.{quoted}&select=settings")
+    rows = await _service_get(f"operators?id=eq.{quoted}&select=*")
     settings = (rows or [{}])[0].get("settings") or {}
     if not isinstance(settings, dict):
         settings = {}
@@ -198,7 +196,16 @@ async def update_settings(
         "mode": body.mode,
         "merchant_id": (body.merchant_id or "").strip(),
     }
-    await _service_patch(f"operators?id=eq.{quoted}", {"settings": settings})
+    try:
+        await _service_patch(f"operators?id=eq.{quoted}", {"settings": settings})
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "Settings storage isn't available yet. Apply DB migration 023 "
+                "(operators.settings column) in Supabase, then save again."
+            ),
+        )
     return {"status": "saved", "sham_cash": settings["sham_cash"]}
 
 

@@ -343,6 +343,14 @@ const bf = (ar, en) => (isAr() ? ar : en);
 const escH = (x) => String(x==null?'':x).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let _allRoutes = [];
 
+// Route code chips are colour-coded by vehicle type (green=bus, gold=microbus,
+// red=taxi) so the network reads at a glance — matching the admin console.
+function typeChipStyle(t) {
+  if (t === 'bus')  return 'background:rgba(14,86,80,.12);color:#0E5650';
+  if (t === 'taxi') return 'background:rgba(206,17,38,.12);color:#CE1126';
+  return 'background:var(--gold-100);color:var(--gold-700)'; // microbus / default
+}
+
 // Shared route-card markup (popular list + search results). Uses the real
 // `route_id` for the code chip and the correct `stop_count` field.
 function routeCardHTML(r) {
@@ -352,7 +360,7 @@ function routeCardHTML(r) {
   const count = (r.stop_count != null) ? r.stop_count : (r.stops_count || 0);
   return `
     <a class="stop-card" style="text-decoration:none" href="/passenger/?route=${encodeURIComponent(r.id)}">
-      <span class="dist" style="background:var(--gold-100);color:var(--gold-700)">${code}</span>
+      <span class="dist" style="${typeChipStyle(r.route_type)}">${code}</span>
       <div>
         <div class="font-bold" style="color:var(--color-text)">${name}</div>
         ${sub ? `<div class="text-xs muted">${sub}</div>` : ''}
@@ -500,7 +508,7 @@ async function renderRouteDetail(routeId) {
   let html = ''
     + '<a href="/passenger/" class="btn btn--ghost btn--sm" style="margin-bottom:12px">' + tt('passenger.back', bf('→ رجوع', '← Back')) + '</a>'
     + '<div class="cluster" style="gap:10px;align-items:center;margin-bottom:6px">'
-    +   '<span class="dist" style="background:var(--gold-100);color:var(--gold-700)">' + code + '</span>'
+    +   '<span class="dist" style="' + typeChipStyle(route.route_type) + '">' + code + '</span>'
     +   '<h2 class="section-title" style="margin:0">' + name + '</h2>'
     + '</div>'
     + '<div class="text-xs muted" style="margin-bottom:14px">' + arDigit(count) + ' ' + tt('routes.stopsCount','محطة') + '</div>'

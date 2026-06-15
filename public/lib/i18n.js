@@ -232,8 +232,13 @@
 
       // ─── Routes page ───────────────────────────────────────────────────────
       'admin.routes.title':   'الخطوط',
-      'admin.routes.sub':     'خطوط النقل العام في دمشق مع لون التعريف وعدد الحافلات.',
+      'admin.routes.sub':     'خطوط النقل العام في دمشق، ملوّنة حسب نوع المركبة.',
       'admin.routes.color':   'اللون',
+      'admin.routes.add':     '+ إضافة خط',
+      'admin.routes.type':    'النوع',
+      'admin.routes.legendBus':   'حافلة',
+      'admin.routes.legendMicro': 'ميكروباص',
+      'admin.routes.legendTaxi':  'تكسي',
       'admin.routes.short':   'رمز الخط',
       'admin.routes.name':    'الاسم',
       'admin.routes.stops':   'عدد المحطات',
@@ -600,8 +605,13 @@
 
       // ─── Routes page ───────────────────────────────────────────────────────
       'admin.routes.title':   'Routes',
-      'admin.routes.sub':     'Damascus transit lines with identity colour and assigned fleet.',
+      'admin.routes.sub':     'Damascus transit lines, coloured by vehicle type.',
       'admin.routes.color':   'Colour',
+      'admin.routes.add':     '+ Add route',
+      'admin.routes.type':    'Type',
+      'admin.routes.legendBus':   'Bus',
+      'admin.routes.legendMicro': 'Microbus',
+      'admin.routes.legendTaxi':  'Taxi',
       'admin.routes.short':   'Code',
       'admin.routes.name':    'Name',
       'admin.routes.stops':   'Stops',

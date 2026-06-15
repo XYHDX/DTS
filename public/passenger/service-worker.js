@@ -6,7 +6,7 @@
 // v8 — bumped for passenger updates: welcome header, station dots on the map,
 // GTFS download link, and the Pay tab (admin sign-in removed). Bump whenever
 // the shared assets or the cached app shell change.
-const CACHE_NAME = 'damascus-transit-v8';
+const CACHE_NAME = 'damascus-transit-v9';
 const APP_SHELL = [
   '/passenger/',
   '/passenger/index.html',
@@ -18,11 +18,11 @@ const APP_SHELL = [
 ];
 
 // Map tile pattern — cache tiles as they're fetched
-const TILE_CACHE = 'damascus-transit-tiles-v8';
+const TILE_CACHE = 'damascus-transit-tiles-v9';
 const TILE_HOSTS = ['basemaps.cartocdn.com', 'tile.openstreetmap.org'];
 
 // Static data API — stale-while-revalidate (stops/routes/schedules)
-const STATIC_DATA_CACHE = 'damascus-transit-data-v8';
+const STATIC_DATA_CACHE = 'damascus-transit-data-v9';
 const STATIC_DATA_PATTERNS = ['/api/stops', '/api/routes', '/api/schedules'];
 
 // API endpoints — network-only (live data must be fresh)

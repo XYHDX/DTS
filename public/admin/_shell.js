@@ -143,7 +143,7 @@
     const menu = document.createElement('div');
     menu.className = 'sidebar__menu';
     let html = '';
-    if (isAdmin || role === 'dispatcher') html += '<a href="/admin/settings.html">' + gear + '<span data-i18n="admin.nav.settings">' + (ar ? 'الإعدادات' : 'Settings') + '</span></a>';
+    if (isAdmin) html += '<a href="/admin/settings.html">' + gear + '<span data-i18n="admin.nav.settings">' + (ar ? 'الإعدادات' : 'Settings') + '</span></a>';
     html += '<button type="button" id="profile-signout">' + exit + '<span data-i18n="admin.signOut">' + (ar ? 'تسجيل الخروج' : 'Sign out') + '</span></button>';
     menu.innerHTML = html; // static, trusted markup
     footer.appendChild(menu);
