@@ -88,20 +88,25 @@
 <script>
 (function () {
   'use strict';
-  let TAB = 'audit', FILTER = '';
+  let TAB = 'audit', FILTER = '', LAST = [], PAGER = null;
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const isAr = () => (document.documentElement.lang || 'ar').slice(0, 2) === 'ar';
   function fmtTs(s) {
     if (!s) return '—';
     const d = new Date(s);
     if (isNaN(d.getTime())) return '—';
-    return d.toLocaleString('ar-SY', { dateStyle: 'short', timeStyle: 'medium' });
+    return d.toLocaleString(isAr() ? 'ar-SY' : 'en-GB', { dateStyle: 'short', timeStyle: 'medium' });
   }
   function setHead() {
     const tr = document.getElementById('thead');
     if (TAB === 'audit') {
-      tr.innerHTML = '<tr><th>الوقت</th><th>الإجراء</th><th>الكيان</th><th>المعرّف</th><th>تفاصيل</th></tr>';
+      tr.innerHTML = isAr()
+        ? '<tr><th>الوقت</th><th>الإجراء</th><th>الكيان</th><th>المعرّف</th><th>تفاصيل</th></tr>'
+        : '<tr><th>Time</th><th>Action</th><th>Entity</th><th>ID</th><th>Details</th></tr>';
     } else {
-      tr.innerHTML = '<tr><th>الوقت</th><th>البريد</th><th>الحالة</th><th>IP</th><th>السبب</th></tr>';
+      tr.innerHTML = isAr()
+        ? '<tr><th>الوقت</th><th>البريد</th><th>الحالة</th><th>IP</th><th>السبب</th></tr>'
+        : '<tr><th>Time</th><th>Email</th><th>Status</th><th>IP</th><th>Reason</th></tr>';
     }
   }
   function render(rows) {
@@ -148,7 +153,8 @@
         throw new Error('HTTP ' + r.status);
       }
       const data = await r.json();
-      render(Array.isArray(data) ? data : []);
+      LAST = Array.isArray(data) ? data : [];
+      if (PAGER) PAGER.set(LAST); else render(LAST);
     } catch (e) {
       if (String(e.message) !== 'unauthorized') {
         document.getElementById('rows').innerHTML = '<tr><td colspan="5"><div class="empty-state">' + esc(e.message) + '</div></td></tr>';
@@ -156,6 +162,7 @@
     }
   }
   document.addEventListener('DOMContentLoaded', function () {
+    PAGER = window.ADMIN_AUTH.pager({ render: render, pageSize: 15, mountAfter: '.data-table-card' });
     setHead(); load();
     document.querySelectorAll('#tabs button').forEach(b => b.addEventListener('click', () => {
       document.querySelectorAll('#tabs button').forEach(x => x.classList.remove('is-active'));
@@ -171,6 +178,7 @@
       FILTER = ''; document.getElementById('filter-input').value = ''; load();
     });
     setInterval(load, 30000);  // auto-refresh
+    document.addEventListener('i18n:change', () => { setHead(); load(); });
   });
 })();
 </script>

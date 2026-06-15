@@ -83,11 +83,11 @@
             <th data-i18n="admin.vehicles.code">رمز الحافلة</th>
             <th data-i18n="admin.vehicles.name">الاسم</th>
             <th data-i18n="admin.vehicles.type">النوع</th>
-            <th>السائق</th>
+            <th data-i18n="admin.col.driver">السائق</th>
             <th data-i18n="admin.vehicles.route">الخط المعيّن</th>
             <th data-i18n="admin.vehicles.capacity">السعة</th>
             <th data-i18n="admin.vehicles.status">الحالة</th>
-            <th>الاعتماد</th>
+            <th data-i18n="admin.col.approval">الاعتماد</th>
             <th>—</th>
           </tr>
         </thead>
@@ -107,7 +107,7 @@
 <script>
 (function () {
   'use strict';
-  let LAST = [], ROUTES = [], DRIVERS = [];
+  let LAST = [], ROUTES = [], DRIVERS = [], PAGER = null;
   const TYPE_AR = { bus:'حافلة', microbus:'ميكروباص', taxi:'تكسي' };
   function isAr(){ return (document.documentElement.lang||'ar').slice(0,2)==='ar'; }
   function esc(s){ return window.ADMIN_AUTH.esc(s); }
@@ -226,18 +226,19 @@
       LAST = Array.isArray(parts[0])?parts[0]:[];
       ROUTES = Array.isArray(parts[1])?parts[1]:[];
       DRIVERS = (Array.isArray(parts[2])?parts[2]:[]).filter(u=>u.role==='driver'&&u.is_active!==false);
-      render(LAST);
+      if (PAGER) PAGER.set(LAST); else render(LAST);
     }).catch(function(e){
       if (String(e.message)!=='unauthorized')
         document.getElementById('rows').innerHTML='<tr><td colspan="9"><div class="empty-state">'+esc(e.message||'Error')+'</div></td></tr>';
     });
   }
   document.addEventListener('DOMContentLoaded', function(){
+    PAGER = window.ADMIN_AUTH.pager({ render: render, pageSize: 15, mountAfter: '.data-table-card' });
     load();
     const btn = document.getElementById('btn-add-vehicle');
     if (btn) btn.addEventListener('click', openAddForm); // admins AND operators may register vehicles
   });
-  document.addEventListener('i18n:change', ()=>render(LAST));
+  document.addEventListener('i18n:change', ()=>{ if (PAGER) PAGER.redraw(); else render(LAST); });
 })();
 </script>
 </body>

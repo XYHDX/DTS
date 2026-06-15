@@ -225,6 +225,55 @@
       document.body.appendChild(el);
       setTimeout(() => el.remove(), 4000);
     },
+    /**
+     * Client-side paginator shared by every list page.
+     *   const PAGER = ADMIN_AUTH.pager({ render, pageSize: 15, mountAfter: '.data-table-card' });
+     *   PAGER.set(rows);   // call instead of render(rows) after a fetch
+     *   PAGER.redraw();    // call on i18n:change to relabel + keep the page
+     * `render(slice)` receives only the current page's rows.
+     */
+    pager: function (opts) {
+      var pageSize = opts.pageSize || 15;
+      var rows = [], page = 1;
+      var bar = document.createElement('div');
+      bar.className = 'dt-pager';
+      bar.style.cssText = 'display:none;gap:10px;align-items:center;justify-content:center;padding:14px 0;flex-wrap:wrap;';
+      var mount = typeof opts.mountAfter === 'string' ? document.querySelector(opts.mountAfter) : opts.mountAfter;
+      if (mount && mount.parentNode) mount.parentNode.insertBefore(bar, mount.nextSibling);
+
+      function t(k, fb) { return (window.I18N && window.I18N.t && window.I18N.t(k)) || fb; }
+      function totalPages() { return Math.max(1, Math.ceil(rows.length / pageSize)); }
+      function draw() {
+        var tp = totalPages();
+        if (page > tp) page = tp;
+        if (page < 1) page = 1;
+        var start = (page - 1) * pageSize;
+        opts.render(rows.slice(start, start + pageSize));
+        if (rows.length <= pageSize) { bar.style.display = 'none'; return; }
+        bar.style.display = 'flex';
+        bar.textContent = '';
+        var prev = document.createElement('button');
+        prev.className = 'btn btn--sm btn--outline';
+        prev.textContent = '‹ ' + t('admin.pager.prev', 'Previous');
+        prev.disabled = page <= 1;
+        prev.onclick = function () { page = Math.max(1, page - 1); draw(); };
+        var lbl = document.createElement('span');
+        lbl.className = 'cell-muted';
+        lbl.style.cssText = 'font-size:13px;min-width:120px;text-align:center;';
+        lbl.textContent = t('admin.pager.page', 'Page') + ' ' + page + ' ' + t('admin.pager.of', 'of') + ' ' + tp;
+        var next = document.createElement('button');
+        next.className = 'btn btn--sm btn--outline';
+        next.textContent = t('admin.pager.next', 'Next') + ' ›';
+        next.disabled = page >= tp;
+        next.onclick = function () { page = Math.min(tp, page + 1); draw(); };
+        bar.appendChild(prev); bar.appendChild(lbl); bar.appendChild(next);
+      }
+      return {
+        set: function (newRows) { rows = Array.isArray(newRows) ? newRows : []; page = 1; draw(); },
+        redraw: draw,
+      };
+    },
+
     /** Minimal modal form helper — see source page usage. */
     openForm: function (opts) {
       const isAr = isArabic();
