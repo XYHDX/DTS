@@ -14,7 +14,7 @@ import hmac as hmac_lib
 import json
 import os
 from datetime import timedelta
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -377,14 +377,10 @@ class TestSettings:
         assert body["sham_cash"]["merchant_id"] == "M1"
         assert "secrets_present" in body
 
-    def test_get_settings_dispatcher_allowed(self, client):
-        async def fake_get(query):
-            return [{"settings": {}}]
-
-        with patch("api.routers.admin._service_get", side_effect=fake_get):
-            r = client.get("/api/admin/settings", headers=_h(_token("dispatcher")))
-        assert r.status_code == 200, r.text
-        assert r.json()["sham_cash"]["mode"] == "sandbox"
+    def test_get_settings_dispatcher_forbidden(self, client):
+        # Settings is admin-only; dispatchers (operators) no longer have access.
+        r = client.get("/api/admin/settings", headers=_h(_token("dispatcher")))
+        assert r.status_code == 403
 
     def test_get_settings_viewer_forbidden(self, client):
         r = client.get("/api/admin/settings", headers=_h(_token("viewer")))

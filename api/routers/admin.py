@@ -149,9 +149,7 @@ async def list_users(
 
 @router.get("/api/admin/settings", tags=["admin"])
 async def get_settings(
-    current_user: CurrentUser = Depends(
-        require_role("admin", "dispatcher", "super_admin")
-    ),
+    current_user: CurrentUser = Depends(require_role("admin", "super_admin")),
 ):
     """Dashboard settings (Sham Cash mode + merchant) for the current operator.
 
@@ -181,9 +179,7 @@ async def get_settings(
 @router.put("/api/admin/settings", tags=["admin"])
 async def update_settings(
     body: ShamCashSettingsUpdate,
-    current_user: CurrentUser = Depends(
-        require_role("admin", "dispatcher", "super_admin")
-    ),
+    current_user: CurrentUser = Depends(require_role("admin", "super_admin")),
 ):
     """Persist the Sham Cash mode + merchant ID on the operator (JSONB settings)."""
     if not current_user.operator_id:

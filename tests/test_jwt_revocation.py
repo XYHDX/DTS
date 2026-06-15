@@ -7,7 +7,6 @@ and the iat claim emitted by create_access_token.
 from datetime import datetime, timedelta, timezone
 
 import jwt
-import pytest
 
 from api.core.auth import (
     JWT_ALGORITHM,
