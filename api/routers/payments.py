@@ -81,7 +81,7 @@ async def _operator_sham(operator_id: str) -> dict:
     if operator_id:
         try:
             rows = await _service_get(
-                f"operators?id=eq.{urllib.parse.quote(operator_id, safe='')}&select=settings"
+                f"operators?id=eq.{urllib.parse.quote(operator_id, safe='')}&select=*"
             )
             sc = ((rows or [{}])[0].get("settings") or {}).get("sham_cash") or {}
             if sc.get("mode"):
