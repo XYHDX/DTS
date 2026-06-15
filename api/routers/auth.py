@@ -9,7 +9,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
 from api.core.auth import (
     AUTH_COOKIE_NAME,
-    JWT_EXPIRATION_HOURS,
     CurrentUser,
     create_access_token,
     get_current_user,
@@ -39,6 +38,10 @@ from api.models.schemas import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+# "Keep me signed in" duration. Plain login issues a 24h session cookie.
+REMEMBER_ME_DAYS = 30
 
 
 @router.post("/api/auth/login", response_model=TokenResponse, tags=["auth"])
@@ -104,6 +107,11 @@ async def login(request: LoginRequest, raw_request: Request, response: Response)
                 vehicle_id = driver_vehicles[0]["id"]
                 vehicle_route_id = driver_vehicles[0].get("assigned_route_id")
 
+        # "Keep me signed in" → a 30-day token in a 30-day persistent cookie.
+        # Otherwise a 24h token in a session cookie (cleared when the browser
+        # closes). Either way the token stays revocable (is_active /
+        # password_changed_at are re-checked on every request).
+        remember = bool(request.remember)
         token = create_access_token(
             user_id=user["id"],
             email=user["email"],
@@ -111,15 +119,13 @@ async def login(request: LoginRequest, raw_request: Request, response: Response)
             operator_id=operator_id,
             vehicle_id=vehicle_id,
             vehicle_route_id=vehicle_route_id,
+            expires_delta=timedelta(days=REMEMBER_ME_DAYS) if remember else None,
         )
 
-        # Set the httpOnly auth cookie for browser clients. `remember` makes it
-        # persistent (capped at the token's own 24h lifetime); otherwise it's a
-        # session cookie cleared when the browser closes.
         response.set_cookie(
             key=AUTH_COOKIE_NAME,
             value=token,
-            max_age=(JWT_EXPIRATION_HOURS * 3600) if request.remember else None,
+            max_age=(REMEMBER_ME_DAYS * 24 * 3600) if remember else None,
             httponly=True,
             secure=True,
             samesite="lax",

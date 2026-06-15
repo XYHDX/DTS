@@ -73,6 +73,26 @@ def _is_sandbox() -> bool:
     return _mode() != "live"
 
 
+async def _operator_sham(operator_id: str) -> dict:
+    """Per-operator Sham Cash config (mode + merchant). The value set from the
+    admin dashboard (operators.settings.sham_cash) overrides the env defaults;
+    the actual secrets always come from env (never stored here)."""
+    cfg = {"mode": _mode(), "merchant_id": os.getenv("SHAM_CASH_MERCHANT_ID", "")}
+    if operator_id:
+        try:
+            rows = await _service_get(
+                f"operators?id=eq.{urllib.parse.quote(operator_id, safe='')}&select=settings"
+            )
+            sc = ((rows or [{}])[0].get("settings") or {}).get("sham_cash") or {}
+            if sc.get("mode"):
+                cfg["mode"] = sc["mode"]
+            if sc.get("merchant_id"):
+                cfg["merchant_id"] = sc["merchant_id"]
+        except Exception:
+            pass
+    return cfg
+
+
 def _qr_secret() -> str:
     """HMAC key for QR payloads. Live mode requires an explicit secret."""
     explicit = os.getenv("QR_SIGNING_SECRET", "").strip()
@@ -169,11 +189,12 @@ async def get_vehicle_qr(
         if raw_fare:
             fare_syp = int(raw_fare)
 
+    op_cfg = await _operator_sham(v.get("operator_id") or "")
     return {
         "vehicle_code": v.get("vehicle_id"),
         "payload": _build_qr_payload(v["id"], v.get("operator_id") or ""),
         "fare_syp": fare_syp,
-        "sandbox": _is_sandbox(),
+        "sandbox": op_cfg["mode"] != "live",
     }
 
 
@@ -248,6 +269,10 @@ async def initiate_payment(body: PaymentInitiateRequest, raw_request: Request):
             )
         amount = body.amount_syp
 
+    # Mode comes from the operator's dashboard setting (env is the fallback).
+    op_cfg = await _operator_sham(operator_id)
+    sandbox = op_cfg["mode"] != "live"
+
     payment = {
         "operator_id": operator_id,
         "vehicle_id": v["id"],
@@ -255,7 +280,7 @@ async def initiate_payment(body: PaymentInitiateRequest, raw_request: Request):
         "amount_syp": amount,
         "status": "pending",
         "qr_nonce": nonce,
-        "sandbox": _is_sandbox(),
+        "sandbox": sandbox,
     }
     created = await _service_post("payments", payment)
     created = created if isinstance(created, dict) else (created[0] if created else {})
@@ -265,10 +290,10 @@ async def initiate_payment(body: PaymentInitiateRequest, raw_request: Request):
     # Deep link the passenger app opens. In live mode this is the official
     # Sham Cash payment URI with the merchant account; in sandbox it is a
     # clearly-marked test link.
-    if _is_sandbox():
+    if sandbox:
         deeplink = f"shamcash://sandbox/pay?ref={created['id']}&amount={amount}"
     else:
-        merchant = os.getenv("SHAM_CASH_MERCHANT_ID", "")
+        merchant = op_cfg.get("merchant_id") or ""
         deeplink = (
             f"shamcash://pay?merchant={urllib.parse.quote(merchant)}"
             f"&ref={created['id']}&amount={amount}&currency=SYP"
@@ -280,7 +305,7 @@ async def initiate_payment(body: PaymentInitiateRequest, raw_request: Request):
         amount_syp=amount,
         vehicle_code=v.get("vehicle_id"),
         deeplink=deeplink,
-        sandbox=_is_sandbox(),
+        sandbox=sandbox,
         expires_at=created.get("expires_at"),
     )
 
