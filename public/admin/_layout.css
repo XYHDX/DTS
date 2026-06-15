@@ -30,7 +30,7 @@
   top: 0;
   height: 100vh;
   align-self: start;
-  overflow-y: auto;
+  overflow: hidden; /* the nav scrolls internally; brand + footer stay pinned */
 }
 .sidebar::before {
   content: ""; position: absolute; inset: 0;
@@ -61,7 +61,7 @@
   color: var(--national-gold); margin-top: 3px; font-weight: 500;
 }
 
-.sidebar nav { display: flex; flex-direction: column; gap: 5px; padding-top: 16px; flex: 1; }
+.sidebar nav { display: flex; flex-direction: column; gap: 5px; padding-top: 16px; flex: 1; min-height: 0; overflow-y: auto; }
 .sidebar nav a {
   display: flex; align-items: center; gap: 13px;
   padding: 12px 13px;

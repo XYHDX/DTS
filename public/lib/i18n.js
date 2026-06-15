@@ -29,6 +29,7 @@
       'header.passenger':     'للركاب',
       'header.driver':        'للسائقين',
       'header.admin':         'دخول الإدارة',
+      'header.help':          'كيفية الاستخدام',
       'header.toggleLang':    'English',
       'header.live':          'مباشر',
 
@@ -410,6 +411,7 @@
       'header.passenger':     'Passengers',
       'header.driver':        'Drivers',
       'header.admin':         'Admin sign-in',
+      'header.help':          'How to use',
       'header.toggleLang':    'العربية',
       'header.live':          'Live',
 
