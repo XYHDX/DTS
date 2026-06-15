@@ -27,6 +27,13 @@
       radial-gradient(ellipse at 15% 85%, rgba(255,255,255,.06), transparent 50%);
     border-bottom: 3px solid var(--national-gold, #C9A95B);
   }
+  /* Gold geometric pattern overlay — same motif/opacity as the home hero. */
+  .help-hero::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><g fill='none' stroke='%23C9A95B' stroke-width='1' stroke-opacity='0.42' stroke-linejoin='round' stroke-linecap='round'><polygon points='68,40 51,45 60,60 45,51 40,68 35,51 20,60 29,45 12,40 29,35 20,20 35,29 40,12 45,29 60,20 51,35'/><path d='M68,40 L80,36.5 M68,40 L80,43.5 M40,68 L36.5,80 M40,68 L43.5,80 M12,40 L0,36.5 M12,40 L0,43.5 M40,12 L36.5,0 M40,12 L43.5,0 M60,20 L72,0 M60,20 L80,8 M60,60 L80,72 M60,60 L72,80 M20,60 L8,80 M20,60 L0,72 M20,20 L0,8 M20,20 L8,0'/><polyline points='8,0 8,3.3 3.3,8 0,8'/><polyline points='80,8 76.7,8 72,3.3 72,0'/><polyline points='72,80 72,76.7 76.7,72 80,72'/><polyline points='8,80 8,76.7 3.3,72 0,72'/></g></svg>");
+    background-size: 80px 80px;
+  }
+  .help-hero .help-wrap { position: relative; z-index: 1; }
   .help-wrap { width: 100%; max-width: var(--container, 1180px); margin-inline: auto; padding-inline: var(--s-5, 24px); }
   .help-hero .eyebrow {
     display:inline-block; font-size:13px; font-weight:600; letter-spacing:.06em;

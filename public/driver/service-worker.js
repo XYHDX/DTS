@@ -5,7 +5,7 @@
 // v8 — bumped so installed driver PWAs pick up the i18n.js update (awaiting-
 // route string) shared with the passenger batch.
 // Bump again whenever the assets listed in APP_SHELL change.
-const CACHE_NAME = 'damascus-driver-v10';
+const CACHE_NAME = 'damascus-driver-v11';
 const APP_SHELL = [
   '/driver/',
   '/driver/index.html',
@@ -15,12 +15,12 @@ const APP_SHELL = [
 ];
 
 // Static data — stale-while-revalidate (trip manifests, routes)
-const STATIC_DATA_CACHE = 'damascus-driver-data-v10';
+const STATIC_DATA_CACHE = 'damascus-driver-data-v11';
 const STATIC_DATA_PATTERNS = ['/api/routes', '/api/stops'];
 
 // Map tile cache — driver uses OSM tiles directly; cartocdn kept
 // whitelisted so old clients keep their offline tiles.
-const TILE_CACHE = 'damascus-driver-tiles-v10';
+const TILE_CACHE = 'damascus-driver-tiles-v11';
 const TILE_HOSTS = ['tile.openstreetmap.org', 'basemaps.cartocdn.com'];
 
 // IndexedDB for GPS position queue (accessed from SW context)
