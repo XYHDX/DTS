@@ -22,10 +22,15 @@
   padding: 22px 14px 18px;
   border-inline-end: 1px solid var(--national-gold);
   display: flex; flex-direction: column;
-  /* The sidebar stretches to the page height (grid row) so it always matches
-     the main column; the profile footer is sticky-bottom so it stays visible
-     without scrolling. */
-  position: relative;
+  /* The sidebar is a fixed-height column pinned to the viewport: it never grows
+     taller than the screen, so there is no empty scrollable area beneath the
+     profile. The nav flexes to fill, pushing the profile footer to the bottom;
+     if the sidebar's own content is taller than the screen it scrolls itself. */
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  align-self: start;
+  overflow-y: auto;
 }
 .sidebar::before {
   content: ""; position: absolute; inset: 0;
@@ -56,13 +61,13 @@
   color: var(--national-gold); margin-top: 3px; font-weight: 500;
 }
 
-.sidebar nav { display: flex; flex-direction: column; gap: 4px; padding-top: 14px; flex: 1; }
+.sidebar nav { display: flex; flex-direction: column; gap: 5px; padding-top: 16px; flex: 1; }
 .sidebar nav a {
-  display: flex; align-items: center; gap: 12px;
-  padding: 10px 12px;
+  display: flex; align-items: center; gap: 13px;
+  padding: 12px 13px;
   color: rgba(255,255,255,.78);
-  font-size: 14px; font-weight: 500;
-  border-radius: 6px;
+  font-size: 15px; font-weight: 500;
+  border-radius: 8px;
   text-decoration: none;
   transition: background .15s, color .15s;
 }
@@ -75,10 +80,9 @@
   padding-top: 14px;
   border-top: 1px solid rgba(255,255,255,.10);
   display: flex; flex-direction: column; gap: 10px;
-  /* Sticky-bottom: the profile stays pinned to the viewport bottom while the
-     page scrolls, but the sidebar itself still spans the full page height. */
-  position: sticky;
-  bottom: 0;
+  /* The nav above flexes to fill, so the footer naturally sits at the bottom of
+     the fixed-height sidebar — no sticky positioning needed. */
+  position: relative;
   background: var(--national-green-900);
   padding-bottom: 4px;
   flex-shrink: 0;
@@ -131,10 +135,10 @@
 .sidebar__logout:hover { background: rgba(255,255,255,.08); color: #fff; }
 
 /* ── Main area ─────────────────────────────────────────────────────────────── */
-.main { padding: 22px 28px 40px; background: var(--surface-soft); min-width: 0; }
-.topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 22px; flex-wrap: wrap; }
-.topbar .pagetitle h1 { margin: 0 0 4px; font-size: 22px; }
-.topbar .pagetitle p { margin: 0; color: var(--ink-2); font-size: 13.5px; }
+.main { padding: 28px 34px 48px; background: var(--surface-soft); min-width: 0; }
+.topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 26px; flex-wrap: wrap; }
+.topbar .pagetitle h1 { margin: 0 0 6px; font-size: 27px; line-height: 1.2; }
+.topbar .pagetitle p { margin: 0; color: var(--ink-2); font-size: 15px; line-height: 1.45; }
 .topbar .cluster { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .live-dot {
   display: inline-block; width: 7px; height: 7px; border-radius: 50%;
@@ -167,20 +171,20 @@
   background: #fff; border: 1px solid var(--rule); border-radius: 10px;
   overflow: hidden;
 }
-.data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
 .data-table thead th {
   text-align: start;
   background: var(--surface-soft);
   color: var(--ink-2);
   font-weight: 600;
   font-size: 12.5px;
-  padding: 12px 16px;
+  padding: 14px 18px;
   border-bottom: 1px solid var(--rule);
   text-transform: uppercase;
   letter-spacing: .03em;
 }
 .data-table tbody td {
-  padding: 13px 16px;
+  padding: 15px 18px;
   border-bottom: 1px solid var(--rule);
   color: var(--ink-1);
   vertical-align: middle;
@@ -197,8 +201,8 @@
 
 .status-pill {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 3px 10px; border-radius: 999px;
-  font-size: 12px; font-weight: 600;
+  padding: 4px 11px; border-radius: 999px;
+  font-size: 12.5px; font-weight: 600;
   background: var(--surface-soft); color: var(--ink-2);
   border: 1px solid var(--rule);
 }
