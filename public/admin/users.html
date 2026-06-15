@@ -70,7 +70,7 @@
             <th data-i18n="admin.users.email">البريد الإلكتروني</th>
             <th data-i18n="admin.users.role">الصلاحية</th>
             <th data-i18n="admin.users.status">الحالة</th>
-            <th>الهاتف</th>
+            <th data-i18n="admin.col.phone">الهاتف</th>
             <th>—</th>
           </tr>
         </thead>
@@ -88,7 +88,7 @@
 <script>
 (function () {
   'use strict';
-  let LAST = [];
+  let LAST = [], PAGER = null;
   function isAr(){ return (document.documentElement.lang||'ar').slice(0,2)==='ar'; }
   function esc(s){ return window.ADMIN_AUTH.esc(s); }
   const ROLE_AR = { admin:'مدير', dispatcher:'مشغّل', driver:'سائق', viewer:'مشاهد', super_admin:'مدير عام' };
@@ -187,19 +187,20 @@
     if (!window.ADMIN_AUTH) return;
     window.ADMIN_AUTH.fetch('/api/admin/users')
       .then(r=>r.ok?r.json():Promise.reject(new Error('HTTP '+r.status)))
-      .then(rows=>{ LAST = Array.isArray(rows)?rows:[]; render(LAST); })
+      .then(rows=>{ LAST = Array.isArray(rows)?rows:[]; if (PAGER) PAGER.set(LAST); else render(LAST); })
       .catch(e=>{
         if (String(e.message)!=='unauthorized')
           document.getElementById('rows').innerHTML='<tr><td colspan="6"><div class="empty-state">'+esc(e.message||'Error')+'</div></td></tr>';
       });
   }
   document.addEventListener('DOMContentLoaded', function(){
+    PAGER = window.ADMIN_AUTH.pager({ render: render, pageSize: 15, mountAfter: '.data-table-card' });
     load();
     const btn = document.getElementById('btn-add-user');
     // Admins create any role; operators (dispatchers) create drivers only.
     if (btn) btn.addEventListener('click', openAddForm);
   });
-  document.addEventListener('i18n:change', ()=>render(LAST));
+  document.addEventListener('i18n:change', ()=>{ if (PAGER) PAGER.redraw(); else render(LAST); });
 })();
 </script>
 </body>

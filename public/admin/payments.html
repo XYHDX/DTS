@@ -77,18 +77,18 @@
 
     <div class="alert alert--warning" id="sandbox-banner" style="display:none;margin-bottom:16px">
       <span class="alert__icon" aria-hidden="true">⚠</span>
-      <span class="alert__body">وضع التجربة (Sandbox) — لا تُحرَّك أموال حقيقية. لتفعيل الدفع الحقيقي يضبط مالك النظام بيانات تاجر شام كاش في إعدادات الخادم (متغيّرات البيئة). يمكنك تجربة الدورة الكاملة الآن عبر زر «محاكاة التأكيد» في كل عملية.</span>
+      <span class="alert__body" data-i18n="admin.payments.sandboxNote">وضع التجربة (Sandbox) — لا تُحرَّك أموال حقيقية. لتفعيل الدفع الحقيقي يضبط مالك النظام بيانات تاجر شام كاش في إعدادات الخادم (متغيّرات البيئة). يمكنك تجربة الدورة الكاملة الآن عبر زر «محاكاة التأكيد» في كل عملية.</span>
     </div>
 
     <section class="data-table-card">
       <table class="data-table" aria-label="payments">
         <thead>
           <tr>
-            <th>المرجع</th>
-            <th>المركبة</th>
-            <th>المبلغ (ل.س)</th>
-            <th>الحالة</th>
-            <th>التاريخ</th>
+            <th data-i18n="admin.col.ref">المرجع</th>
+            <th data-i18n="admin.col.vehicle">المركبة</th>
+            <th data-i18n="admin.col.amount">المبلغ (ل.س)</th>
+            <th data-i18n="admin.col.status">الحالة</th>
+            <th data-i18n="admin.col.date">التاريخ</th>
             <th>—</th>
           </tr>
         </thead>
@@ -107,7 +107,7 @@
 <script>
 (function () {
   'use strict';
-  let LAST = [], VEH = {};
+  let LAST = [], VEH = {}, PAGER = null;
   function isAr() { return (document.documentElement.lang || 'ar').slice(0,2) === 'ar'; }
   function esc(s) { return window.ADMIN_AUTH.esc(s); }
   const ST = {
@@ -172,15 +172,18 @@
       (Array.isArray(parts[1]) ? parts[1] : []).forEach(v => { VEH[v.id] = v.vehicle_id; });
       document.getElementById('sandbox-banner').style.display =
         (LAST.some(p => p.sandbox) || LAST.length === 0) ? '' : 'none';
-      render(LAST);
+      if (PAGER) PAGER.set(LAST); else render(LAST);
     }).catch(e => {
       if (String(e.message) !== 'unauthorized')
         document.getElementById('rows').innerHTML =
           '<tr><td colspan="6"><div class="empty-state">' + esc(e.message || 'Error') + '</div></td></tr>';
     });
   }
-  document.addEventListener('DOMContentLoaded', function () { load(); setInterval(load, 60000); });
-  document.addEventListener('i18n:change', () => render(LAST));
+  document.addEventListener('DOMContentLoaded', function () {
+    PAGER = window.ADMIN_AUTH.pager({ render: render, pageSize: 15, mountAfter: '.data-table-card' });
+    load(); setInterval(load, 60000);
+  });
+  document.addEventListener('i18n:change', () => { if (PAGER) PAGER.redraw(); else render(LAST); });
 })();
 </script>
 </body>

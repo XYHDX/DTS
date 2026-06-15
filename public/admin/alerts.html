@@ -102,7 +102,7 @@
     return 'is-offline';
   }
 
-  let LAST = [];
+  let LAST = [], PAGER = null;
   function render(rows) {
     const tbody = document.getElementById('rows');
     if (!rows || rows.length === 0) {
@@ -172,7 +172,7 @@
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const rows = await r.json();
       LAST = Array.isArray(rows) ? rows : [];
-      render(LAST);
+      if (PAGER) PAGER.set(LAST); else render(LAST);
     } catch (e) {
       if (String(e.message) !== 'unauthorized') {
         document.getElementById('rows').innerHTML =
@@ -181,8 +181,11 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', load);
-  document.addEventListener('i18n:change', () => render(LAST));
+  document.addEventListener('DOMContentLoaded', function () {
+    PAGER = window.ADMIN_AUTH.pager({ render: render, pageSize: 15, mountAfter: '.data-table-card' });
+    load();
+  });
+  document.addEventListener('i18n:change', () => { if (PAGER) PAGER.redraw(); else render(LAST); });
 })();
 </script>
 </body>
