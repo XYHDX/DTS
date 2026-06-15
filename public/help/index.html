@@ -27,7 +27,7 @@
       radial-gradient(ellipse at 15% 85%, rgba(255,255,255,.06), transparent 50%);
     border-bottom: 3px solid var(--national-gold, #C9A95B);
   }
-  .help-wrap { max-width: var(--hg-max); margin: 0 auto; padding-inline: clamp(18px, 4vw, 36px); }
+  .help-wrap { width: 100%; max-width: var(--container, 1180px); margin-inline: auto; padding-inline: var(--s-5, 24px); }
   .help-hero .eyebrow {
     display:inline-block; font-size:13px; font-weight:600; letter-spacing:.06em;
     color: var(--national-gold,#C9A95B); border:1px solid rgba(201,169,91,.5);
@@ -144,18 +144,34 @@
   <span class="flag-strip__black"></span>
 </div>
 
-<!-- Top bar -->
-<div class="help-topbar">
-  <div class="help-wrap">
-    <nav>
+<!-- Top utility bar (same pattern as the home page) -->
+<div class="utility-bar">
+  <div class="container">
+    <span class="gov" id="ub-gov">الجمهورية العربية السورية · نظام النقل العام</span>
+    <span class="right">
       <a href="/" data-nav="home">الرئيسية</a>
+      <span class="sep"></span>
       <a href="/passenger/" data-nav="passenger">للركاب</a>
+      <span class="sep"></span>
       <a href="/driver/" data-nav="driver">للسائقين</a>
-      <a href="/admin/login.html" data-nav="admin">الإدارة</a>
-    </nav>
-    <button class="lang-btn" id="lang-btn" aria-label="Toggle language">EN</button>
+      <span class="sep"></span>
+      <a href="/admin/login.html" data-nav="admin">دخول الإدارة</a>
+      <span class="sep"></span>
+      <button class="utility-lang" id="lang-btn" aria-label="Toggle language">EN</button>
+    </span>
   </div>
 </div>
+
+<!-- Sticky nav (same pattern as the home page) -->
+<nav class="nav-bar" id="primary-nav" aria-label="primary">
+  <div class="container">
+    <a href="/" data-nav="home">الرئيسية</a>
+    <a href="/passenger/" data-nav="passenger">للركاب</a>
+    <a href="/driver/" data-nav="driver">للسائقين</a>
+    <a href="/admin/login.html" data-nav="admin">دخول الإدارة</a>
+    <a href="/help/" class="is-active" data-nav="help">كيفية الاستخدام</a>
+  </div>
+</nav>
 
 <!-- Hero -->
 <section class="help-hero">
@@ -209,8 +225,8 @@
 
   // ---- Bilingual content model ------------------------------------------------
   const NAV = {
-    ar: { home:'الرئيسية', passenger:'للركاب', driver:'للسائقين', admin:'الإدارة' },
-    en: { home:'Home', passenger:'Passengers', driver:'Drivers', admin:'Admin' },
+    ar: { home:'الرئيسية', passenger:'للركاب', driver:'للسائقين', admin:'دخول الإدارة', help:'كيفية الاستخدام', gov:'الجمهورية العربية السورية · نظام النقل العام' },
+    en: { home:'Home', passenger:'Passengers', driver:'Drivers', admin:'Admin sign-in', help:'How to use', gov:'Syrian Arab Republic · Public Transit' },
   };
 
   function build(L) {
@@ -222,7 +238,7 @@
   }
 
   const AR = {
-    dir:'rtl', btn:'EN',
+    dir:'rtl', btn:'English',
     eyebrow:'دليل المنصّة · 2026',
     title:'كيف تعمل منصّة نقل دمشق؟',
     lede:'تعرّف على كيفية استخدام المنصّة، وكيف يرتبط جهاز السائق بنظام التتبّع اللحظي، وكيف تستفيد كراكب أو مشرف من البيانات المباشرة.',
@@ -306,7 +322,7 @@
   };
 
   const EN = {
-    dir:'ltr', btn:'ع',
+    dir:'ltr', btn:'العربية',
     eyebrow:'Platform guide · 2026',
     title:'How does Damascus Transit work?',
     lede:'Learn how to use the platform, how a driver’s device links to live bus tracking, and how passengers and supervisors benefit from real-time data.',
@@ -421,8 +437,10 @@
     document.getElementById('hero-title').textContent = L.title;
     document.getElementById('hero-lede').textContent = L.lede;
 
-    // Top nav labels
-    document.querySelectorAll('.help-topbar [data-nav]').forEach(a => {
+    // Top bar + sticky nav labels (same pattern as home)
+    var gov = document.getElementById('ub-gov');
+    if (gov) gov.textContent = NAV[lang].gov;
+    document.querySelectorAll('[data-nav]').forEach(a => {
       a.textContent = NAV[lang][a.dataset.nav] || a.textContent;
     });
 
