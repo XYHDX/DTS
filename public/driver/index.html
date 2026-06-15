@@ -282,13 +282,13 @@
   </a>
   <button id="lang-toggle" class="lang-btn" data-i18n-toggle data-i18n="header.toggleLang" title="EN / AR">EN</button>
   <div>
-    <div class="label">حافلة</div>
+    <div class="label" data-i18n="driver.bus">حافلة</div>
     <div class="vehicle-id" id="bar-vehicle">—</div>
   </div>
   <div style="text-align:center">
     <span class="gps-pill" id="gps-pill">
       <span class="live-dot" aria-hidden="true"></span>
-      <span id="gps-text">جاري الاتصال…</span>
+      <span id="gps-text" data-i18n="driver.gps.connecting">جاري الاتصال…</span>
     </span>
   </div>
   <button id="logout-btn" class="logout-btn" title="تسجيل الخروج" aria-label="تسجيل الخروج">
@@ -300,25 +300,25 @@
 <!-- Login pane -->
 <section id="login-pane" class="login-pane">
   <div class="login-card">
-    <h2>دخول السائق</h2>
-    <p class="sub">أدخل بريدك وكلمة المرور، أو استخدم البصمة إن كانت مفعّلة.</p>
+    <h2 data-i18n="driver.login.title">دخول السائق</h2>
+    <p class="sub" data-i18n="driver.login.sub">أدخل بريدك وكلمة المرور، أو استخدم البصمة إن كانت مفعّلة.</p>
 
     <button id="biometric-btn" class="biometric-btn hidden">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 12a3 3 0 0 1 6 0v4a1 1 0 0 1-2 0v-4"/></svg>
-      الدخول ببصمة الإصبع
+      <span data-i18n="driver.login.biometric">الدخول ببصمة الإصبع</span>
     </button>
 
     <form id="login-form" style="display:flex;flex-direction:column;gap:14px">
       <div class="field">
-        <label class="field__label" for="email">البريد</label>
+        <label class="field__label" for="email" data-i18n="driver.login.email">البريد</label>
         <input class="input" id="email" type="email" inputmode="email" autocomplete="username" required>
       </div>
       <div class="field">
-        <label class="field__label" for="password">كلمة المرور</label>
+        <label class="field__label" for="password" data-i18n="driver.login.password">كلمة المرور</label>
         <input class="input" id="password" type="password" autocomplete="current-password" required>
       </div>
-      <button class="btn btn--lg btn--block" type="submit">دخول</button>
-      <p class="field__error hidden" id="login-error">بيانات الدخول غير صحيحة</p>
+      <button class="btn btn--lg btn--block" type="submit" data-i18n="driver.login.submit">دخول</button>
+      <p class="field__error hidden" id="login-error" data-i18n="driver.login.error">بيانات الدخول غير صحيحة</p>
     </form>
   </div>
 </section>
@@ -326,60 +326,60 @@
 <!-- Trip pane -->
 <section id="trip-pane" class="trip-pane hidden">
 
-  <div id="approval-banner" class="hidden" style="background:#fef3c7;color:#92400e;border:1px solid #d97706;border-radius:var(--r-md);padding:var(--s-3) var(--s-4);margin-bottom:var(--s-4);font-weight:600">
+  <div id="approval-banner" class="hidden" data-i18n="driver.approvalPending" style="background:#fef3c7;color:#92400e;border:1px solid #d97706;border-radius:var(--r-md);padding:var(--s-3) var(--s-4);margin-bottom:var(--s-4);font-weight:600">
     ⏳ مركبتك بانتظار اعتماد الإدارة — لا يمكن بدء الرحلات أو استقبال الدفعات قبل الموافقة.
   </div>
 
   <div class="trip-header">
-    <div class="label">الخط الحالي</div>
+    <div class="label" data-i18n="driver.currentRoute">الخط الحالي</div>
     <div class="route-name" id="route-name">—</div>
-    <div class="next-stop" id="next-stop">المحطة التالية: —</div>
+    <div class="next-stop" id="next-stop" data-i18n="driver.nextStop">المحطة التالية: —</div>
   </div>
 
-  <button id="start-trip" class="big-button big-button--start">▶ بدء الرحلة</button>
-  <button id="end-trip" class="big-button big-button--end hidden">■ إنهاء الرحلة</button>
+  <button id="start-trip" class="big-button big-button--start" data-i18n="driver.startTrip">▶ بدء الرحلة</button>
+  <button id="end-trip" class="big-button big-button--end hidden" data-i18n="driver.endTrip">■ إنهاء الرحلة</button>
 
   <div id="trip-running" class="hidden">
     <div class="counter" role="group" aria-label="عدّاد الركاب">
       <button id="dec" aria-label="إنقاص">−</button>
       <div>
         <div class="counter__value" id="pax-count">٠</div>
-        <span class="counter__label">عدد الركاب</span>
+        <span class="counter__label" data-i18n="driver.paxCount">عدد الركاب</span>
       </div>
       <button id="inc" aria-label="زيادة">+</button>
     </div>
 
     <div class="meta-grid">
       <div class="meta-card">
-        <div class="meta-card__label">السرعة</div>
-        <div class="meta-card__value" id="meta-speed">٠ <span class="unit">كم/س</span></div>
+        <div class="meta-card__label" data-i18n="driver.meta.speed">السرعة</div>
+        <div class="meta-card__value" id="meta-speed">٠ <span class="unit" data-i18n="driver.unit.kmh">كم/س</span></div>
       </div>
       <div class="meta-card">
-        <div class="meta-card__label">المسافة</div>
-        <div class="meta-card__value" id="meta-dist">٠ <span class="unit">كم</span></div>
+        <div class="meta-card__label" data-i18n="driver.meta.distance">المسافة</div>
+        <div class="meta-card__value" id="meta-dist">٠ <span class="unit" data-i18n="driver.unit.km">كم</span></div>
       </div>
       <div class="meta-card">
-        <div class="meta-card__label">المدة</div>
-        <div class="meta-card__value" id="meta-time">٠ <span class="unit">د</span></div>
+        <div class="meta-card__label" data-i18n="driver.meta.duration">المدة</div>
+        <div class="meta-card__value" id="meta-time">٠ <span class="unit" data-i18n="driver.unit.min">د</span></div>
       </div>
       <div class="meta-card">
-        <div class="meta-card__label">الإشغال</div>
+        <div class="meta-card__label" data-i18n="driver.meta.occupancy">الإشغال</div>
         <div class="meta-card__value" id="meta-occ">٠٪</div>
       </div>
     </div>
 
     <button id="incident-btn" class="incident-btn">
-      🚨 الإبلاغ عن حادث
+      <span data-i18n="driver.incident">🚨 الإبلاغ عن حادث</span>
     </button>
   </div>
 
   <!-- Sham Cash fare QR (passengers scan this to pay) -->
   <div id="pay-qr-box" class="hidden" style="margin-top:var(--s-5);background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--r-lg);padding:var(--s-4);text-align:center">
-    <div style="font-weight:700;margin-bottom:var(--s-2)">ادفع بمسح الرمز — شام كاش</div>
-    <div style="font-size:var(--fs-xs);color:var(--color-text-mute);margin-bottom:var(--s-3)">يمسحه الراكب بكاميرا هاتفه أو من داخل تطبيق نقل دمشق</div>
+    <div style="font-weight:700;margin-bottom:var(--s-2)" data-i18n="driver.pay.title">ادفع بمسح الرمز — شام كاش</div>
+    <div style="font-size:var(--fs-xs);color:var(--color-text-mute);margin-bottom:var(--s-3)" data-i18n="driver.pay.hint">يمسحه الراكب بكاميرا هاتفه أو من داخل تطبيق نقل دمشق</div>
     <div id="pay-qr-img" style="display:grid;place-items:center;min-height:120px;word-break:break-all;font-family:var(--font-mono);font-size:var(--fs-xs);color:var(--color-text-mute)"></div>
-    <div style="margin-top:var(--s-2);color:var(--color-text-mute);font-size:var(--fs-sm)">الأجرة: <b id="fare-display">حسب الخط</b></div>
-    <div id="pay-qr-sandbox" class="hidden" style="margin-top:var(--s-2);font-size:var(--fs-xs);background:#fef3c7;color:#92400e;border-radius:6px;padding:4px 8px;display:inline-block">وضع التجربة — لا أموال حقيقية</div>
+    <div style="margin-top:var(--s-2);color:var(--color-text-mute);font-size:var(--fs-sm)"><span data-i18n="driver.pay.fareLabel">الأجرة:</span> <b id="fare-display" data-i18n="driver.pay.perRoute">حسب الخط</b></div>
+    <div id="pay-qr-sandbox" class="hidden" style="margin-top:var(--s-2);font-size:var(--fs-xs);background:#fef3c7;color:#92400e;border-radius:6px;padding:4px 8px;display:inline-block" data-i18n="driver.pay.sandbox">وضع التجربة — لا أموال حقيقية</div>
   </div>
 </section>
 
@@ -498,7 +498,7 @@ async function loadPayQr() {
         img.textContent = payUrl;
       }
       const fareEl = $('#fare-display');
-      if (fareEl) fareEl.textContent = data.fare_syp ? (arDigit(data.fare_syp) + ' ل.س') : 'حسب الخط';
+      if (fareEl) fareEl.textContent = data.fare_syp ? (arDigit(data.fare_syp) + ' ل.س') : ((window.I18N && I18N.t('driver.pay.perRoute')) || 'Per route');
       const sbx = $('#pay-qr-sandbox');
       if (sbx) sbx.classList.toggle('hidden', !data.sandbox);
       box.classList.remove('hidden');
@@ -576,15 +576,21 @@ addEventListener('online', () => setOnline(true));
 addEventListener('offline', () => setOnline(false));
 setOnline(navigator.onLine);
 
-function setGps(state, text) {
+let _gpsState = true, _gpsKey = '';
+function setGps(state, key) {
   const pill = $('#gps-pill');
   const connected = state === true;
+  _gpsState = state; _gpsKey = key || '';
   // Red dot only when GPS is truly off / permission denied. A "searching"
-  // state (slow first fix, weak signal) keeps the gold dot so we don't nag
-  // a driver who has already granted permission.
-  $('#gps-text').textContent = text || (connected ? 'مرتبط بالقمر' : 'بدون GPS');
+  // state (slow first fix, weak signal) keeps the gold dot so we don't nag a
+  // driver who has already granted permission. Text is i18n-keyed so it
+  // switches with the language toggle.
+  const k = key || (connected ? 'driver.gps.linked' : 'driver.gps.off');
+  $('#gps-text').textContent = (window.I18N && I18N.t && I18N.t(k)) || '';
   pill.classList.toggle('is-off', state === false);
 }
+// Re-render the live GPS label when the language changes.
+document.addEventListener('i18n:change', () => setGps(_gpsState, _gpsKey));
 
 // Login
 $('#login-form').addEventListener('submit', async (ev) => {
@@ -642,18 +648,18 @@ function setupGPS() {
       if (perm === 'granted') {
         positionWatchStop = cap.watchPosition(
           (p) => onPosition(p.coords),
-          () => setGps(false, 'تعذّر الوصول للموقع')
+          () => setGps(false, 'driver.gps.denied')
         );
       }
     });
   } else if (navigator.geolocation) {
-    setGps('searching', 'جاري تحديد الموقع…');
+    setGps('searching', 'driver.gps.locating');
     // Only a real permission denial (code 1) is actionable by the driver.
     // A timeout / temporarily-unavailable fix (codes 2,3) is transient — keep
     // watching and show "searching" instead of telling them to enable GPS.
     const onErr = (err) => {
-      if (err && err.code === 1) setGps(false, 'فعّل GPS من المتصفح');
-      else setGps('searching', 'جاري البحث عن إشارة…');
+      if (err && err.code === 1) setGps(false, 'driver.gps.enable');
+      else setGps('searching', 'driver.gps.searching');
     };
     navigator.geolocation.getCurrentPosition(
       (p) => onPosition(p.coords), onErr,
@@ -671,12 +677,12 @@ function setupGPS() {
 function onPosition(c) {
   setGps(true);
   const speed = c.speed != null ? Math.max(0, Math.round(c.speed * 3.6)) : 0;
-  $('#meta-speed').innerHTML = arDigit(speed) + ' <span class="unit">كم/س</span>';
+  $('#meta-speed').innerHTML = arDigit(speed) + ' <span class="unit">' + ((window.I18N && I18N.t('driver.unit.kmh')) || 'km/h') + '</span>';
 
   if (lastPos) {
     const km = haversineKm(lastPos.latitude, lastPos.longitude, c.latitude, c.longitude);
     if (km < 1) totalKm += km;
-    $('#meta-dist').innerHTML = arDigit(totalKm.toFixed(1)) + ' <span class="unit">كم</span>';
+    $('#meta-dist').innerHTML = arDigit(totalKm.toFixed(1)) + ' <span class="unit">' + ((window.I18N && I18N.t('driver.unit.km')) || 'km') + '</span>';
   }
   lastPos = c;
 
@@ -866,7 +872,7 @@ $('#end-trip').addEventListener('click', async () => {
 function updateTimer() {
   if (!tripStartedAt) return;
   const mins = Math.floor((Date.now() - tripStartedAt) / 60000);
-  $('#meta-time').innerHTML = arDigit(mins) + ' <span class="unit">د</span>';
+  $('#meta-time').innerHTML = arDigit(mins) + ' <span class="unit">' + ((window.I18N && I18N.t('driver.unit.min')) || 'min') + '</span>';
 }
 
 // Passenger counter

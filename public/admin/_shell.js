@@ -131,6 +131,30 @@
       .catch(() => {});
   }
 
+  // Build the profile dropdown in the pinned sidebar footer: hovering (or
+  // tapping) the user row reveals Settings (admins) + Sign out.
+  function buildProfileMenu(onLogout) {
+    const footer = document.querySelector('.sidebar__footer');
+    const userRow = footer && footer.querySelector('.sidebar__user');
+    if (!footer || !userRow || footer.querySelector('.sidebar__menu')) return;
+    const ar = isArabic();
+    const gear = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
+    const exit = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>';
+    const menu = document.createElement('div');
+    menu.className = 'sidebar__menu';
+    let html = '';
+    if (isAdmin) html += '<a href="/admin/settings.html">' + gear + '<span data-i18n="admin.nav.settings">' + (ar ? 'الإعدادات' : 'Settings') + '</span></a>';
+    html += '<button type="button" id="profile-signout">' + exit + '<span data-i18n="admin.signOut">' + (ar ? 'تسجيل الخروج' : 'Sign out') + '</span></button>';
+    menu.innerHTML = html; // static, trusted markup
+    footer.appendChild(menu);
+    const so = menu.querySelector('#profile-signout');
+    if (so) so.addEventListener('click', onLogout);
+    userRow.style.userSelect = 'none';
+    userRow.addEventListener('click', function (e) { e.stopPropagation(); footer.classList.toggle('is-open'); });
+    menu.addEventListener('click', function (e) { e.stopPropagation(); });
+    document.addEventListener('click', function () { footer.classList.remove('is-open'); });
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     const initial = ((user && (user.name || user.email)) || '?').trim().charAt(0).toUpperCase();
     setText('#user-initial', initial);
@@ -149,8 +173,7 @@
       return;
     }
 
-    const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) logoutBtn.addEventListener('click', function () {
+    function doLogout() {
       const done = function () {
         try {
           localStorage.removeItem(TOKEN_KEY);
@@ -162,9 +185,11 @@
       };
       // Revoke the httpOnly cookie server-side first (JS can't clear it), then
       // wipe the local hints regardless of the request outcome.
-      fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' })
-        .then(done, done);
-    });
+      fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }).then(done, done);
+    }
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) logoutBtn.addEventListener('click', doLogout);
+    buildProfileMenu(doLogout);
 
     const langBtn = document.getElementById('lang-toggle');
     if (langBtn && window.I18N) {
@@ -271,6 +296,63 @@
       return {
         set: function (newRows) { rows = Array.isArray(newRows) ? newRows : []; page = 1; draw(); },
         redraw: draw,
+      };
+    },
+
+    /**
+     * Server-side paginator — the API returns ONE page at a time, so the table
+     * never pulls the whole dataset. `fetchPage(page)` must resolve to
+     * `{ items, has_more }`; `render(items)` draws the current page.
+     */
+    serverPager: function (opts) {
+      var page = 1, hasMore = false, busy = false, lastItems = [];
+      var bar = document.createElement('div');
+      bar.className = 'dt-pager';
+      bar.style.cssText = 'display:none;gap:10px;align-items:center;justify-content:center;padding:14px 0;flex-wrap:wrap;';
+      var mount = typeof opts.mountAfter === 'string' ? document.querySelector(opts.mountAfter) : opts.mountAfter;
+      if (mount && mount.parentNode) mount.parentNode.insertBefore(bar, mount.nextSibling);
+
+      function t(k, fb) { return (window.I18N && window.I18N.t && window.I18N.t(k)) || fb; }
+      function draw() {
+        if (page <= 1 && !hasMore) { bar.style.display = 'none'; return; }
+        bar.style.display = 'flex';
+        bar.textContent = '';
+        var prev = document.createElement('button');
+        prev.className = 'btn btn--sm btn--outline';
+        prev.textContent = '‹ ' + t('admin.pager.prev', 'Previous');
+        prev.disabled = page <= 1 || busy;
+        prev.onclick = function () { go(page - 1); };
+        var lbl = document.createElement('span');
+        lbl.className = 'cell-muted';
+        lbl.style.cssText = 'font-size:13px;min-width:90px;text-align:center;';
+        lbl.textContent = t('admin.pager.page', 'Page') + ' ' + page;
+        var next = document.createElement('button');
+        next.className = 'btn btn--sm btn--outline';
+        next.textContent = t('admin.pager.next', 'Next') + ' ›';
+        next.disabled = !hasMore || busy;
+        next.onclick = function () { go(page + 1); };
+        bar.appendChild(prev); bar.appendChild(lbl); bar.appendChild(next);
+      }
+      function go(p) {
+        if (busy || p < 1) return Promise.resolve();
+        busy = true;
+        return Promise.resolve(opts.fetchPage(p)).then(function (res) {
+          res = res || {};
+          page = p;
+          hasMore = !!res.has_more;
+          lastItems = res.items || [];
+          opts.render(lastItems);
+          busy = false;
+          draw();
+        }, function (e) {
+          busy = false;
+          if (opts.onError) opts.onError(e);
+        });
+      }
+      return {
+        first: function () { return go(1); },
+        reload: function () { return go(page); },
+        rerender: function () { opts.render(lastItems); },
       };
     },
 

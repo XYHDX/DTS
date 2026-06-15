@@ -22,7 +22,10 @@
   padding: 22px 14px 18px;
   border-inline-end: 1px solid var(--national-gold);
   display: flex; flex-direction: column;
-  position: relative;
+  /* Pin the sidebar to the viewport so the profile is always visible without
+     scrolling the page; the nav list scrolls internally when it's too tall. */
+  position: sticky; top: 0;
+  height: 100vh;
   overflow: hidden;
 }
 .sidebar::before {
@@ -54,7 +57,7 @@
   color: var(--national-gold); margin-top: 3px; font-weight: 500;
 }
 
-.sidebar nav { display: flex; flex-direction: column; gap: 4px; padding-top: 14px; flex: 1; }
+.sidebar nav { display: flex; flex-direction: column; gap: 4px; padding-top: 14px; flex: 1; min-height: 0; overflow-y: auto; }
 .sidebar nav a {
   display: flex; align-items: center; gap: 12px;
   padding: 10px 12px;
@@ -73,10 +76,39 @@
   padding-top: 14px;
   border-top: 1px solid rgba(255,255,255,.10);
   display: flex; flex-direction: column; gap: 10px;
+  position: relative;
+  flex-shrink: 0;
 }
 .sidebar__user {
-  display: flex; align-items: center; gap: 10px; padding: 4px 8px;
+  display: flex; align-items: center; gap: 10px; padding: 8px;
+  border-radius: 8px; cursor: pointer; transition: background .15s;
 }
+.sidebar__user:hover { background: rgba(255,255,255,.07); }
+.sidebar__user::after {
+  content: "⌄"; margin-inline-start: auto; color: rgba(255,255,255,.55);
+  font-size: 14px; line-height: 1; transition: transform .15s;
+}
+.sidebar__footer.is-open .sidebar__user::after { transform: rotate(180deg); }
+/* Profile dropdown — opens upward from the pinned profile row (hover or tap) */
+.sidebar__menu {
+  position: absolute; inset-inline: 0; bottom: calc(100% + 6px);
+  background: #0c4842;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 10px; padding: 6px;
+  display: none; flex-direction: column; gap: 2px;
+  box-shadow: 0 -10px 28px rgba(0,0,0,.35); z-index: 30;
+}
+.sidebar__footer:hover .sidebar__menu,
+.sidebar__footer.is-open .sidebar__menu { display: flex; }
+.sidebar__menu a, .sidebar__menu button {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 10px; border-radius: 6px;
+  color: rgba(255,255,255,.85); background: transparent; border: 0;
+  font: inherit; font-size: 13px; text-align: start; width: 100%;
+  cursor: pointer; text-decoration: none;
+}
+.sidebar__menu a:hover, .sidebar__menu button:hover { background: rgba(255,255,255,.10); color: #fff; }
+.sidebar__menu svg { width: 16px; height: 16px; opacity: .85; flex-shrink: 0; }
 .avatar-circle {
   width: 34px; height: 34px; border-radius: 50%;
   background: var(--national-gold); color: var(--national-green-900);
@@ -85,6 +117,7 @@
 .sidebar__user .name { font-size: 13px; color: #fff; font-weight: 600; line-height: 1.2; }
 .sidebar__user .role { font-size: 11px; color: var(--national-gold); margin-top: 2px; text-transform: uppercase; letter-spacing: .04em; }
 .sidebar__logout {
+  display: none; /* replaced by the profile dropdown's Sign out */
   background: transparent; border: 1px solid rgba(255,255,255,.18);
   color: rgba(255,255,255,.78);
   padding: 8px 10px; border-radius: 6px;

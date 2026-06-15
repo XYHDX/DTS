@@ -33,6 +33,7 @@ from api.models.schemas import (
     UserResponse,
     RouteCreate,
     RouteUpdate,
+    ShamCashSettingsUpdate,
     TripCancel,
     TripDispatch,
     UserUpdate,
@@ -89,21 +90,29 @@ async def _count_pending_vehicles(op_suffix: str) -> int:
 # ── Users ──────────────────────────────────────────────────────────────────────
 
 
-@router.get("/api/admin/users", response_model=List[UserResponse], tags=["admin"])
+@router.get("/api/admin/users", tags=["admin"])
 async def list_users(
+    page: int | None = None,
+    page_size: int = 15,
     current_user: CurrentUser = Depends(
         require_role("admin", "dispatcher", "super_admin")
     ),
 ):
-    """List all users scoped to the current operator."""
-    try:
-        query = "users?select=*"
-        if current_user.role != "super_admin" and current_user.operator_id:
-            query += f"&{_op_filter(current_user.operator_id)}"
-        users = await _service_get(query)
+    """List users scoped to the current operator.
 
-        return [
-            UserResponse(
+    Without ``page`` it returns the full array (kept for the vehicle form's
+    driver dropdown). With ``page`` it returns ONE page only —
+    ``{items, page, page_size, has_more}`` — so the Users table never pulls
+    the whole table at once.
+    """
+    try:
+        base = "users?select=*"
+        if current_user.role != "super_admin" and current_user.operator_id:
+            base += f"&{_op_filter(current_user.operator_id)}"
+        base += "&order=created_at.desc"
+
+        def _resp(u):
+            return UserResponse(
                 id=u["id"],
                 email=u["email"],
                 full_name=u["full_name"],
@@ -113,14 +122,80 @@ async def list_users(
                 is_active=u["is_active"],
                 created_at=u.get("created_at"),
             )
-            for u in users
-        ]
+
+        if page is None:
+            users = await _service_get(base)
+            return [_resp(u) for u in users]
+
+        page = max(1, page)
+        page_size = max(1, min(page_size, 100))
+        offset = (page - 1) * page_size
+        # Fetch one extra row to learn whether a next page exists (no COUNT).
+        rows = await _service_get(base + f"&limit={page_size + 1}&offset={offset}")
+        has_more = len(rows) > page_size
+        return {
+            "items": [_resp(u) for u in rows[:page_size]],
+            "page": page,
+            "page_size": page_size,
+            "has_more": has_more,
+        }
 
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
         )
+
+
+@router.get("/api/admin/settings", tags=["admin"])
+async def get_settings(
+    current_user: CurrentUser = Depends(require_role("admin", "super_admin")),
+):
+    """Dashboard settings (Sham Cash mode + merchant) for the current operator.
+
+    The real secrets live only in server env vars and are never returned; we
+    report whether each is present so the UI can warn before switching to live.
+    """
+    sham = {"mode": "sandbox", "merchant_id": ""}
+    if current_user.operator_id:
+        rows = await _service_get(
+            f"operators?id=eq.{urllib.parse.quote(current_user.operator_id, safe='')}&select=settings"
+        )
+        sc = ((rows or [{}])[0].get("settings") or {}).get("sham_cash") or {}
+        sham["mode"] = sc.get("mode") or "sandbox"
+        sham["merchant_id"] = sc.get("merchant_id") or ""
+    return {
+        "sham_cash": sham,
+        "secrets_present": {
+            "qr_signing_secret": bool(os.getenv("QR_SIGNING_SECRET")),
+            "api_secret": bool(os.getenv("SHAM_CASH_API_SECRET")),
+            "webhook_secret": bool(os.getenv("SHAM_CASH_WEBHOOK_SECRET")),
+        },
+    }
+
+
+@router.put("/api/admin/settings", tags=["admin"])
+async def update_settings(
+    body: ShamCashSettingsUpdate,
+    current_user: CurrentUser = Depends(require_role("admin", "super_admin")),
+):
+    """Persist the Sham Cash mode + merchant ID on the operator (JSONB settings)."""
+    if not current_user.operator_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No operator scope for settings.",
+        )
+    quoted = urllib.parse.quote(current_user.operator_id, safe="")
+    rows = await _service_get(f"operators?id=eq.{quoted}&select=settings")
+    settings = (rows or [{}])[0].get("settings") or {}
+    if not isinstance(settings, dict):
+        settings = {}
+    settings["sham_cash"] = {
+        "mode": body.mode,
+        "merchant_id": (body.merchant_id or "").strip(),
+    }
+    await _service_patch(f"operators?id=eq.{quoted}", {"settings": settings})
+    return {"status": "saved", "sham_cash": settings["sham_cash"]}
 
 
 @router.post("/api/admin/users", response_model=UserResponse, tags=["admin"])

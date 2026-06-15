@@ -328,6 +328,15 @@ class ShamCashWebhookPayload(BaseModel):
     payer_hint: Optional[str] = Field(None, max_length=32)
 
 
+class ShamCashSettingsUpdate(BaseModel):
+    """Dashboard-editable Sham Cash config. Hybrid model: the mode + merchant
+    are stored per-operator in the DB; the actual API/webhook secrets stay in
+    server environment variables and are never accepted or returned here."""
+
+    mode: Literal["sandbox", "live"] = "sandbox"
+    merchant_id: Optional[str] = Field(None, max_length=128)
+
+
 class ScheduleResponse(BaseModel):
     id: str
     route_id: str
