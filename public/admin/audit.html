@@ -30,12 +30,12 @@
 
 <div class="utility-bar">
   <div class="container">
-    <span class="gov">الجمهورية العربية السورية</span>
+    <span class="gov" data-i18n="hero.eyebrow">الجمهورية العربية السورية</span>
     <span class="right">
-      <a href="/">الرئيسية</a><span class="sep"></span>
-      <a href="/passenger/">للركاب</a><span class="sep"></span>
-      <a href="/driver/">للسائقين</a><span class="sep"></span>
-      <a href="/admin/login.html">الإدارة</a>
+      <a href="/" data-i18n="header.home">الرئيسية</a><span class="sep"></span>
+      <a href="/passenger/" data-i18n="header.passenger">للركاب</a><span class="sep"></span>
+      <a href="/driver/" data-i18n="header.driver">للسائقين</a><span class="sep"></span>
+      <a href="/admin/login.html" data-i18n="header.admin">الإدارة</a>
     </span>
   </div>
 </div>
@@ -44,7 +44,7 @@
   <aside class="sidebar">
     <a href="/" class="sidebar__brand">
       <span class="sidebar__brand-mark"><picture><source srcset="/assets/identity/sy-emblem-eagle.avif" type="image/avif"><img src="/assets/identity/sy-emblem-eagle.png" alt=""></picture></span>
-      <span class="sidebar__brand-text"><b>نقل دمشق</b><small>لوحة الإدارة</small></span>
+      <span class="sidebar__brand-text"><b data-i18n="admin.brand">نقل دمشق</b><small data-i18n="admin.brandSub">لوحة الإدارة</small></span>
     </a>
     <nav data-shell-nav aria-label="إدارة"></nav>
     <div class="sidebar__footer">
@@ -56,20 +56,23 @@
   <main class="main">
     <div class="topbar">
       <div class="pagetitle">
-        <h1>السجل / Audit log</h1>
-        <p>كل إجراء إداري وكل محاولة دخول. للمسؤولين فقط — مرئيّة ضمن نطاق المُشغّل الحالي.</p>
+        <h1 data-i18n="admin.audit.title">السجل</h1>
+        <p data-i18n="admin.audit.sub">كل إجراء إداري وكل محاولة دخول. للمسؤولين فقط — مرئيّة ضمن نطاق المُشغّل الحالي.</p>
+      </div>
+      <div class="cluster">
+        <button class="lang-toggle" id="lang-toggle" data-i18n-toggle aria-label="Toggle language">EN</button>
       </div>
     </div>
 
     <div class="tabs" id="tabs">
-      <button data-tab="audit"   class="is-active">إجراءات / Actions</button>
-      <button data-tab="logins">محاولات الدخول / Login attempts</button>
+      <button data-tab="audit"   class="is-active" data-i18n="admin.audit.tabActions">الإجراءات</button>
+      <button data-tab="logins" data-i18n="admin.audit.tabLogins">محاولات الدخول</button>
     </div>
 
     <div class="filter-row" id="filter-row">
-      <input id="filter-input" placeholder="إجراء أو بريد… / action or email…" style="min-width:240px;">
-      <button id="filter-go">تصفية / Filter</button>
-      <button id="filter-clear" style="background:#fff;color:#0E5650;border:1px solid #0E5650;">إلغاء / Clear</button>
+      <input id="filter-input" data-i18n-placeholder="admin.audit.search" placeholder="إجراء أو بريد…" style="min-width:240px;">
+      <button id="filter-go" data-i18n="admin.audit.filter">تصفية</button>
+      <button id="filter-clear" data-i18n="admin.audit.clear" style="background:#fff;color:#0E5650;border:1px solid #0E5650;">إلغاء</button>
     </div>
 
     <section class="data-table-card">
@@ -112,7 +115,7 @@
   function render(rows) {
     const tbody = document.getElementById('rows');
     if (!rows || !rows.length) {
-      tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">لا توجد سجلات بهذا الفلتر. / No rows.</div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">' + (isAr() ? 'لا توجد سجلات بهذا الفلتر.' : 'No rows match this filter.') + '</div></td></tr>';
       return;
     }
     if (TAB === 'audit') {

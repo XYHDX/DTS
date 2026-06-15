@@ -76,10 +76,10 @@
     </div>
 
     <div class="cluster" id="filters" role="tablist" style="margin-bottom:16px">
-      <button class="btn btn--sm btn--primary" data-f="pending">قيد الانتظار <b id="n-pending">·</b></button>
-      <button class="btn btn--sm btn--outline" data-f="approved">معتمدة <b id="n-approved">·</b></button>
-      <button class="btn btn--sm btn--outline" data-f="rejected">مرفوضة <b id="n-rejected">·</b></button>
-      <button class="btn btn--sm btn--outline" data-f="suspended">معلّقة <b id="n-suspended">·</b></button>
+      <button class="btn btn--sm btn--primary" data-f="pending"><span class="flabel">قيد الانتظار</span> <b id="n-pending">·</b></button>
+      <button class="btn btn--sm btn--outline" data-f="approved"><span class="flabel">معتمدة</span> <b id="n-approved">·</b></button>
+      <button class="btn btn--sm btn--outline" data-f="rejected"><span class="flabel">مرفوضة</span> <b id="n-rejected">·</b></button>
+      <button class="btn btn--sm btn--outline" data-f="suspended"><span class="flabel">معلّقة</span> <b id="n-suspended">·</b></button>
     </div>
 
     <section class="data-table-card">
@@ -153,8 +153,19 @@
     return b('resubmit', isAr() ? 'إعادة للانتظار' : 'Re-queue', false);
   }
 
+  function filterLabels() {
+    const ar = { pending:'قيد الانتظار', approved:'معتمدة', rejected:'مرفوضة', suspended:'معلّقة' };
+    const en = { pending:'Pending', approved:'Approved', rejected:'Rejected', suspended:'Suspended' };
+    const m = isAr() ? ar : en;
+    document.querySelectorAll('#filters button[data-f]').forEach(b => {
+      const lab = b.querySelector('.flabel');
+      if (lab) lab.textContent = m[b.dataset.f] || b.dataset.f;
+    });
+  }
+
   function render() {
     const tbody = document.getElementById('rows');
+    filterLabels();
     counts();
     const rows = ALL.filter(v => (v.approval_status || 'approved') === FILTER);
     if (!rows.length) {

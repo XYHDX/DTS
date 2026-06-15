@@ -4,642 +4,483 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0E5650">
-<meta name="description" content="دليل استخدام منصة نقل دمشق — للركاب، السائقين، والإدارة. ربط الـGPS، إنشاء الرحلات، حل المشاكل.">
-<title>كيفية الاستخدام — نقل دمشق</title>
+<meta name="description" content="دليل استخدام منصة نقل دمشق — للركاب، السائقين، والإدارة · Damascus Transit user guide — passengers, drivers, admins.">
+<title>كيفية الاستخدام — نقل دمشق · How to Use</title>
 
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-
 <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200;300;400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/lib/design-system.css">
 
 <style>
-  /* Help-page specific layout */
+  :root { --hg-max: 1060px; }
+  body { background: var(--color-surface, #faf9f6); }
+
+  /* Hero */
   .help-hero {
-    position: relative;
-    padding: 64px 0 72px;
-    background-color: var(--national-green);
+    position: relative; color:#fff; overflow:hidden;
+    padding: clamp(48px, 8vw, 80px) 0 clamp(40px, 6vw, 64px);
+    background-color: var(--national-green, #0E5650);
     background-image:
-      radial-gradient(ellipse at 80% 20%, rgba(201,169,91,.18), transparent 55%),
-      radial-gradient(ellipse at 20% 80%, rgba(255,255,255,.05), transparent 50%);
-    color: #fff;
-    overflow: hidden;
-    border-bottom: 1px solid var(--national-gold);
+      radial-gradient(ellipse at 82% 18%, rgba(201,169,91,.22), transparent 55%),
+      radial-gradient(ellipse at 15% 85%, rgba(255,255,255,.06), transparent 50%);
+    border-bottom: 3px solid var(--national-gold, #C9A95B);
   }
-  .help-hero::before {
-    content: ""; position: absolute; inset: 0;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><g fill='none' stroke='%23C9A95B' stroke-width='1' stroke-opacity='0.38' stroke-linejoin='round' stroke-linecap='round'><polygon points='68,40 51,45 60,60 45,51 40,68 35,51 20,60 29,45 12,40 29,35 20,20 35,29 40,12 45,29 60,20 51,35'/><path d='M68,40 L80,36.5 M68,40 L80,43.5 M40,68 L36.5,80 M40,68 L43.5,80 M12,40 L0,36.5 M12,40 L0,43.5 M40,12 L36.5,0 M40,12 L43.5,0 M60,20 L72,0 M60,20 L80,8 M60,60 L80,72 M60,60 L72,80 M20,60 L8,80 M20,60 L0,72 M20,20 L0,8 M20,20 L8,0'/><polyline points='8,0 8,3.3 3.3,8 0,8'/><polyline points='80,8 76.7,8 72,3.3 72,0'/><polyline points='72,80 72,76.7 76.7,72 80,72'/><polyline points='8,80 8,76.7 3.3,72 0,72'/></g></svg>");
-    background-size: 80px 80px;
-    pointer-events: none;
-  }
-  .help-hero > .container { position: relative; z-index: 1; }
-  .help-hero h1 { font-size: clamp(1.9rem, 3.6vw, 2.6rem); margin: 16px 0 8px; color: #fff; font-family: var(--font-sans); }
-  .help-hero p { color: rgba(255,255,255,.86); max-width: 60ch; margin: 0; font-size: 17px; line-height: 1.7; }
+  .help-wrap { max-width: var(--hg-max); margin: 0 auto; padding-inline: clamp(18px, 4vw, 36px); }
   .help-hero .eyebrow {
-    color: var(--national-gold); background: rgba(255,255,255,.08);
-    border: 1px solid var(--national-gold);
-    padding: 8px 14px; border-radius: var(--r-sm);
-    letter-spacing: .18em; text-transform: uppercase;
-    font-weight: 700; font-size: 13px;
-    display: inline-block;
+    display:inline-block; font-size:13px; font-weight:600; letter-spacing:.06em;
+    color: var(--national-gold,#C9A95B); border:1px solid rgba(201,169,91,.5);
+    border-radius:999px; padding:5px 14px; margin-bottom:18px;
   }
+  .help-hero h1 { margin:0 0 14px; font-size: clamp(28px, 5vw, 44px); line-height:1.15; font-weight:700; }
+  .help-hero p.lede { margin:0; max-width:60ch; font-size: clamp(15px,2.2vw,18px); line-height:1.6; color:rgba(255,255,255,.85); }
 
-  /* Audience picker tabs */
-  .audience-tabs {
-    display: flex; gap: 4px;
-    margin-top: 28px; padding: 4px;
-    background: rgba(255,255,255,.08);
-    border: 1px solid rgba(255,255,255,.18);
-    border-radius: var(--r-md);
-    max-width: 540px; flex-wrap: wrap;
+  /* Language toggle (top-right floating pill) */
+  .help-topbar { background: var(--national-green-900,#082b25); }
+  .help-topbar .help-wrap { display:flex; align-items:center; justify-content:space-between; padding-block:10px; }
+  .help-topbar a { color:rgba(255,255,255,.82); text-decoration:none; font-size:13.5px; }
+  .help-topbar nav { display:flex; gap:18px; flex-wrap:wrap; }
+  .help-topbar a:hover { color:#fff; }
+  .lang-btn {
+    background: transparent; color: var(--national-gold,#C9A95B);
+    border:1px solid var(--national-gold,#C9A95B); border-radius:999px;
+    padding:7px 18px; font:inherit; font-weight:700; font-size:13px; cursor:pointer;
+    letter-spacing:.04em; transition:.15s;
   }
-  .audience-tab {
-    flex: 1; min-width: 120px;
-    padding: 10px 14px;
-    border: 0; background: transparent;
-    color: rgba(255,255,255,.78);
-    font-weight: 600; font-size: 14px;
-    font-family: var(--font-sans);
-    cursor: pointer; border-radius: var(--r-sm);
-    transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
-  }
-  .audience-tab:hover { color: #fff; }
-  .audience-tab.is-active { background: var(--national-gold); color: var(--national-green-950); }
+  .lang-btn:hover { background: var(--national-gold,#C9A95B); color: var(--national-green-900,#082b25); }
 
-  /* Body content */
-  .help-body { padding: 56px 0 80px; background: var(--color-bg); }
-  .help-grid { display: grid; gap: 40px; grid-template-columns: 1fr; }
-  @media (min-width: 900px) { .help-grid { grid-template-columns: 220px 1fr; } }
+  /* Tabs */
+  .help-tabs { display:flex; gap:8px; flex-wrap:wrap; margin-top:26px; }
+  .help-tab {
+    background: rgba(255,255,255,.10); color:#fff; border:1px solid rgba(255,255,255,.18);
+    border-radius:999px; padding:9px 18px; font:inherit; font-size:14px; font-weight:600;
+    cursor:pointer; transition:.15s;
+  }
+  .help-tab:hover { background: rgba(255,255,255,.18); }
+  .help-tab.is-active { background: var(--national-gold,#C9A95B); color: var(--national-green-900,#082b25); border-color:transparent; }
 
-  .help-toc {
-    position: sticky; top: 80px;
-    align-self: start;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--r-md);
-    padding: 18px;
-  }
-  .help-toc h6 {
-    margin: 0 0 12px; font-size: 11px; font-weight: 700;
-    letter-spacing: .08em; text-transform: uppercase;
-    color: var(--national-gold-700);
-    font-family: var(--font-sans);
-  }
+  /* Body layout */
+  .help-body { padding: clamp(34px,6vw,56px) 0 80px; }
+  .help-grid { display:grid; grid-template-columns: 220px 1fr; gap: clamp(24px,4vw,52px); align-items:start; }
+  .help-toc { position: sticky; top: 18px; }
+  .help-toc h6 { margin:0 0 12px; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color: var(--color-text-soft,#6b7280); }
   .help-toc a {
-    display: block; padding: 7px 10px;
-    color: var(--color-text-soft); font-size: 14px; font-weight: 500;
-    border-radius: var(--r-sm);
-    border-inline-start: 2px solid transparent;
-    transition: all var(--t-fast) var(--ease);
+    display:block; padding:9px 12px; border-radius:9px; margin-bottom:4px;
+    color: var(--color-text,#1f2937); text-decoration:none; font-size:14.5px; transition:.12s;
   }
-  .help-toc a:hover { background: var(--color-surface-2); color: var(--national-green); text-decoration: none; }
-  .help-toc a.is-active { background: var(--national-green-100); color: var(--national-green-700); border-inline-start-color: var(--national-gold); font-weight: 700; }
-  @media (max-width: 899px) { .help-toc { position: static; } }
+  .help-toc a:hover { background: rgba(14,86,80,.07); }
+  .help-toc a.is-active { background: rgba(14,86,80,.12); color: var(--national-green,#0E5650); font-weight:600; }
 
-  .help-section { margin-bottom: 56px; scroll-margin-top: 80px; }
+  .help-section { scroll-margin-top: 16px; margin-bottom: 56px; }
   .help-section:last-child { margin-bottom: 0; }
-  .help-section .lede { font-size: 17px; color: var(--color-text-soft); line-height: 1.7; max-width: 64ch; }
-  .help-section h2 { font-size: 26px; font-weight: 700; margin: 0 0 6px; color: var(--color-text); font-family: var(--font-sans); }
-  .help-section h3 { font-size: 18px; font-weight: 700; margin: 28px 0 10px; color: var(--color-text); font-family: var(--font-sans); }
-  .help-section h4 { font-size: 15px; font-weight: 700; margin: 18px 0 6px; color: var(--color-text); font-family: var(--font-sans); }
-  .help-section .section-eyebrow {
-    display: inline-block;
-    font-family: var(--font-mono); font-size: 12px;
-    color: var(--national-gold-700); font-weight: 600;
-    letter-spacing: .12em; text-transform: uppercase;
-    margin-bottom: 10px;
-    padding-bottom: 6px;
-    border-bottom: 2px solid var(--national-gold);
-  }
-  .help-section p { color: var(--color-text-soft); line-height: 1.7; max-width: 64ch; }
-  .help-section ul, .help-section ol { padding-inline-start: 22px; color: var(--color-text-soft); line-height: 1.85; max-width: 64ch; }
-  .help-section li { margin-bottom: 6px; }
-  .help-section li strong { color: var(--color-text); font-weight: 700; }
-  .help-section code { font-family: var(--font-mono); font-size: 13px; background: var(--color-surface-2); padding: 1px 6px; border-radius: 3px; color: var(--national-green-800); }
+  .sec-eyebrow { font-size:13px; font-weight:700; letter-spacing:.05em; color: var(--national-gold,#b3923f); }
+  .help-section h2 { margin:6px 0 12px; font-size: clamp(22px,3.4vw,30px); line-height:1.2; color: var(--national-green-900,#082b25); }
+  .help-section h3 { margin:30px 0 10px; font-size:18px; color: var(--national-green,#0E5650); }
+  .help-section p.lede { margin:0 0 8px; font-size: clamp(15px,2vw,17px); line-height:1.65; color: var(--color-text,#374151); }
+  .help-section p { line-height:1.65; color: var(--color-text,#374151); }
+  .help-section ul { line-height:1.7; color:var(--color-text,#374151); padding-inline-start:22px; }
+  code { background: rgba(14,86,80,.08); color: var(--national-green,#0E5650); padding:1px 6px; border-radius:5px; font-family:'JetBrains Mono',monospace; font-size:.88em; }
 
-  /* Step list — numbered cards */
-  .steps {
-    list-style: none; padding: 0; margin: 16px 0 0;
-    display: grid; gap: 14px;
-    counter-reset: step;
+  /* Steps */
+  ol.steps { list-style:none; counter-reset: s; margin:0; padding:0; }
+  ol.steps > li {
+    position:relative; padding-inline-start:52px; margin-bottom:18px;
   }
-  .steps li {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--r-md);
-    padding: 18px 22px 18px 64px;
-    position: relative;
-    transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
-    counter-increment: step;
+  ol.steps > li::before {
+    counter-increment: s; content: counter(s);
+    position:absolute; inset-inline-start:0; top:0;
+    width:34px; height:34px; border-radius:50%;
+    background: var(--national-green,#0E5650); color:#fff;
+    display:grid; place-items:center; font-weight:700; font-size:15px;
   }
-  [dir="rtl"] .steps li { padding: 18px 64px 18px 22px; }
-  .steps li:hover { border-color: var(--national-gold); box-shadow: var(--sh-md); transform: translateY(-1px); }
-  .steps li::before {
-    content: counter(step);
-    position: absolute;
-    inset-block-start: 18px;
-    inset-inline-start: 18px;
-    width: 32px; height: 32px;
-    border-radius: 50%;
-    background: var(--national-green);
-    color: #fff;
-    display: grid; place-items: center;
-    font-family: var(--font-mono);
-    font-size: 14px; font-weight: 700;
-  }
-  .steps li b { display: block; font-size: 15px; color: var(--color-text); font-weight: 700; margin-bottom: 4px; }
-  .steps li p { margin: 0; font-size: 14px; color: var(--color-text-soft); line-height: 1.65; }
-  .steps li code { font-size: 12px; }
+  ol.steps b { display:block; font-size:15.5px; color: var(--national-green-900,#082b25); margin-bottom:3px; }
+  ol.steps p { margin:0; font-size:14.5px; }
 
-  /* Callout boxes */
-  .callout {
-    display: flex; gap: 14px; align-items: flex-start;
-    padding: 16px 20px;
-    border: 1px solid var(--color-border);
-    border-inline-start: 4px solid var(--national-green);
-    border-radius: var(--r-md);
-    background: var(--color-surface);
-    margin: 18px 0;
+  /* Callouts */
+  .note {
+    display:flex; gap:13px; align-items:flex-start;
+    border-radius:12px; padding:16px 18px; margin:22px 0 0;
+    background: rgba(14,86,80,.06); border:1px solid rgba(14,86,80,.16);
   }
-  .callout__icon {
-    flex-shrink: 0; width: 28px; height: 28px;
-    display: grid; place-items: center;
-    border-radius: 50%; background: var(--national-green-100); color: var(--national-green);
-    font-weight: 700; font-size: 14px;
+  .note .ico {
+    flex-shrink:0; width:28px; height:28px; border-radius:50%;
+    background: var(--national-green,#0E5650); color:#fff;
+    display:grid; place-items:center; font-weight:700; font-size:15px;
   }
-  .callout--warn { border-inline-start-color: #C58A2B; }
-  .callout--warn .callout__icon { background: #FBEFD5; color: #C58A2B; }
-  .callout--danger { border-inline-start-color: var(--national-red); }
-  .callout--danger .callout__icon { background: var(--national-red-100); color: var(--national-red-700); }
-  .callout h5 { font-size: 14px; margin: 0 0 4px; color: var(--color-text); font-family: var(--font-sans); }
-  .callout p { margin: 0; font-size: 14px; color: var(--color-text-soft); line-height: 1.6; }
+  .note h5 { margin:0 0 3px; font-size:15px; color: var(--national-green-900,#082b25); }
+  .note p { margin:0; font-size:14px; }
+  .note--warn { background: rgba(201,169,91,.13); border-color: rgba(201,169,91,.4); }
+  .note--warn .ico { background: #b3923f; }
+  .note--danger { background: rgba(206,17,38,.07); border-color: rgba(206,17,38,.28); }
+  .note--danger .ico { background: var(--national-red,#CE1126); }
 
-  /* Visual diagram block */
-  .diagram {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--r-md);
-    padding: 24px;
-    margin: 18px 0;
-    text-align: center;
-  }
-  .diagram svg { max-width: 100%; height: auto; }
-  .diagram-caption { font-size: 13px; color: var(--color-text-mute); margin-top: 12px; }
+  /* Diagram */
+  .diagram { margin:18px 0; border:1px solid var(--color-border,#e5e7eb); border-radius:12px; overflow:hidden; background:#fff; }
+  .diagram svg { display:block; }
+  .diagram .cap { padding:10px 16px; font-size:13px; color: var(--color-text-soft,#6b7280); background: var(--color-surface-2,#f3f4f6); border-top:1px solid var(--color-border,#e5e7eb); }
 
-  /* Troubleshooting table */
-  .trouble-table { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--r-md); overflow: hidden; margin-top: 12px; }
-  .trouble-row { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; padding: 14px 18px; border-bottom: 1px solid var(--color-border); align-items: flex-start; }
-  .trouble-row:last-child { border-bottom: 0; }
-  .trouble-row > div:first-child { font-weight: 700; color: var(--national-red-700); font-size: 14px; }
-  .trouble-row > div:last-child { font-size: 14px; color: var(--color-text-soft); line-height: 1.65; }
-  @media (max-width: 640px) { .trouble-row { grid-template-columns: 1fr; gap: 6px; } }
+  /* Trouble table */
+  .trouble { border:1px solid var(--color-border,#e5e7eb); border-radius:12px; overflow:hidden; }
+  .trouble .row { display:grid; grid-template-columns: 230px 1fr; gap:0; border-bottom:1px solid var(--color-border,#e5e7eb); }
+  .trouble .row:last-child { border-bottom:0; }
+  .trouble .q { padding:14px 16px; font-weight:600; background: var(--color-surface-2,#f6f7f8); color: var(--national-green-900,#082b25); font-size:14.5px; }
+  .trouble .a { padding:14px 16px; font-size:14px; line-height:1.6; color: var(--color-text,#374151); }
+
+  @media (max-width: 820px) {
+    .help-grid { grid-template-columns: 1fr; }
+    .help-toc { display:none; }
+    .trouble .row { grid-template-columns: 1fr; }
+    .trouble .q { border-bottom:1px solid var(--color-border,#e5e7eb); }
+  }
 </style>
 </head>
-<body class="with-fade-in">
+<body>
 
-<!-- Utility bar — matches every other page so the chrome stays uniform. -->
-<div class="utility-bar">
-  <div class="container">
-    <span class="gov" data-i18n="hero.eyebrow">الجمهورية العربية السورية</span>
-    <span class="right">
-      <a href="/" data-i18n="header.home">الرئيسية</a>
-      <span class="sep"></span>
-      <a href="/passenger/" data-i18n="header.passenger">للركاب</a>
-      <span class="sep"></span>
-      <a href="/driver/" data-i18n="header.driver">للسائقين</a>
-      <span class="sep"></span>
-      <a href="/admin/login.html" data-i18n="header.admin">الإدارة</a>
-      <span class="sep"></span>
-      <button class="utility-lang" data-i18n-toggle aria-label="Toggle language" data-i18n="header.toggleLang">EN</button>
-    </span>
+<!-- Flag accent strip -->
+<div class="flag-strip" aria-hidden="true">
+  <span class="flag-strip__green"></span>
+  <span class="flag-strip__white"></span>
+  <span class="flag-strip__black"></span>
+</div>
+
+<!-- Top bar -->
+<div class="help-topbar">
+  <div class="help-wrap">
+    <nav>
+      <a href="/" data-nav="home">الرئيسية</a>
+      <a href="/passenger/" data-nav="passenger">للركاب</a>
+      <a href="/driver/" data-nav="driver">للسائقين</a>
+      <a href="/admin/login.html" data-nav="admin">الإدارة</a>
+    </nav>
+    <button class="lang-btn" id="lang-btn" aria-label="Toggle language">EN</button>
   </div>
 </div>
-<script src="/lib/i18n.js" defer></script>
-
-<!-- Masthead -->
-<header class="masthead">
-  <div class="container">
-    <div class="masthead__emblem" aria-hidden="true">
-      <picture>
-        <source srcset="/assets/identity/sy-emblem-eagle.avif" type="image/avif">
-        <img src="/assets/identity/sy-emblem-eagle.png" alt="">
-      </picture>
-    </div>
-    <div class="masthead__text">
-      <h1>كيفية الاستخدام · دليل المنصّة</h1>
-      <span class="masthead__tag">للركاب · السائقين · الإدارة</span>
-    </div>
-    <div class="masthead__en">
-      <strong>How to Use</strong>
-      Platform user guide
-    </div>
-  </div>
-</header>
-
-<!-- Sticky nav -->
-<nav class="nav-bar" id="primary-nav" aria-label="رئيسية">
-  <div class="container">
-    <a href="/">الرئيسية</a>
-    <a href="/passenger/">للركاب</a>
-    <a href="/driver/">للسائقين</a>
-    <a href="/admin/login.html">دخول الإدارة</a>
-    <a href="/help/" class="is-active">كيفية الاستخدام</a>
-  </div>
-</nav>
 
 <!-- Hero -->
 <section class="help-hero">
-  <div class="container">
-    <span class="eyebrow">دليل ٢٠٢٦ · v5.0</span>
-    <h1>كيف تعمل منصّة نقل دمشق؟</h1>
-    <p>تعرّف على كيفية استخدام المنصّة، وكيف يرتبط جهاز السائق بنظام تتبّع الحافلات لحظياً، وكيف تستفيد كراكب أو مشرف من البيانات المباشرة.</p>
-    <div class="audience-tabs" role="tablist">
-      <button class="audience-tab is-active" data-target="#passengers">للركاب</button>
-      <button class="audience-tab" data-target="#drivers">للسائقين</button>
-      <button class="audience-tab" data-target="#gps">ربط الـGPS</button>
-      <button class="audience-tab" data-target="#admins">للإدارة</button>
-      <button class="audience-tab" data-target="#troubleshooting">حلّ المشاكل</button>
-    </div>
+  <div class="help-wrap">
+    <span class="eyebrow" id="hero-eyebrow"></span>
+    <h1 id="hero-title"></h1>
+    <p class="lede" id="hero-lede"></p>
+    <div class="help-tabs" id="tabs" role="tablist"></div>
   </div>
 </section>
 
 <!-- Body -->
 <main class="help-body">
-  <div class="container">
+  <div class="help-wrap">
     <div class="help-grid">
-
-      <!-- TOC -->
-      <aside class="help-toc" aria-label="فهرس الدليل">
-        <h6>المحتويات</h6>
-        <a href="#passengers" class="is-active">١ · للركاب</a>
-        <a href="#drivers">٢ · للسائقين</a>
-        <a href="#gps">٣ · ربط الـGPS</a>
-        <a href="#admins">٤ · للإدارة</a>
-        <a href="#troubleshooting">٥ · حلّ المشاكل</a>
-      </aside>
-
-      <!-- Content -->
-      <div>
-
-        <!-- PASSENGERS -->
-        <section class="help-section" id="passengers">
-          <span class="section-eyebrow">١ · للركاب</span>
-          <h2>كيف تستخدم تطبيق الركّاب</h2>
-          <p class="lede">تطبيق الركّاب يُريك أقرب الحافلات إلى موقعك، وأوقات الوصول المتوقّعة لخطّك، والخطوط الشائعة. يعمل في المتصفح وكتطبيق PWA قابل للتثبيت.</p>
-
-          <h3>الخطوات الأساسية</h3>
-          <ol class="steps">
-            <li>
-              <b>افتح تطبيق الركاب</b>
-              <p>اذهب إلى <code>damascustransit.sy/passenger/</code> من المتصفح. يفضّل المتصفّحات الحديثة (Chrome، Safari، Edge).</p>
-            </li>
-            <li>
-              <b>اسمح بالوصول للموقع</b>
-              <p>عند الطلب الأوّل، يطلب المتصفّح إذن الوصول للموقع — اضغط "السماح" حتى يظهر لك أقرب المحطات. يمكنك دائماً البحث يدوياً إن رفضت الإذن.</p>
-            </li>
-            <li>
-              <b>ابحث عن خطّك أو محطّتك</b>
-              <p>اكتب اسم المحطّة أو رقم الخطّ في شريط البحث (مثال: "مزة"، "باب توما"، "خط ١٠١").</p>
-            </li>
-            <li>
-              <b>تابع الحافلات لحظياً</b>
-              <p>الخريطة تعرض الحافلات المتحرّكة. النقاط الخضراء تمثّل الحافلات، والأوقات تُحدَّث كل ٥ ثوانٍ تلقائياً.</p>
-            </li>
-            <li>
-              <b>ثبّت التطبيق (اختياري)</b>
-              <p>عندما يظهر بانر "ثبّت التطبيق"، اضغط "تثبيت" للحصول على وصول أسرع، أيقونة على الشاشة الرئيسية، وعمل دون اتصال.</p>
-            </li>
-          </ol>
-
-          <div class="callout">
-            <span class="callout__icon">i</span>
-            <div>
-              <h5>يعمل دون اتصال</h5>
-              <p>التطبيق يحفظ المحطات والخطوط محلياً ويعمل حتى عند انقطاع الإنترنت — تظهر شارة "دون اتصال" في الأعلى.</p>
-            </div>
-          </div>
-        </section>
-
-        <!-- DRIVERS -->
-        <section class="help-section" id="drivers">
-          <span class="section-eyebrow">٢ · للسائقين</span>
-          <h2>كيف يستخدم السائقون التطبيق</h2>
-          <p class="lede">تطبيق السائق مصمَّم للعمل أثناء القيادة بأقلّ تشتيت — أزرار كبيرة، شاشات بسيطة، وعدّاد ركاب يدوي. يبثّ الموقع تلقائياً حين تبدأ الرحلة.</p>
-
-          <ol class="steps">
-            <li>
-              <b>احصل على بيانات الدخول من الإدارة</b>
-              <p>قبل البدء، يجب أن يكون قد تمّ تخصيص حساب لك من قِبل المسؤول، مع ربط جهازك برقم الحافلة.</p>
-            </li>
-            <li>
-              <b>افتح تطبيق السائق</b>
-              <p>اذهب إلى <code>damascustransit.sy/driver/</code> — يفضّل تثبيت التطبيق كـPWA ليعمل ملء الشاشة وفي الخلفية.</p>
-            </li>
-            <li>
-              <b>سجّل الدخول</b>
-              <p>أدخل بريدك وكلمة المرور. إن كان جهازك يدعم البصمة، يظهر زرّ "الدخول ببصمة الإصبع" بعد الجلسة الأولى.</p>
-            </li>
-            <li>
-              <b>اسمح بالوصول للموقع</b>
-              <p>سيطلب التطبيق إذن الوصول لـGPS. اختر "السماح دائماً" — هذا ضروري لبثّ الموقع حتى عند تشغيل تطبيقات أخرى.</p>
-            </li>
-            <li>
-              <b>اضغط "بدء الرحلة"</b>
-              <p>الزرّ الأخضر الكبير يبدأ بثّ موقعك لخوادم المنصّة كل ٥ ثوانٍ، ويُشغّل عدّاد الركاب والمسافة.</p>
-            </li>
-            <li>
-              <b>عَدّ الركّاب يدوياً</b>
-              <p>استخدم الزرَّين "+" و"−" لتسجيل صعود ونزول الركاب. تظهر النسبة المئوية للإشغال تلقائياً.</p>
-            </li>
-            <li>
-              <b>أنهِ الرحلة عند الوصول للنهاية</b>
-              <p>الزرّ الأحمر "إنهاء الرحلة" يوقف بثّ الموقع ويرسل ملخّصاً للإدارة (المسافة، المدّة، الإشغال المتوسّط).</p>
-            </li>
-          </ol>
-
-          <div class="callout callout--warn">
-            <span class="callout__icon">!</span>
-            <div>
-              <h5>في حال انقطاع الإنترنت</h5>
-              <p>التطبيق يحفظ المواقع محلياً ويرسلها دفعة واحدة عند عودة الاتصال. لا تقلق — البيانات لن تُفقد.</p>
-            </div>
-          </div>
-        </section>
-
-        <!-- GPS -->
-        <section class="help-section" id="gps">
-          <span class="section-eyebrow">٣ · ربط الـGPS</span>
-          <h2>كيف يرتبط GPS السائق بالحافلة؟</h2>
-          <p class="lede">يتمّ ربط جهاز السائق برقم الحافلة من جانب الإدارة، ثمّ يبثّ التطبيق إحداثيات الموقع تلقائياً عند بدء كل رحلة. يلي شرح كامل لكل مرحلة:</p>
-
-          <div class="diagram">
-            <svg viewBox="0 0 720 220" width="100%" height="220" xmlns="http://www.w3.org/2000/svg" aria-label="مخطّط ربط الـGPS">
-              <!-- Background -->
-              <rect width="720" height="220" fill="#FFFFFF"/>
-              <!-- Driver phone -->
-              <g transform="translate(60,40)">
-                <rect x="0" y="0" width="120" height="140" rx="12" fill="#0E5650" stroke="#C9A95B" stroke-width="2"/>
-                <rect x="14" y="20" width="92" height="100" rx="4" fill="#FFFFFF"/>
-                <circle cx="60" cy="130" r="3" fill="#C9A95B"/>
-                <text x="60" y="50" fill="#0E5650" text-anchor="middle" font-family="Readex Pro,sans-serif" font-size="11" font-weight="700">جهاز السائق</text>
-                <text x="60" y="68" fill="#0E5650" text-anchor="middle" font-family="Readex Pro,sans-serif" font-size="9">رقم: B-101</text>
-                <circle cx="60" cy="92" r="10" fill="#0E5650"/>
-                <text x="60" y="96" fill="#fff" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9">📍</text>
-              </g>
-              <!-- Arrow 1 -->
-              <g transform="translate(190,100)">
-                <line x1="0" y1="10" x2="100" y2="10" stroke="#C9A95B" stroke-width="2.5" stroke-dasharray="5,4"/>
-                <polygon points="100,10 92,5 92,15" fill="#C9A95B"/>
-                <text x="50" y="-2" fill="#0E5650" text-anchor="middle" font-family="Readex Pro,sans-serif" font-size="10" font-weight="600">SSL/JWT</text>
-                <text x="50" y="28" fill="#6A6A6A" text-anchor="middle" font-family="Readex Pro,sans-serif" font-size="9">كل ٥ ثوانٍ</text>
-              </g>
-              <!-- Server -->
-              <g transform="translate(300,40)">
-                <rect x="0" y="0" width="120" height="140" rx="12" fill="#082B25" stroke="#C9A95B" stroke-width="2"/>
-                <text x="60" y="60" fill="#C9A95B" text-anchor="middle" font-family="Readex Pro,sans-serif" font-size="11" font-weight="700">خادم نقل دمشق</text>
-                <text x="60" y="80" fill="#fff" text-anchor="middle" font-family="Readex Pro,sans-serif" font-size="9">FastAPI + PostGIS</text>
-                <rect x="20" y="100" width="80" height="20" rx="4" fill="#0E5650"/>
-                <text x="60" y="114" fill="#C9A95B" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9">/api/driver/position</text>
-              </g>
-              <!-- Arrow 2 -->
-              <g transform="translate(430,100)">
-                <line x1="0" y1="10" x2="100" y2="10" stroke="#C9A95B" stroke-width="2.5" stroke-dasharray="5,4"/>
-                <polygon points="100,10 92,5 92,15" fill="#C9A95B"/>
-                <text x="50" y="-2" fill="#0E5650" text-anchor="middle" font-family="Readex Pro,sans-serif" font-size="10" font-weight="600">SSE</text>
-                <text x="50" y="28" fill="#6A6A6A" text-anchor="middle" font-family="Readex Pro,sans-serif" font-size="9">/api/stream</text>
-              </g>
-              <!-- Passenger app -->
-              <g transform="translate(540,40)">
-                <rect x="0" y="0" width="120" height="140" rx="12" fill="#FAFAF7" stroke="#C9A95B" stroke-width="2"/>
-                <rect x="14" y="20" width="92" height="100" rx="4" fill="#FFFFFF"/>
-                <text x="60" y="50" fill="#0E5650" text-anchor="middle" font-family="Readex Pro,sans-serif" font-size="11" font-weight="700">تطبيق الراكب</text>
-                <text x="60" y="68" fill="#0E5650" text-anchor="middle" font-family="Readex Pro,sans-serif" font-size="9">خريطة مباشرة</text>
-                <circle cx="40" cy="92" r="3" fill="#0E5650"/>
-                <circle cx="60" cy="98" r="3" fill="#0E5650"/>
-                <circle cx="80" cy="88" r="3" fill="#0E5650"/>
-              </g>
-            </svg>
-            <div class="diagram-caption">رحلة المعلومة: من جهاز السائق إلى الخادم، ثمّ إلى كل التطبيقات (الركّاب، الإدارة).</div>
-          </div>
-
-          <h3>الإعداد لمرّة واحدة (من الإدارة)</h3>
-          <ol class="steps">
-            <li>
-              <b>أنشئ حافلة في قاعدة البيانات</b>
-              <p>من لوحة الإدارة ← الحافلات ← "إضافة حافلة". أدخل رقم اللوحة، السعة، والخطّ المخصَّص.</p>
-            </li>
-            <li>
-              <b>أنشئ حساب سائق</b>
-              <p>المستخدمون ← "إضافة سائق". اختر دور <code>driver</code>، ثمّ اربطه بـ<strong>رقم الحافلة</strong> من القائمة المنسدلة.</p>
-            </li>
-            <li>
-              <b>أرسل بيانات الدخول للسائق</b>
-              <p>عبر البريد الإلكتروني أو الرسائل القصيرة. تتضمّن: البريد، كلمة المرور المؤقّتة، ورقم الحافلة المخصَّصة.</p>
-            </li>
-          </ol>
-
-          <h3>الإعداد على جهاز السائق</h3>
-          <ol class="steps">
-            <li>
-              <b>افتح تطبيق السائق وسجّل الدخول</b>
-              <p>عند الدخول الأوّل، يربط الخادم الجلسة برقم الحافلة المخصَّص في الحساب — لا حاجة لإعداد يدوي.</p>
-            </li>
-            <li>
-              <b>اقبل أذونات الموقع</b>
-              <p>الأذونات المطلوبة:</p>
-              <ul style="margin: 6px 0 0; padding-inline-start: 22px">
-                <li><strong>الموقع الدقيق</strong> (Fine Location) — لإحداثيات GPS دقيقة بدون انحراف.</li>
-                <li><strong>الموقع في الخلفية</strong> (Background Location) — للبثّ المتواصل حتى عند قفل الشاشة.</li>
-                <li><strong>التشغيل الخلفي</strong> (Background Execution) — على iOS، يجب تفعيله من إعدادات التطبيق.</li>
-              </ul>
-            </li>
-            <li>
-              <b>اضغط "بدء الرحلة" لتفعيل البثّ</b>
-              <p>عند البدء، يفعّل التطبيق <code>watchPosition()</code> ويرسل النبضات كل ٥ ثوانٍ إلى <code>/api/driver/position</code> مع رمز JWT يربطها بحافلتك تلقائياً.</p>
-            </li>
-            <li>
-              <b>تابع شارة الـGPS</b>
-              <p>في الأعلى، تظهر شارة "مرتبط بالقمر" حين يكون البثّ نشطاً. إذا تحوّلت لأحمر، راجع قسم <a href="#troubleshooting">حلّ المشاكل</a>.</p>
-            </li>
-          </ol>
-
-          <h3>ما يحدث في الكواليس</h3>
-          <p>كلّ نبضة GPS تحتوي على:</p>
-          <ul>
-            <li><code>lat, lon</code> — الإحداثيات بدقّة ٥ خانات عشرية (~١ متر).</li>
-            <li><code>speed</code> — السرعة المُحوَّلة من م/ث إلى كم/س.</li>
-            <li><code>heading</code> — الاتّجاه بالدرجات (٠–٣٥٩).</li>
-            <li><code>timestamp</code> — الطابع الزمني UTC.</li>
-            <li><code>trip_id</code> — معرّف الرحلة الحالية (يُنشأ عند الضغط على "بدء الرحلة").</li>
-          </ul>
-          <p>يَستخدم الخادم رمز JWT الخاص بك لاستنتاج <code>vehicle_id</code> و<code>driver_id</code> تلقائياً، فلا حاجة لإرسالهما في كل نبضة — هذا يحمي البيانات ويمنع انتحال الهويّة.</p>
-
-          <div class="callout">
-            <span class="callout__icon">★</span>
-            <div>
-              <h5>تنعيم القراءات</h5>
-              <p>يَستخدم الخادم متوسّط متحرّك أُسّي (EMA) لتنعيم قراءات السرعة والمسار قبل عرضها للركّاب، ما يحدّ من الارتعاش الناتج عن انحراف GPS البسيط.</p>
-            </div>
-          </div>
-        </section>
-
-        <!-- ADMINS -->
-        <section class="help-section" id="admins">
-          <span class="section-eyebrow">٤ · للإدارة</span>
-          <h2>دليل المسؤولين والموزّعين</h2>
-          <p class="lede">لوحة الإدارة هي مركز التحكّم: من هنا تُنشئ المستخدمين والحافلات والخطوط، تتابع التنبيهات، وتُراقب أداء الشبكة في الوقت الحقيقي.</p>
-
-          <ol class="steps">
-            <li>
-              <b>سجّل الدخول من <code>/admin/login.html</code></b>
-              <p>اختر الدور (إدارة / موزّع) من شريط البطاقات أعلى نموذج الدخول.</p>
-            </li>
-            <li>
-              <b>أضف الحافلات والخطوط</b>
-              <p>"الحافلات" لإدارة الأسطول، "الخطوط" لتعريف المسارات والمحطّات. تَستخدم القائمة المنسدلة لربط حافلة بخطّ.</p>
-            </li>
-            <li>
-              <b>اربط السائقين بالحافلات</b>
-              <p>"المستخدمون" ← "إضافة سائق" ← اختر الحافلة. يجب أن يكون لكل سائق حافلة واحدة فقط في وقت واحد.</p>
-            </li>
-            <li>
-              <b>راقب الخريطة المباشرة</b>
-              <p>الصفحة الرئيسية للإدارة تعرض جميع الحافلات النشطة، KPIs الأسطول، والتنبيهات المفتوحة.</p>
-            </li>
-            <li>
-              <b>راجع التحليلات أسبوعياً</b>
-              <p><a href="/dashboard/analytics.html">قسم التحليلات</a> يعطيك مخطّطات الرحلات، دقّة المواعيد، وأكثر الحوادث شيوعاً.</p>
-            </li>
-          </ol>
-        </section>
-
-        <!-- TROUBLESHOOTING -->
-        <section class="help-section" id="troubleshooting">
-          <span class="section-eyebrow">٥ · حلّ المشاكل</span>
-          <h2>المشاكل الشائعة وحلولها</h2>
-          <p class="lede">معظم مشاكل GPS تنتج من أذونات نظام التشغيل أو إعدادات توفير الطاقة. يلي حلولها:</p>
-
-          <div class="trouble-table">
-            <div class="trouble-row">
-              <div>شارة GPS حمراء</div>
-              <div>الأذونات مرفوضة. اذهب إلى إعدادات الجهاز ← التطبيقات ← نقل دمشق ← الأذونات ← الموقع ← "السماح دائماً". أعد فتح التطبيق.</div>
-            </div>
-            <div class="trouble-row">
-              <div>البثّ يتوقّف بعد دقائق</div>
-              <div>وضع توفير الطاقة (Battery Saver) أو "تطبيقات نائمة" يَقتل المهام الخلفية. أَضف نقل دمشق لقائمة الاستثناءات في إعدادات البطّارية.</div>
-            </div>
-            <div class="trouble-row">
-              <div>لا تظهر حافلتي في خريطة الإدارة</div>
-              <div>تأكّد من أنك ضغطت "بدء الرحلة" — البثّ لا يبدأ تلقائياً عند تسجيل الدخول، فقط بعد بدء الرحلة. راجع شارة GPS أيضاً.</div>
-            </div>
-            <div class="trouble-row">
-              <div>أوقات الوصول غير دقيقة</div>
-              <div>أوقات الوصول تُحسَب من السرعة الحالية + الترافيك. الانحراف يصل ±٣ دقائق. تَحسّن بعد جمع بيانات الخطّ لأسبوع كامل.</div>
-            </div>
-            <div class="trouble-row">
-              <div>"بيانات الدخول غير صحيحة"</div>
-              <div>تأكّد من البريد الإلكتروني الصحيح (لا فراغات). إذا نسيت كلمة المرور، استخدم <code>/admin/reset.html</code> أو راسل المسؤول.</div>
-            </div>
-            <div class="trouble-row">
-              <div>التطبيق بطيء أو يتوقّف</div>
-              <div>أغلق التبويبات الأخرى، أعد تشغيل المتصفح، أو ثبّت التطبيق كـPWA من قائمة المتصفح — أداء PWA أفضل بكثير.</div>
-            </div>
-          </div>
-
-          <div class="callout callout--danger">
-            <span class="callout__icon">!</span>
-            <div>
-              <h5>لم تجد المشكلة؟</h5>
-              <p>راسل فريق الدعم على <a href="mailto:ops@damascustransit.sy">ops@damascustransit.sy</a> مع وصف المشكلة، رقم الحافلة، ونوع جهازك. سنردّ خلال ٢٤ ساعة.</p>
-            </div>
-          </div>
-        </section>
-
-      </div>
+      <aside class="help-toc" id="toc" aria-label="contents"></aside>
+      <div id="content"></div>
     </div>
   </div>
 </main>
 
-<!-- Footer -->
-<footer class="foot">
-  <div class="container">
-    <div>
-      <h6>نقل دمشق</h6>
-      <p class="lede">منصة وطنية مفتوحة المصدر تربط الركاب والسائقين والمشرفين بمواقع الحافلات وأوقات الوصول لحظياً، بدون إعلانات وبدون مقابل.</p>
-      <div class="social-row">
-        <a href="https://github.com/XYHDX/DTS" target="_blank" rel="noopener" aria-label="GitHub">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.6 5.6.6 11.9c0 5 3.3 9.3 7.8 10.8.6.1.8-.2.8-.5v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.4-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.2 1.2.9-.3 1.9-.4 2.9-.4s2 .1 2.9.4c2.2-1.5 3.2-1.2 3.2-1.2.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.1 0 4.5-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.3v3.4c0 .3.2.7.8.5 4.5-1.5 7.8-5.8 7.8-10.8C23.4 5.6 18.3.5 12 .5Z"/></svg>
-        </a>
-      </div>
-    </div>
-    <div>
-      <h6>المنصة</h6>
-      <a href="/">الرئيسية</a>
-      <a href="/passenger/">للركاب</a>
-      <a href="/driver/">للسائقين</a>
-      <a href="/admin/login.html">دخول الإدارة</a>
-    </div>
-    <div>
-      <h6>المساعدة</h6>
-      <a href="/help/#passengers">دليل الركّاب</a>
-      <a href="/help/#drivers">دليل السائقين</a>
-      <a href="/help/#gps">ربط الـGPS</a>
-      <a href="/help/#troubleshooting">حلّ المشاكل</a>
-    </div>
-    <div>
-      <h6>المرجع</h6>
-      <a href="https://github.com/XYHDX/DTS" target="_blank" rel="noopener">GitHub</a>
-      <a href="/api/gtfs">GTFS Feed</a>
-      <a href="/api/health">API Health</a>
-    </div>
-    <div class="copy">
-      <span>© ٢٠٢٦ نقل دمشق · الجمهورية العربية السورية · رخصة MIT</span>
-      <span>v5.0 · مايو ٢٠٢٦</span>
-    </div>
-  </div>
-</footer>
-
-<button class="scroll-top" id="scroll-top" aria-label="عودة إلى الأعلى">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6,15 12,9 18,15"/></svg>
-</button>
-
 <script>
-'use strict';
-const $ = (s, r=document) => r.querySelector(s);
+(function () {
+  'use strict';
 
-// Sticky-nav shadow + scroll-to-top
-const nav = $('#primary-nav'), stb = $('#scroll-top');
-window.addEventListener('scroll', () => {
-  const y = window.scrollY;
-  if (nav) nav.classList.toggle('is-scrolled', y > 8);
-  if (stb) stb.classList.toggle('is-visible', y > 600);
-}, { passive: true });
-if (stb) stb.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  // GPS data-flow diagram (labels swap with language).
+  function diagram(L) {
+    return '<div class="diagram"><svg viewBox="0 0 720 210" width="100%" height="210" xmlns="http://www.w3.org/2000/svg">' +
+      '<rect width="720" height="210" fill="#ffffff"/>' +
+      '<g transform="translate(56,36)"><rect width="120" height="138" rx="12" fill="#0E5650" stroke="#C9A95B" stroke-width="2"/>' +
+      '<text x="60" y="54" fill="#C9A95B" text-anchor="middle" font-family="Readex Pro,sans-serif" font-size="12" font-weight="700">'+L.d1+'</text>' +
+      '<text x="60" y="74" fill="#fff" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10">BUS-101</text>' +
+      '<circle cx="60" cy="104" r="13" fill="#0c3d38"/><text x="60" y="109" fill="#C9A95B" text-anchor="middle" font-size="12">GPS</text></g>' +
+      '<g transform="translate(186,96)"><line x1="0" y1="10" x2="104" y2="10" stroke="#C9A95B" stroke-width="2.5" stroke-dasharray="5,4"/>' +
+      '<polygon points="104,10 96,5 96,15" fill="#C9A95B"/>' +
+      '<text x="52" y="-2" fill="#0E5650" text-anchor="middle" font-family="Readex Pro,sans-serif" font-size="10" font-weight="600">SSL · JWT</text>' +
+      '<text x="52" y="28" fill="#6A6A6A" text-anchor="middle" font-family="Readex Pro,sans-serif" font-size="9">'+L.d4+'</text></g>' +
+      '<g transform="translate(300,36)"><rect width="120" height="138" rx="12" fill="#082B25" stroke="#C9A95B" stroke-width="2"/>' +
+      '<text x="60" y="60" fill="#C9A95B" text-anchor="middle" font-family="Readex Pro,sans-serif" font-size="12" font-weight="700">'+L.d2+'</text>' +
+      '<text x="60" y="80" fill="#fff" text-anchor="middle" font-family="Readex Pro,sans-serif" font-size="9">FastAPI · PostGIS</text>' +
+      '<rect x="18" y="100" width="84" height="20" rx="4" fill="#0E5650"/><text x="60" y="114" fill="#C9A95B" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8">/driver/position</text></g>' +
+      '<g transform="translate(430,96)"><line x1="0" y1="10" x2="104" y2="10" stroke="#C9A95B" stroke-width="2.5" stroke-dasharray="5,4"/>' +
+      '<polygon points="104,10 96,5 96,15" fill="#C9A95B"/>' +
+      '<text x="52" y="-2" fill="#0E5650" text-anchor="middle" font-family="Readex Pro,sans-serif" font-size="10" font-weight="600">SSE</text>' +
+      '<text x="52" y="28" fill="#6A6A6A" text-anchor="middle" font-family="Readex Pro,sans-serif" font-size="9">/api/stream</text></g>' +
+      '<g transform="translate(544,36)"><rect width="120" height="138" rx="12" fill="#FAFAF7" stroke="#C9A95B" stroke-width="2"/>' +
+      '<text x="60" y="58" fill="#0E5650" text-anchor="middle" font-family="Readex Pro,sans-serif" font-size="12" font-weight="700">'+L.d3+'</text>' +
+      '<circle cx="42" cy="96" r="4" fill="#0E5650"/><circle cx="62" cy="104" r="4" fill="#0E5650"/><circle cx="82" cy="90" r="4" fill="#0E5650"/></g>' +
+      '</svg><div class="cap">'+L.dcap+'</div></div>';
+  }
 
-// Audience tabs (in hero) — smooth-scroll to section
-document.querySelectorAll('.audience-tab').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.audience-tab').forEach(b => b.classList.remove('is-active'));
-    btn.classList.add('is-active');
-    const target = document.querySelector(btn.dataset.target);
-    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // ---- Bilingual content model ------------------------------------------------
+  const NAV = {
+    ar: { home:'الرئيسية', passenger:'للركاب', driver:'للسائقين', admin:'الإدارة' },
+    en: { home:'Home', passenger:'Passengers', driver:'Drivers', admin:'Admin' },
+  };
+
+  function build(L) {
+    return {
+      eyebrow: L.eyebrow, title: L.title, lede: L.lede, toc: L.tocTitle,
+      tabs: L.tabs,
+      sections: L.sections,
+    };
+  }
+
+  const AR = {
+    dir:'rtl', btn:'EN',
+    eyebrow:'دليل المنصّة · 2026',
+    title:'كيف تعمل منصّة نقل دمشق؟',
+    lede:'تعرّف على كيفية استخدام المنصّة، وكيف يرتبط جهاز السائق بنظام التتبّع اللحظي، وكيف تستفيد كراكب أو مشرف من البيانات المباشرة.',
+    tocTitle:'المحتويات',
+    tabs:[
+      {id:'passengers', label:'للركاب'},
+      {id:'drivers', label:'للسائقين'},
+      {id:'gps', label:'ربط الـGPS'},
+      {id:'admins', label:'للإدارة'},
+      {id:'trouble', label:'حلّ المشاكل'},
+    ],
+    d1:'جهاز السائق', d2:'خادم نقل دمشق', d3:'تطبيق الراكب', d4:'كل ٥ ثوانٍ',
+    dcap:'رحلة المعلومة: من جهاز السائق إلى الخادم، ثمّ إلى تطبيقات الركّاب والإدارة.',
+    sections:[
+      { id:'passengers', n:'١', eyebrow:'للركاب', title:'كيف تستخدم تطبيق الركّاب',
+        lede:'يُريك تطبيق الركّاب أقرب الحافلات لموقعك، وأوقات الوصول المتوقّعة لخطّك، والخطوط الشائعة. يعمل في المتصفّح وكتطبيق قابل للتثبيت.',
+        blocks:[
+          {steps:[
+            ['افتح تطبيق الركّاب','اذهب إلى <code>/passenger/</code> من متصفّح حديث (Chrome، Safari، Edge).'],
+            ['اسمح بالوصول للموقع','اضغط "السماح" لرؤية أقرب المحطّات. يمكنك دائماً البحث يدوياً إن رفضت الإذن.'],
+            ['ابحث عن خطّك أو محطّتك','اكتب اسم المحطّة أو رقم الخطّ (مثال: "المزة"، "باب توما"، "خط ١٠١").'],
+            ['تابع الحافلات لحظياً','تعرض الخريطة الحافلات المتحرّكة، وتُحدَّث المواعيد كل ٥ ثوانٍ تلقائياً.'],
+            ['ادفع الأجرة من التطبيق','افتح تبويب "الدفع" وامسح رمز QR داخل الحافلة للدفع عبر شام كاش — كل ذلك من تطبيق واحد.'],
+            ['ثبّت التطبيق (اختياري)','عند ظهور بانر "تثبيت"، اضغطه لوصول أسرع وعمل دون اتصال.'],
+          ]},
+          {note:['i','يعمل دون اتصال','يحفظ التطبيق المحطّات والخطوط محلياً ويعمل حتى عند انقطاع الإنترنت — تظهر شارة "دون اتصال" في الأعلى.']},
+        ]},
+      { id:'drivers', n:'٢', eyebrow:'للسائقين', title:'كيف يستخدم السائقون التطبيق',
+        lede:'صُمِّم تطبيق السائق للعمل أثناء القيادة بأقلّ تشتيت — أزرار كبيرة وشاشات بسيطة وعدّاد ركاب يدوي. يبثّ الموقع تلقائياً عند بدء الرحلة.',
+        blocks:[
+          {steps:[
+            ['احصل على بيانات الدخول من الإدارة','يخصّص المسؤول لك حساباً ويربط جهازك برقم الحافلة.'],
+            ['افتح تطبيق السائق وسجّل الدخول','اذهب إلى <code>/driver/</code> وأدخل بريدك وكلمة المرور. بعد أوّل جلسة يظهر زرّ الدخول بالبصمة إن كان مدعوماً.'],
+            ['اسمح بالوصول للموقع','اختر "السماح دائماً" — ضروري لبثّ الموقع حتى عند قفل الشاشة.'],
+            ['اضغط "بدء الرحلة"','يبدأ بثّ موقعك كل ٥ ثوانٍ ويُشغّل عدّاد الركاب والمسافة.'],
+            ['عُدّ الركّاب يدوياً','استخدم "+" و"−" لتسجيل الصعود والنزول؛ تظهر نسبة الإشغال تلقائياً.'],
+            ['أنهِ الرحلة عند الوصول','يوقف الزرّ الأحمر البثّ ويرسل ملخّصاً (المسافة، المدّة، متوسّط الإشغال).'],
+          ]},
+          {note:['!','في حال انقطاع الإنترنت','يحفظ التطبيق المواقع محلياً ويرسلها دفعة واحدة عند عودة الاتصال — لن تُفقد البيانات.','warn']},
+        ]},
+      { id:'gps', n:'٣', eyebrow:'ربط الـGPS', title:'كيف يرتبط GPS السائق بالحافلة؟',
+        lede:'يربط المسؤول جهاز السائق برقم الحافلة، ثمّ يبثّ التطبيق الإحداثيات تلقائياً عند بدء كل رحلة. وإليك التفصيل:',
+        blocks:[
+          {diagram:true},
+          {h3:'الإعداد لمرّة واحدة (من الإدارة)'},
+          {steps:[
+            ['أنشئ حافلة','الإدارة ← الحافلات ← "إضافة مركبة": أدخل رقم اللوحة والسعة والخطّ.'],
+            ['أنشئ حساب سائق','المستخدمون ← "إضافة مستخدم" بدور <code>driver</code>، ثمّ اربطه برقم الحافلة.'],
+            ['أرسل بيانات الدخول للسائق','عبر البريد أو الرسائل: البريد، كلمة المرور المؤقّتة، ورقم الحافلة.'],
+          ]},
+          {h3:'ما يحدث في الكواليس'},
+          {p:'كلّ نبضة GPS تحتوي على الإحداثيات (بدقّة متر تقريباً)، السرعة، الاتّجاه، الطابع الزمني، ومعرّف الرحلة. يستنتج الخادم رقم الحافلة والسائق من رمز JWT تلقائياً، فلا تُرسَل الهويّة في كل نبضة — ما يمنع الانتحال.'},
+          {note:['★','تنعيم القراءات','يستخدم الخادم متوسّطاً متحرّكاً أُسّياً (EMA) لتنعيم السرعة والمسار قبل عرضهما للركّاب، ما يقلّل الارتعاش الناتج عن انحراف GPS.']},
+        ]},
+      { id:'admins', n:'٤', eyebrow:'للإدارة', title:'دليل المسؤولين والموزّعين',
+        lede:'لوحة الإدارة هي مركز التحكّم: تُنشئ المستخدمين والمركبات والخطوط، تتابع التنبيهات، وتراقب أداء الشبكة لحظياً.',
+        blocks:[
+          {steps:[
+            ['سجّل الدخول','من <code>/admin/login.html</code> واختر الدور (إدارة أو موزّع).'],
+            ['أضف المركبات والخطوط','"المركبات" لإدارة الأسطول، و"الخطوط" لتعريف المسارات — وتُلوَّن الخطوط تلقائياً حسب نوع المركبة.'],
+            ['اربط السائقين بالمركبات','المستخدمون ← "إضافة مستخدم" ← اختر المركبة. لكل سائق مركبة واحدة في الوقت ذاته.'],
+            ['اعتمد المركبات الجديدة','من "الموافقات" تراجع طلبات المشغّلين — لا تعمل أي مركبة قبل اعتمادها.'],
+            ['راقب الخريطة والتحليلات','تعرض الصفحة الرئيسية الحافلات النشطة ومؤشّرات الأداء، وتُظهر التحليلات الرحلات ودقّة المواعيد.'],
+          ]},
+          {note:['i','صلاحية الإعدادات','صفحة الإعدادات (وضع الدفع ومعرّف التاجر) متاحة للمسؤولين فقط، بينما يدير الموزّعون التشغيل اليومي.']},
+        ]},
+      { id:'trouble', n:'٥', eyebrow:'حلّ المشاكل', title:'المشاكل الشائعة وحلولها',
+        lede:'معظم مشاكل GPS تنتج عن أذونات نظام التشغيل أو إعدادات توفير الطاقة. وإليك حلولها:',
+        blocks:[
+          {table:[
+            ['شارة GPS حمراء','الأذونات مرفوضة — إعدادات الجهاز ← التطبيقات ← نقل دمشق ← الأذونات ← الموقع ← "السماح دائماً"، ثمّ أعد فتح التطبيق.'],
+            ['البثّ يتوقّف بعد دقائق','وضع توفير الطاقة يقتل المهام الخلفية — أضف نقل دمشق لقائمة الاستثناءات في إعدادات البطّارية.'],
+            ['حافلتي لا تظهر للإدارة','تأكّد من ضغط "بدء الرحلة"؛ لا يبدأ البثّ بمجرّد تسجيل الدخول. راجع شارة GPS أيضاً.'],
+            ['أوقات الوصول غير دقيقة','تُحسَب من السرعة الحالية والترافيك (±٣ دقائق تقريباً) وتتحسّن بعد جمع بيانات الخطّ لأسبوع.'],
+            ['"بيانات الدخول غير صحيحة"','تأكّد من صحّة البريد (بلا فراغات). إن نسيت كلمة المرور استخدم <code>/admin/reset.html</code> أو راسل المسؤول.'],
+            ['التطبيق بطيء','أغلق التبويبات الأخرى أو ثبّت التطبيق — أداء النسخة المثبّتة أفضل بكثير.'],
+          ]},
+          {note:['!','ما زلت عالقاً؟','راسل مسؤول النظام مع رقم الحافلة ووصف المشكلة ولقطة شاشة لشارة GPS — يسرّع ذلك الحلّ.','danger']},
+        ]},
+    ],
+  };
+
+  const EN = {
+    dir:'ltr', btn:'ع',
+    eyebrow:'Platform guide · 2026',
+    title:'How does Damascus Transit work?',
+    lede:'Learn how to use the platform, how a driver’s device links to live bus tracking, and how passengers and supervisors benefit from real-time data.',
+    tocTitle:'Contents',
+    tabs:[
+      {id:'passengers', label:'Passengers'},
+      {id:'drivers', label:'Drivers'},
+      {id:'gps', label:'GPS link'},
+      {id:'admins', label:'Admins'},
+      {id:'trouble', label:'Troubleshooting'},
+    ],
+    d1:'Driver device', d2:'Damascus Transit server', d3:'Passenger app', d4:'every 5s',
+    dcap:'The data journey: from the driver’s device to the server, then to the passenger and admin apps.',
+    sections:[
+      { id:'passengers', n:'1', eyebrow:'Passengers', title:'Using the passenger app',
+        lede:'The passenger app shows the buses nearest you, the expected arrival times for your line, and popular routes. It runs in the browser and as an installable app.',
+        blocks:[
+          {steps:[
+            ['Open the passenger app','Go to <code>/passenger/</code> in a modern browser (Chrome, Safari, Edge).'],
+            ['Allow location access','Tap “Allow” to see the nearest stops. You can always search manually if you decline.'],
+            ['Search your line or stop','Type a stop name or line number (e.g. “Mezzeh”, “Bab Touma”, “Line 101”).'],
+            ['Track buses live','The map shows moving buses; arrival times refresh every 5 seconds automatically.'],
+            ['Pay the fare in-app','Open the “Pay” tab and scan the QR code inside the bus to pay with Sham Cash — all from one app.'],
+            ['Install the app (optional)','When the “Install” banner appears, tap it for faster access and offline use.'],
+          ]},
+          {note:['i','Works offline','The app caches stops and routes locally and keeps working when the connection drops — an “Offline” badge appears at the top.']},
+        ]},
+      { id:'drivers', n:'2', eyebrow:'Drivers', title:'How drivers use the app',
+        lede:'The driver app is built to be used while driving with minimal distraction — large buttons, simple screens, and a manual passenger counter. It broadcasts location automatically once a trip starts.',
+        blocks:[
+          {steps:[
+            ['Get credentials from admin','An administrator assigns you an account and links your device to a bus number.'],
+            ['Open the driver app and sign in','Go to <code>/driver/</code> and enter your email and password. After the first session a fingerprint sign-in button appears if supported.'],
+            ['Allow location access','Choose “Allow always” — required to broadcast location even when the screen is locked.'],
+            ['Tap “Start trip”','This begins broadcasting your location every 5 seconds and starts the passenger and distance counters.'],
+            ['Count passengers manually','Use “+” and “−” to log boardings and exits; the occupancy percentage updates automatically.'],
+            ['End the trip on arrival','The red button stops broadcasting and sends a summary (distance, duration, average occupancy).'],
+          ]},
+          {note:['!','If the connection drops','The app stores positions locally and sends them in one batch when the connection returns — no data is lost.','warn']},
+        ]},
+      { id:'gps', n:'3', eyebrow:'GPS link', title:'How does the driver’s GPS link to the bus?',
+        lede:'An administrator links the driver’s device to a bus number, then the app broadcasts coordinates automatically at the start of every trip. Here is the detail:',
+        blocks:[
+          {diagram:true},
+          {h3:'One-time setup (by admin)'},
+          {steps:[
+            ['Create a vehicle','Admin → Vehicles → “Add vehicle”: enter the plate number, capacity, and route.'],
+            ['Create a driver account','Users → “Add user” with the <code>driver</code> role, then link it to the bus number.'],
+            ['Send the driver their credentials','By email or SMS: the email, temporary password, and assigned bus number.'],
+          ]},
+          {h3:'What happens behind the scenes'},
+          {p:'Each GPS heartbeat carries the coordinates (roughly metre-accurate), speed, heading, a timestamp, and a trip ID. The server infers the vehicle and driver from your JWT automatically, so identity is never sent on every beat — which prevents spoofing.'},
+          {note:['★','Smoothing the readings','The server applies an exponential moving average (EMA) to smooth speed and heading before showing them to passengers, reducing jitter from minor GPS drift.']},
+        ]},
+      { id:'admins', n:'4', eyebrow:'Admins', title:'Guide for administrators & dispatchers',
+        lede:'The admin console is the control centre: create users, vehicles and routes, follow alerts, and monitor network performance in real time.',
+        blocks:[
+          {steps:[
+            ['Sign in','From <code>/admin/login.html</code> and pick your role (admin or dispatcher).'],
+            ['Add vehicles and routes','“Vehicles” manages the fleet; “Routes” defines lines — and routes are coloured automatically by vehicle type.'],
+            ['Link drivers to vehicles','Users → “Add user” → choose the vehicle. Each driver has one vehicle at a time.'],
+            ['Approve new vehicles','Under “Approvals” you review operator submissions — no vehicle runs before it is approved.'],
+            ['Watch the map & analytics','The overview shows active buses and KPIs; analytics shows trips and on-time accuracy.'],
+          ]},
+          {note:['i','Settings permission','The Settings page (payment mode and merchant ID) is available to admins only, while dispatchers handle day-to-day operations.']},
+        ]},
+      { id:'trouble', n:'5', eyebrow:'Troubleshooting', title:'Common problems & fixes',
+        lede:'Most GPS issues come from operating-system permissions or power-saving settings. Here are the fixes:',
+        blocks:[
+          {table:[
+            ['GPS badge is red','Permissions denied — Device settings → Apps → Damascus Transit → Permissions → Location → “Allow always”, then reopen the app.'],
+            ['Broadcast stops after a few minutes','Battery-saver kills background tasks — add Damascus Transit to the exceptions list in battery settings.'],
+            ['My bus doesn’t show for admin','Make sure you tapped “Start trip”; broadcasting doesn’t begin just from signing in. Check the GPS badge too.'],
+            ['Arrival times are inaccurate','They are computed from current speed and traffic (±3 minutes) and improve after a week of route data.'],
+            ['“Invalid credentials”','Check the email is correct (no spaces). If you forgot the password use <code>/admin/reset.html</code> or contact the admin.'],
+            ['The app is slow','Close other tabs or install the app — the installed version performs much better.'],
+          ]},
+          {note:['!','Still stuck?','Message your system administrator with the bus number, a description, and a screenshot of the GPS badge — it speeds up the fix.','danger']},
+        ]},
+    ],
+  };
+
+  const DATA = { ar: AR, en: EN };
+  let lang = (function () {
+    try { return (localStorage.getItem('dt_lang') === 'en') ? 'en' : 'ar'; } catch (e) { return 'ar'; }
+  })();
+
+  const esc = (s) => String(s == null ? '' : s);
+
+  function blockHTML(b, L) {
+    if (b.diagram) return diagram(L);
+    if (b.h3) return '<h3>' + esc(b.h3) + '</h3>';
+    if (b.p) return '<p>' + b.p + '</p>';
+    if (b.steps) return '<ol class="steps">' + b.steps.map(s =>
+      '<li><b>' + esc(s[0]) + '</b><p>' + s[1] + '</p></li>').join('') + '</ol>';
+    if (b.note) {
+      const kind = b.note[3] ? ' note--' + b.note[3] : '';
+      return '<div class="note' + kind + '"><span class="ico">' + esc(b.note[0]) + '</span>' +
+        '<div><h5>' + esc(b.note[1]) + '</h5><p>' + b.note[2] + '</p></div></div>';
+    }
+    if (b.table) return '<div class="trouble">' + b.table.map(r =>
+      '<div class="row"><div class="q">' + esc(r[0]) + '</div><div class="a">' + r[1] + '</div></div>').join('') + '</div>';
+    return '';
+  }
+
+  function render() {
+    const L = DATA[lang];
+    document.documentElement.lang = lang;
+    document.documentElement.dir = L.dir;
+    document.getElementById('lang-btn').textContent = L.btn;
+    document.getElementById('hero-eyebrow').textContent = L.eyebrow;
+    document.getElementById('hero-title').textContent = L.title;
+    document.getElementById('hero-lede').textContent = L.lede;
+
+    // Top nav labels
+    document.querySelectorAll('.help-topbar [data-nav]').forEach(a => {
+      a.textContent = NAV[lang][a.dataset.nav] || a.textContent;
+    });
+
+    // Tabs
+    document.getElementById('tabs').innerHTML = L.tabs.map((t, i) =>
+      '<button class="help-tab' + (i === 0 ? ' is-active' : '') + '" data-target="' + t.id + '">' + esc(t.label) + '</button>').join('');
+
+    // TOC
+    document.getElementById('toc').innerHTML = '<h6>' + esc(L.tocTitle) + '</h6>' +
+      L.sections.map((s, i) => '<a href="#' + s.id + '"' + (i === 0 ? ' class="is-active"' : '') + '>' +
+        esc(s.n) + ' · ' + esc(s.eyebrow) + '</a>').join('');
+
+    // Sections
+    document.getElementById('content').innerHTML = L.sections.map(s =>
+      '<section class="help-section" id="' + s.id + '">' +
+        '<span class="sec-eyebrow">' + esc(s.n) + ' · ' + esc(s.eyebrow) + '</span>' +
+        '<h2>' + esc(s.title) + '</h2>' +
+        '<p class="lede">' + esc(s.lede) + '</p>' +
+        s.blocks.map(b => blockHTML(b, L)).join('') +
+      '</section>').join('');
+
+    wireScroll();
+  }
+
+  function wireScroll() {
+    document.querySelectorAll('#tabs .help-tab, #toc a').forEach(el => {
+      el.addEventListener('click', function (ev) {
+        const id = this.dataset.target || (this.getAttribute('href') || '').slice(1);
+        const target = document.getElementById(id);
+        if (target) { ev.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      });
+    });
+    // Scroll-spy
+    const links = Array.from(document.querySelectorAll('#toc a'));
+    const tabs = Array.from(document.querySelectorAll('#tabs .help-tab'));
+    const secs = links.map(a => document.getElementById(a.getAttribute('href').slice(1))).filter(Boolean);
+    if ('IntersectionObserver' in window && secs.length) {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            const id = e.target.id;
+            links.forEach(a => a.classList.toggle('is-active', a.getAttribute('href') === '#' + id));
+            tabs.forEach(t => t.classList.toggle('is-active', t.dataset.target === id));
+          }
+        });
+      }, { rootMargin: '-20% 0px -70% 0px' });
+      secs.forEach(s => io.observe(s));
+    }
+  }
+
+  document.getElementById('lang-btn').addEventListener('click', function () {
+    lang = (lang === 'ar') ? 'en' : 'ar';
+    try { localStorage.setItem('dt_lang', lang); } catch (e) {}
+    render();
   });
-});
 
-// TOC links — active state on scroll
-const sections = document.querySelectorAll('.help-section');
-const tocLinks = document.querySelectorAll('.help-toc a');
-function syncToc() {
-  let active = sections[0];
-  const fromTop = window.scrollY + 100;
-  sections.forEach(sec => { if (sec.offsetTop <= fromTop) active = sec; });
-  tocLinks.forEach(a => a.classList.toggle('is-active', a.getAttribute('href') === '#' + active.id));
-  document.querySelectorAll('.audience-tab').forEach(b => b.classList.toggle('is-active', b.dataset.target === '#' + active.id));
-}
-window.addEventListener('scroll', syncToc, { passive: true });
-syncToc();
+  render();
+})();
 </script>
 </body>
 </html>
