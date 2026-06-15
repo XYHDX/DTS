@@ -314,12 +314,12 @@ function render(overview) {
   if (Array.isArray(overview.trips_by_day) && overview.trips_by_day.length) {
     drawBars($('#trips-chart'), overview.trips_by_day, labels);
   } else {
-    $('#trips-chart').innerHTML = '<text x="300" y="110" text-anchor="middle" fill="#6A6A6A" font-size="14">لا بيانات بعد — تظهر الرسوم عند توفر رحلات مسجلة</text>';
+    $('#trips-chart').innerHTML = '<text x="300" y="110" text-anchor="middle" fill="#6A6A6A" font-size="14">' + ((window.I18N && I18N.t('admin.analytics.noTrips')) || 'لا بيانات بعد — تظهر الرسوم عند توفر رحلات مسجلة') + '</text>';
   }
   if (Array.isArray(overview.occupancy_buckets) && overview.occupancy_buckets.length) {
     drawDonut($('#occ-chart'), overview.occupancy_buckets);
   } else {
-    $('#occ-chart').innerHTML = '<text x="110" y="110" text-anchor="middle" fill="#6A6A6A" font-size="13">لا بيانات إشغال بعد</text>';
+    $('#occ-chart').innerHTML = '<text x="110" y="110" text-anchor="middle" fill="#6A6A6A" font-size="13">' + ((window.I18N && I18N.t('admin.analytics.noOcc')) || 'لا بيانات إشغال بعد') + '</text>';
   }
 
   loadRouteTable();
@@ -329,7 +329,7 @@ function render(overview) {
     ? incidents.map(x =>
         '<div class="incident-li"><span>' + esc(x.type) + '</span><b>' + esc(fmtNum(x.count)) + '</b></div>'
       ).join('')
-    : '<div class="incident-li"><span class="cell-muted">لا حوادث مسجلة في هذه الفترة.</span></div>';
+    : '<div class="incident-li"><span class="cell-muted">' + ((window.I18N && I18N.t('admin.analytics.noIncidents')) || 'لا حوادث مسجلة في هذه الفترة.') + '</span></div>';
 }
 
 async function loadRouteTable() {
@@ -349,7 +349,7 @@ async function loadRouteTable() {
   const perf = (Array.isArray(perfRaw) ? perfRaw : []);
 
   if (!perf.length) {
-    $('#route-table').innerHTML = '<div class="cell-muted" style="padding:14px">لا بيانات أداء بعد — تظهر بعد اكتمال رحلات.</div>';
+    $('#route-table').innerHTML = '<div class="cell-muted" style="padding:14px">' + ((window.I18N && I18N.t('admin.analytics.noPerf')) || 'لا بيانات أداء بعد — تظهر بعد اكتمال رحلات.') + '</div>';
     return;
   }
   $('#route-table').innerHTML = `
