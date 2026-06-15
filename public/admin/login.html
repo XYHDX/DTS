@@ -233,6 +233,18 @@
 const $ = (s, r=document) => r.querySelector(s);
 const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:8000' : '';
 
+// "Keep me signed in": if a remembered session is still valid, skip the form
+// and go straight to the dashboard instead of asking for credentials again.
+(async function () {
+  try {
+    if (!localStorage.getItem('dt_user')) return;
+    const me = await fetch(API_BASE + '/api/auth/me', { credentials: 'same-origin' });
+    if (!me.ok) return;
+    const u = await me.json();
+    location.replace((u && u.role === 'driver') ? '/driver/' : '/admin/');
+  } catch (_) { /* stay on the login form */ }
+})();
+
 let turnstileToken = null;
 const TURNSTILE_KEY = window.TURNSTILE_SITE_KEY || '';
 if (TURNSTILE_KEY) {

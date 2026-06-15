@@ -26,7 +26,9 @@
     padding-top: calc(var(--s-4) + env(safe-area-inset-top));
     border-radius: 0 0 var(--r-xl) var(--r-xl);
   }
-  .topbar h1 { margin: 0 0 var(--s-3); font-size: var(--fs-xl); }
+  .topbar h1 { margin: 0; font-size: var(--fs-xl); font-weight: 700; color: #fff; line-height: 1.25; }
+  .topbar .cluster.between { align-items: flex-start; margin-bottom: var(--s-3); }
+  #nearest-stops { margin-top: var(--s-3); }
   .search-bar {
     display: flex;
     background: rgba(255,255,255,.12);
@@ -225,7 +227,7 @@
 <section class="panel">
   <h2 class="section-title" data-i18n="passenger.quick">روابط سريعة</h2>
   <div class="quick-actions">
-    <a href="/api/gtfs" class="qa-btn">
+    <a href="/api/gtfs/feed.zip" class="qa-btn">
       <div class="qa-btn__icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h10"/></svg></div>
       <div class="font-bold" data-i18n="passenger.gtfs">جدول GTFS</div>
       <div class="text-xs muted" data-i18n="passenger.gtfsSub">بيانات الخطوط القابلة للتنزيل</div>
@@ -252,9 +254,9 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 4v16M4 9h16"/></svg>
     <span data-i18n="passenger.tabRoutes">الخطوط</span>
   </a>
-  <a href="/admin/login.html">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>
-    <span data-i18n="passenger.tabAccount">حسابي</span>
+  <a href="#" id="nav-pay">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+    <span data-i18n="passenger.tabPay">ادفع</span>
   </a>
 </nav>
 
@@ -532,9 +534,22 @@ function initMap(center=[36.291, 33.513]) {
     center, zoom: 13
   });
   map.on('load', () => {
+    // Stops layer (gold dots) — matches the legend; drawn under the buses.
+    map.addSource('stops', { type:'geojson', data: {type:'FeatureCollection',features:[]} });
+    map.addLayer({ id:'stops', type:'circle', source:'stops',
+      paint: { 'circle-radius':4, 'circle-color':'#C9A95B', 'circle-stroke-width':1.5, 'circle-stroke-color':'#fff' } });
     map.addSource('vehicles', { type:'geojson', data: {type:'FeatureCollection',features:[]} });
     map.addLayer({ id:'vehicles', type:'circle', source:'vehicles',
       paint: { 'circle-radius':6, 'circle-color':'#00876f', 'circle-stroke-width':2, 'circle-stroke-color':'#fff' } });
+    // Populate the stop dots once on load.
+    getJson('/api/stops').then(list => {
+      const feats = (Array.isArray(list) ? list : []).map(s => {
+        const lon = s.longitude ?? s.lon, lat = s.latitude ?? s.lat;
+        if (!Number.isFinite(lon) || !Number.isFinite(lat)) return null;
+        return { type:'Feature', geometry:{ type:'Point', coordinates:[lon, lat] }, properties:{} };
+      }).filter(Boolean);
+      if (map.getSource('stops')) map.getSource('stops').setData({ type:'FeatureCollection', features: feats });
+    }).catch(()=>{});
   });
 }
 function openStream() {
@@ -725,6 +740,7 @@ document.addEventListener('i18n:change', () => {
 
   const on = (sel, fn) => { const el = $(sel); if (el) el.addEventListener('click', fn); };
   on('#pay-fab', openScanner);
+  on('#nav-pay', function (e) { if (e && e.preventDefault) e.preventDefault(); openScanner(); });
   on('#pay-scan-close', closeScanner);
   on('#pay-confirm', confirmPay);
   on('#pay-sheet-close', closeSheet);
