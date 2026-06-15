@@ -89,7 +89,11 @@ async def _operator_sham(operator_id: str) -> dict:
             if sc.get("merchant_id"):
                 cfg["merchant_id"] = sc["merchant_id"]
         except Exception:
-            pass
+            # Operator settings are optional UX config; on any read error we
+            # deliberately fall back to the env defaults set above.
+            logger.warning(
+                "Could not read operator Sham Cash settings; using env defaults"
+            )
     return cfg
 
 

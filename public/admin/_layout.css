@@ -22,11 +22,10 @@
   padding: 22px 14px 18px;
   border-inline-end: 1px solid var(--national-gold);
   display: flex; flex-direction: column;
-  /* Pin the sidebar to the viewport so the profile is always visible without
-     scrolling the page; the nav list scrolls internally when it's too tall. */
-  position: sticky; top: 0;
-  height: 100vh;
-  overflow: hidden;
+  /* The sidebar stretches to the page height (grid row) so it always matches
+     the main column; the profile footer is sticky-bottom so it stays visible
+     without scrolling. */
+  position: relative;
 }
 .sidebar::before {
   content: ""; position: absolute; inset: 0;
@@ -57,7 +56,7 @@
   color: var(--national-gold); margin-top: 3px; font-weight: 500;
 }
 
-.sidebar nav { display: flex; flex-direction: column; gap: 4px; padding-top: 14px; flex: 1; min-height: 0; overflow-y: auto; }
+.sidebar nav { display: flex; flex-direction: column; gap: 4px; padding-top: 14px; flex: 1; }
 .sidebar nav a {
   display: flex; align-items: center; gap: 12px;
   padding: 10px 12px;
@@ -76,7 +75,12 @@
   padding-top: 14px;
   border-top: 1px solid rgba(255,255,255,.10);
   display: flex; flex-direction: column; gap: 10px;
-  position: relative;
+  /* Sticky-bottom: the profile stays pinned to the viewport bottom while the
+     page scrolls, but the sidebar itself still spans the full page height. */
+  position: sticky;
+  bottom: 0;
+  background: var(--national-green-900);
+  padding-bottom: 4px;
   flex-shrink: 0;
 }
 .sidebar__user {

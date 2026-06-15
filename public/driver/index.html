@@ -416,7 +416,7 @@ function showTrip() {
   $('#trip-pane').classList.remove('hidden');
   document.body.classList.remove('is-logged-out');
   $('#bar-vehicle').textContent = user?.vehicle_code || user?.vehicle_id || '—';
-  $('#route-name').textContent  = user?.route_name || 'بانتظار تخصيص الخط';
+  $('#route-name').textContent  = user?.route_name || ((window.I18N && I18N.t('driver.awaitingRoute')) || 'Awaiting route assignment');
   // Track A.3: pull the driver's actual vehicle + route assignment
   // (fixes the v4.1 bug where the bar said "—" because the login
   //  response never includes vehicle_code/route_name).

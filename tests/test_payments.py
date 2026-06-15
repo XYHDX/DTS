@@ -357,3 +357,58 @@ class TestSandboxAndRoles:
     def test_admin_payments_list_requires_staff(self, client):
         r = client.get("/api/admin/payments", headers=_h(_token("viewer")))
         assert r.status_code == 403
+
+
+# ---------------------------------------------------------------------------
+# Dashboard Settings (Sham Cash mode + merchant)
+# ---------------------------------------------------------------------------
+
+
+class TestSettings:
+    def test_get_settings_admin(self, client):
+        async def fake_get(query):
+            return [{"settings": {"sham_cash": {"mode": "live", "merchant_id": "M1"}}}]
+
+        with patch("api.routers.admin._service_get", side_effect=fake_get):
+            r = client.get("/api/admin/settings", headers=_h(_token("admin")))
+        assert r.status_code == 200, r.text
+        body = r.json()
+        assert body["sham_cash"]["mode"] == "live"
+        assert body["sham_cash"]["merchant_id"] == "M1"
+        assert "secrets_present" in body
+
+    def test_get_settings_dispatcher_allowed(self, client):
+        async def fake_get(query):
+            return [{"settings": {}}]
+
+        with patch("api.routers.admin._service_get", side_effect=fake_get):
+            r = client.get("/api/admin/settings", headers=_h(_token("dispatcher")))
+        assert r.status_code == 200, r.text
+        assert r.json()["sham_cash"]["mode"] == "sandbox"
+
+    def test_get_settings_viewer_forbidden(self, client):
+        r = client.get("/api/admin/settings", headers=_h(_token("viewer")))
+        assert r.status_code == 403
+
+    def test_update_settings_persists(self, client):
+        captured = {}
+
+        async def fake_get(query):
+            return [{"settings": {}}]
+
+        async def fake_patch(query, data):
+            captured["data"] = data
+            return [{"id": "op-001", **data}]
+
+        with (
+            patch("api.routers.admin._service_get", side_effect=fake_get),
+            patch("api.routers.admin._service_patch", side_effect=fake_patch),
+        ):
+            r = client.put(
+                "/api/admin/settings",
+                json={"mode": "live", "merchant_id": "M9"},
+                headers=_h(_token("admin")),
+            )
+        assert r.status_code == 200, r.text
+        assert r.json()["sham_cash"]["mode"] == "live"
+        assert captured["data"]["settings"]["sham_cash"]["merchant_id"] == "M9"
