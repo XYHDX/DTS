@@ -33,7 +33,7 @@
      bar + home page, so the bar and the page body share identical gutters. */
   .driver-bar__inner {
     display: grid;
-    grid-template-columns: auto auto auto 1fr auto;
+    grid-template-columns: auto auto 1fr auto;
     gap: 10px;
     align-items: center;
     position: relative;
@@ -102,14 +102,23 @@
     border-color: var(--national-gold);
   }
 
-  /* When the driver isn't logged in, hide EVERYTHING in the bar except the
-     home button + language toggle. This prevents stale "—" / "connecting…"
-     placeholders that make the login screen look like a broken trip view.
-     pointer-events:none also blocks dead clicks on invisible elements. */
-  body.is-logged-out .driver-bar__inner > *:not(.home-btn):not(.lang-btn) {
-    visibility: hidden;
-    pointer-events: none;
+  /* Sign-in screen: match the ADMIN sign-in theme exactly — hide the trip
+     app-bar entirely and present the login card over the national-green +
+     gold-pattern background. The language toggle lives in the top utility
+     bar (same place as the home + admin pages). */
+  body.is-logged-out .driver-bar { display: none; }
+  body.is-logged-out { background: var(--national-green-900); }
+  body.is-logged-out .driver-shell { position: relative; }
+  body.is-logged-out .driver-shell::before {
+    content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><g fill='none' stroke='%23C9A95B' stroke-width='1' stroke-opacity='0.16' stroke-linejoin='round' stroke-linecap='round'><polygon points='68,40 51,45 60,60 45,51 40,68 35,51 20,60 29,45 12,40 29,35 20,20 35,29 40,12 45,29 60,20 51,35'/><path d='M68,40 L80,36.5 M68,40 L80,43.5 M40,68 L36.5,80 M40,68 L43.5,80 M12,40 L0,36.5 M12,40 L0,43.5 M40,12 L36.5,0 M40,12 L43.5,0 M60,20 L72,0 M60,20 L80,8 M60,60 L80,72 M60,60 L72,80 M20,60 L8,80 M20,60 L0,72 M20,20 L0,8 M20,20 L8,0'/><polyline points='8,0 8,3.3 3.3,8 0,8'/><polyline points='80,8 76.7,8 72,3.3 72,0'/><polyline points='72,80 72,76.7 76.7,72 80,72'/><polyline points='8,80 8,76.7 3.3,72 0,72'/></g></svg>");
+    background-size: 80px 80px;
   }
+  body.is-logged-out .driver-shell::after {
+    content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: radial-gradient(ellipse at 80% 20%, rgba(201,169,91,.18), transparent 55%);
+  }
+  body.is-logged-out .login-pane { position: relative; z-index: 1; }
 
   .login-pane { flex: 1; padding: 24px 16px 32px; }
   /* Trip content shares the bar's gutters: each top-level block is centred at
@@ -269,6 +278,8 @@
       <a href="/driver/" data-i18n="header.driver">للسائقين</a>
       <span class="sep"></span>
       <a href="/admin/login.html" data-i18n="header.admin">الإدارة</a>
+      <span class="sep"></span>
+      <button class="utility-lang" id="lang-toggle" data-i18n-toggle data-i18n="header.toggleLang" aria-label="Toggle language">EN</button>
     </span>
   </div>
 </div>
@@ -282,7 +293,6 @@
   <a href="/" class="home-btn" title="العودة إلى الرئيسية" aria-label="العودة إلى الرئيسية">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
   </a>
-  <button id="lang-toggle" class="lang-btn" data-i18n-toggle data-i18n="header.toggleLang" title="EN / AR">EN</button>
   <div>
     <div class="label" data-i18n="driver.bus">حافلة</div>
     <div class="vehicle-id" id="bar-vehicle">—</div>
