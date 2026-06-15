@@ -279,6 +279,10 @@
       'admin.analytics.thTrips': 'رحلات',
       'admin.analytics.thAccuracy':'دقة',
       'admin.analytics.thOccupancy':'إشغال',
+      'admin.analytics.noTrips':  'لا بيانات بعد — تظهر الرسوم عند توفر رحلات مسجلة',
+      'admin.analytics.noOcc':    'لا بيانات إشغال بعد',
+      'admin.analytics.noIncidents': 'لا حوادث مسجلة في هذه الفترة.',
+      'admin.analytics.noPerf':   'لا بيانات أداء بعد — تظهر بعد اكتمال رحلات.',
 
       'common.search':         'بحث',
 
@@ -587,6 +591,10 @@
       'admin.analytics.thTrips': 'Trips',
       'admin.analytics.thAccuracy':'On-time',
       'admin.analytics.thOccupancy':'Occupancy',
+      'admin.analytics.noTrips':  'No data yet — charts appear once trips are recorded',
+      'admin.analytics.noOcc':    'No occupancy data yet',
+      'admin.analytics.noIncidents': 'No incidents recorded in this period.',
+      'admin.analytics.noPerf':   'No performance data yet — appears once trips complete.',
 
       'common.search':         'Search',
 
