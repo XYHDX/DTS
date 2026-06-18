@@ -37,9 +37,9 @@
 /* ---------------------------------------------------------------------------
  *  1) CONFIG — edit these for your unit / operator / broker
  * ------------------------------------------------------------------------- */
-// Identity (the admin app pairs this VEHICLE_ID to a real vehicle record).
-const char* VEHICLE_ID  = "BUS-101";
-// Your operator UUID (the default seeded "damascus" operator shown here).
+// Identity — this is the ID published in the topic vehicles/<VEHICLE_ID>/status.
+const char* VEHICLE_ID  = "DTS002";
+// Your operator UUID (the default seeded "damascus" operator; change if yours differs).
 const char* OPERATOR_ID = "00000000-0000-0000-0000-000000000001";
 
 // Cellular data plan APN (ask your SIM operator — examples for Syria):
@@ -47,10 +47,10 @@ const char* APN      = "internet";   // Syriatel / MTN: usually "internet"
 const char* GPRS_USER = "";
 const char* GPRS_PASS = "";
 
-// Mosquitto broker reachable over the cellular data network.
-// Use a public IP / hostname of the machine running docker-compose.scale.yml.
-const char* MQTT_HOST = "203.0.113.10";   // <-- your broker's public host/IP
-const uint16_t MQTT_PORT = 1883;          // 1883 plain · 8883 TLS (see notes)
+// Mosquitto broker the device connects to. Over 2G this must be a PUBLIC IP/host
+// (a laptop on localhost is NOT reachable from cellular — see notes at the end).
+const char* MQTT_HOST = "YOUR_BROKER_IP";  // <-- set to your broker's public host/IP
+const uint16_t MQTT_PORT = 1883;           // 1883 plain · 8883 TLS (see notes)
 const char* MQTT_USER = "";               // set if the broker requires auth
 const char* MQTT_PASS = "";
 

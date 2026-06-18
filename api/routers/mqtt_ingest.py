@@ -38,8 +38,10 @@ from __future__ import annotations
 import hmac
 import hashlib
 import os
+import re
 import time
 from typing import Optional
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from fastapi.responses import Response
@@ -277,8 +279,57 @@ async def _vehicle_approved(vehicle_id: str) -> bool:
     return approved
 
 
+# ── Friendly-ID resolution ──────────────────────────────────────────────
+# Firmware may publish either the vehicle's UUID (vehicles.id) or its human
+# fleet code (vehicles.vehicle_id, e.g. "DTS002"). The rest of the pipeline
+# (approval gate, Redis geo, vehicle_positions FK) keys on the UUID, so resolve
+# the code → UUID once per vehicle (cached) at ingest time. UUIDs pass through
+# unchanged; an unknown id is left as-is for the approval gate to handle.
+_UUID_RE = re.compile(
+    r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-"
+    r"[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+)
+_resolve_cache: dict[str, tuple[float, Optional[tuple[str, Optional[str]]]]] = {}
+_RESOLVE_TTL = 60.0
+
+
+async def _resolve_vehicle(published_id: str) -> Optional[tuple[str, Optional[str]]]:
+    """Resolve a published id to ``(vehicle_uuid, operator_id)``.
+
+    Accepts the UUID (``vehicles.id``) *or* the fleet code
+    (``vehicles.vehicle_id``) so firmware can publish a friendly value like
+    ``"DTS002"``. Returns ``None`` when nothing matches (the caller keeps the
+    original id). Cached for ``_RESOLVE_TTL`` seconds.
+    """
+    cached = _resolve_cache.get(published_id)
+    now = time.monotonic()
+    if cached is not None and (now - cached[0]) < _RESOLVE_TTL:
+        return cached[1]
+    result: Optional[tuple[str, Optional[str]]] = None
+    try:
+        from api.core.database import _service_get  # lazy import
+
+        col = "id" if _UUID_RE.match(published_id) else "vehicle_id"
+        rows = await _service_get(
+            f"vehicles?{col}=eq.{quote(published_id, safe='')}&select=id,operator_id"
+        )
+        if rows:
+            result = (rows[0]["id"], rows[0].get("operator_id"))
+    except Exception:
+        result = None
+    _resolve_cache[published_id] = (now, result)
+    return result
+
+
 async def _ingest(decoded: _PartialDecode) -> None:
-    """Hot path: approval gate → geo cache → EMA → persist."""
+    """Hot path: resolve id → approval gate → geo cache → EMA → persist."""
+    # Map a friendly fleet code (e.g. "DTS002") to the vehicle's canonical UUID
+    # so the live map, geo cache and persistence all key on the same id.
+    resolved = await _resolve_vehicle(decoded.vehicle_id)
+    if resolved is not None:
+        decoded.vehicle_id = resolved[0]
+        if not decoded.operator_id:
+            decoded.operator_id = resolved[1]
     if not await _vehicle_approved(decoded.vehicle_id):
         logger.info(
             "telemetry_dropped_unapproved",
