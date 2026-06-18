@@ -7,7 +7,8 @@ from datetime import datetime
 from fastapi import APIRouter, Header, HTTPException, Request, status
 import urllib.parse
 
-from api.core.database import _supabase_get, _supabase_post, _supabase_rpc
+from api.core.database import _service_get, _service_post, _service_rpc
+from api.core import live_bus
 from api.core.logging import logger
 from api.models.schemas import TraccarEvent, TraccarPosition, WebhookResponse
 
@@ -62,8 +63,8 @@ async def traccar_position_webhook(
 
     try:
         quoted_id = urllib.parse.quote(position.deviceId, safe="")
-        devices = await _supabase_get(
-            f"vehicles?gps_device_id=eq.{quoted_id}&select=id,vehicle_id,approval_status,is_active"
+        devices = await _service_get(
+            f"vehicles?gps_device_id=eq.{quoted_id}&select=id,vehicle_id,approval_status,is_active,operator_id"
         )
         if not devices:
             return {"status": "ignored", "reason": "device_not_found"}
@@ -78,7 +79,7 @@ async def traccar_position_webhook(
         ):
             return {"status": "ignored", "reason": "vehicle_not_approved"}
 
-        await _supabase_rpc(
+        await _service_rpc(
             "upsert_vehicle_position",
             {
                 "p_vehicle_id": vehicle["id"],
@@ -91,6 +92,26 @@ async def traccar_position_webhook(
                 "p_occupancy": None,
             },
         )
+
+        # Fan out to the live SSE stream (/api/stream) so the map moves in real
+        # time — same as the driver path. Best-effort: a bus blip must never
+        # fail ingest.
+        try:
+            await live_bus.publish(
+                operator_id=vehicle.get("operator_id"),
+                payload={
+                    "vehicle_id": vehicle["id"],
+                    "vehicle_name": "",
+                    "vehicle_name_ar": "",
+                    "latitude": position.latitude,
+                    "longitude": position.longitude,
+                    "speed_kmh": position.speed or 0,
+                    "occupancy_pct": None,
+                    "timestamp": datetime.utcnow().isoformat(),
+                },
+            )
+        except Exception:
+            pass
 
         return {"status": "success", "timestamp": datetime.utcnow().isoformat()}
 
@@ -116,7 +137,7 @@ async def traccar_event_webhook(
 
     try:
         quoted_id = urllib.parse.quote(event.deviceId, safe="")
-        devices = await _supabase_get(
+        devices = await _service_get(
             f"vehicles?gps_device_id=eq.{quoted_id}&select=id,approval_status,is_active"
         )
         if devices and (
@@ -155,7 +176,7 @@ async def traccar_event_webhook(
                 "description": f"Event from Traccar: {event.data}",
                 "is_resolved": False,
             }
-            await _supabase_post("alerts", alert_data)
+            await _service_post("alerts", alert_data)
 
             if _email_available:
                 import asyncio
