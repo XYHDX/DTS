@@ -223,6 +223,28 @@
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
       }[c]));
     },
+    // Normalise a FastAPI error `detail` into a readable string. FastAPI
+    // returns 422 validation errors as an ARRAY of {msg, loc, ...}; rendering
+    // that array directly used to show "[object Object]". Handles string,
+    // array, and object shapes.
+    errText: function (detail, fallback) {
+      fallback = fallback || (isArabic() ? 'فشل الحفظ' : 'Save failed');
+      if (detail == null) return fallback;
+      if (typeof detail === 'string') return detail || fallback;
+      if (Array.isArray(detail)) {
+        const parts = detail.map(function (d) {
+          if (typeof d === 'string') return d;
+          if (d && d.msg) {
+            const field = Array.isArray(d.loc) ? d.loc[d.loc.length - 1] : null;
+            return field ? field + ': ' + d.msg : d.msg;
+          }
+          return '';
+        }).filter(Boolean);
+        return parts.length ? parts.join('؛ ') : fallback;
+      }
+      if (typeof detail === 'object') return detail.msg || detail.detail || fallback;
+      return String(detail) || fallback;
+    },
     fetch: function (url, opts) {
       opts = opts || {};
       // Auth travels in the httpOnly cookie (same-origin → sent automatically).
@@ -438,7 +460,7 @@
         card.querySelector('#dts-save').disabled = true;
         try {
           const detail = await opts.onSubmit(values);
-          if (detail && detail.error) { err.textContent = detail.error; card.querySelector('#dts-save').disabled = false; return; }
+          if (detail && detail.error) { err.textContent = ADMIN_AUTH.errText(detail.error); card.querySelector('#dts-save').disabled = false; return; }
           close();
           if (opts.onAfter) opts.onAfter();
         } catch (e) {

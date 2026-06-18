@@ -11,6 +11,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 
@@ -88,6 +89,70 @@ async def _count_pending_vehicles(op_suffix: str) -> int:
 
 
 # ── Users ──────────────────────────────────────────────────────────────────────
+
+
+# Columns added by later DB migrations that an out-of-date database may not
+# have yet. If an INSERT fails *because* one of these is missing, we drop it
+# and retry so creating a user keeps working (the same graceful degradation
+# already used for operators.settings and vehicles.approval_status). All three
+# are nullable / defaulted, so omitting one only loses that single attribute.
+_USER_OPTIONAL_COLUMNS = ("must_change_password", "full_name_ar", "phone")
+
+
+def _humanize_db_error(body: str) -> str:
+    """Turn a raw PostgREST/Postgres error body into an actionable message."""
+    low = (body or "").lower()
+    if "duplicate key" in low or "already exists" in low:
+        return "Email already exists."
+    if "foreign key" in low and "operator" in low:
+        return (
+            "Your admin account isn't linked to a valid operator, so the new "
+            "user can't be saved. Check the account's operator and try again."
+        )
+    if "invalid input value for enum" in low or "user_role" in low:
+        return "Invalid role for the new user."
+    reason = (body or "").strip().replace("\n", " ")
+    if reason:
+        return f"Database rejected the new user: {reason[:200]}"
+    return "Database rejected the new user."
+
+
+async def _insert_user_row(new_user: dict) -> dict:
+    """INSERT a user, tolerating an out-of-date database schema.
+
+    On a "column does not exist" error we strip that (optional) column and
+    retry, logging a warning so the operator knows a migration is pending.
+    Any other DB error is surfaced with its real reason — callers must never
+    collapse it into an opaque 500.
+    """
+    payload = dict(new_user)
+    last_body = ""
+    for _ in range(len(_USER_OPTIONAL_COLUMNS) + 1):
+        try:
+            return await _service_post("users", payload)
+        except httpx.HTTPStatusError as exc:
+            last_body = getattr(exc.response, "text", "") or str(exc)
+            missing = next(
+                (c for c in _USER_OPTIONAL_COLUMNS if c in payload and c in last_body),
+                None,
+            )
+            if missing is None:
+                logger.error("users INSERT failed: %s", last_body[:500])
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=_humanize_db_error(last_body),
+                )
+            payload.pop(missing, None)
+            logger.warning(
+                "users INSERT: column %r missing — retrying without it; apply "
+                "the pending DB migration. Detail: %s",
+                missing,
+                last_body[:200],
+            )
+    raise HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail=_humanize_db_error(last_body),
+    )
 
 
 @router.get("/api/admin/users", tags=["admin"])
@@ -253,7 +318,7 @@ async def create_user(
             "must_change_password": True,
         }
 
-        result = await _service_post("users", new_user)
+        result = await _insert_user_row(new_user)
         if not result:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -286,6 +351,8 @@ async def create_user(
     except HTTPException:
         raise
     except Exception:
+        # Log the real cause so "Internal server error" is never a dead end.
+        logger.exception("create_user failed unexpectedly")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",

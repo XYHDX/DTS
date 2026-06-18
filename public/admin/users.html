@@ -126,7 +126,7 @@
     window.ADMIN_AUTH.fetch('/api/admin/users/'+encodeURIComponent(id), {
       method:'PUT', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ is_active: to })
-    }).then(r=>{ if(!r.ok) return r.json().then(j=>{throw new Error(j.detail||'Failed');});
+    }).then(r=>{ if(!r.ok) return r.json().catch(()=>({})).then(j=>{throw new Error(window.ADMIN_AUTH.errText(j.detail));});
       window.ADMIN_AUTH.toast(to?'تم تفعيل الحساب':'تم تعطيل الحساب', to?'Account enabled':'Account disabled','success'); load();
     }).catch(e=>window.ADMIN_AUTH.toast(e.message,e.message,'error'));
   }
@@ -168,7 +168,7 @@
             const r = await window.ADMIN_AUTH.fetch('/api/admin/users', {
               method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(values)
             });
-            if (!r.ok){ const j = await r.json().catch(()=>({detail:'Save failed'})); return {error:j.detail||'Save failed'}; }
+            if (!r.ok){ const j = await r.json().catch(()=>({})); return {error: window.ADMIN_AUTH.errText(j.detail)}; }
             const created = await r.json().catch(()=>({}));
             window.ADMIN_AUTH.toast('تم إنشاء الحساب','Account created','success');
             if (!vehicleId || values.role!=='driver' || !created.id) return;

@@ -83,13 +83,18 @@ class CurrentUser(BaseModel):
 
 
 def hash_password(password: str) -> str:
+    # bcrypt only uses the first 72 bytes of the input; bcrypt >= 4.0 *raises*
+    # on longer passwords (older versions silently truncate). Truncate here so
+    # creating a user with a long password can never blow up with a 500. The
+    # matching verify_password truncates identically, so this stays consistent
+    # with every hash already stored.
     salt = bcrypt.gensalt()
-    return bcrypt.hashpw(password.encode(), salt).decode()
+    return bcrypt.hashpw(password.encode()[:72], salt).decode()
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     try:
-        return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
+        return bcrypt.checkpw(plain_password.encode()[:72], hashed_password.encode())
     except (ValueError, TypeError):
         return False
 

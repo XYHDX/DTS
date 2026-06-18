@@ -7,8 +7,16 @@ import os
 from datetime import timedelta
 from unittest.mock import AsyncMock, patch
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
+
+
+def _http_error(body: str, status_code: int = 400) -> httpx.HTTPStatusError:
+    """Build an httpx error mirroring what _service_post raises on a DB reject."""
+    req = httpx.Request("POST", "http://mock-supabase.local/users")
+    resp = httpx.Response(status_code, request=req, text=body)
+    return httpx.HTTPStatusError("db error", request=req, response=resp)
 
 os.environ.setdefault("SUPABASE_URL", "http://mock-supabase.local")
 os.environ.setdefault("SUPABASE_KEY", "mock-key")
@@ -120,6 +128,85 @@ class TestAdminCreateUser:
             headers={"Authorization": f"Bearer {dispatcher_token}"},
         )
         assert r.status_code in (401, 403)
+
+    def test_create_user_recovers_from_missing_column(self, client, admin_token):
+        """If the live DB hasn't applied the migration that adds
+        must_change_password, the INSERT must drop that column and retry —
+        never surface a blank 500. Regression for the reported "Add User /
+        Internal server error" bug."""
+        drift_body = (
+            '{"code":"PGRST204","message":"Could not find the '
+            "'must_change_password' column of 'users' in the schema cache\"}"
+        )
+        ok_row = {
+            "id": "u-x",
+            "email": "drift@transit.sy",
+            "full_name": "Drift",
+            "full_name_ar": None,
+            "role": "driver",
+            "phone": None,
+            "is_active": True,
+        }
+        calls = {"n": 0}
+
+        async def fake_post(path, data):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise _http_error(drift_body)
+            # On retry the offending column must have been dropped.
+            assert "must_change_password" not in data
+            return ok_row
+
+        with (
+            patch(
+                "api.routers.admin._service_get", new_callable=AsyncMock
+            ) as mock_get,
+            patch("api.routers.admin._service_post", side_effect=fake_post),
+        ):
+            mock_get.return_value = []
+            r = client.post(
+                "/api/admin/users",
+                json={
+                    "email": "drift@transit.sy",
+                    "password": "securepass123",
+                    "full_name": "Drift",
+                    "role": "driver",
+                },
+                headers={"Authorization": f"Bearer {admin_token}"},
+            )
+        assert r.status_code == 200
+        assert calls["n"] == 2  # failed once, retried once
+
+    def test_create_user_surfaces_real_db_error(self, client, admin_token):
+        """A genuine DB rejection must come back as an actionable message,
+        not an opaque 'Internal server error'."""
+        dup_body = (
+            '{"code":"23505","message":"duplicate key value violates unique '
+            'constraint \\"users_email_key\\""}'
+        )
+
+        async def fake_post(path, data):
+            raise _http_error(dup_body)
+
+        with (
+            patch(
+                "api.routers.admin._service_get", new_callable=AsyncMock
+            ) as mock_get,
+            patch("api.routers.admin._service_post", side_effect=fake_post),
+        ):
+            mock_get.return_value = []
+            r = client.post(
+                "/api/admin/users",
+                json={
+                    "email": "dup@transit.sy",
+                    "password": "securepass123",
+                    "full_name": "Dup",
+                    "role": "driver",
+                },
+                headers={"Authorization": f"Bearer {admin_token}"},
+            )
+        assert r.status_code == 400
+        assert "already exists" in r.json()["detail"].lower()
 
 
 # ---------------------------------------------------------------------------
