@@ -498,21 +498,64 @@ function initMap() {
     map.addSource('vehicles', { type:'geojson', data:{type:'FeatureCollection',features:[]} });
     map.addLayer({ id:'vehicles', type:'circle', source:'vehicles',
       paint: { 'circle-radius':7, 'circle-color':'#1F7068', 'circle-stroke-width':2, 'circle-stroke-color':'#fff' }});
+
+    // Hover card: GPS + driver info for each bus.
+    const popup = new maplibregl.Popup({ closeButton:false, closeOnClick:false, offset:12 });
+    const esc = (s)=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    map.on('mouseenter', 'vehicles', (e)=>{
+      map.getCanvas().style.cursor = 'pointer';
+      const p = e.features[0].properties || {};
+      const c = e.features[0].geometry.coordinates.slice();
+      const ar = (document.documentElement.lang||'ar').slice(0,2)==='ar';
+      const spd = (p.speed===''||p.speed==null)?null:Math.round(Number(p.speed));
+      let ts='—'; try { if (p.ts) ts = new Date(p.ts).toLocaleTimeString(ar?'ar-EG':'en-GB'); } catch(_){}
+      const row=(k,v)=>`<div><span style="color:#6b7a78">${k}:</span> ${v}</div>`;
+      popup.setLngLat(c).setHTML(
+        `<div style="font:13px/1.6 system-ui,sans-serif;min-width:158px;color:#10211f">`
+        + `<div style="font-weight:700;margin-bottom:3px">${esc(p.name||p.fleet||p.id)}${p.fleet?` · ${esc(p.fleet)}`:''}</div>`
+        + row(ar?'السائق':'Driver', esc(p.driver|| (ar?'غير معيّن':'unassigned')))
+        + row(ar?'السرعة':'Speed', spd==null?'—':spd+(ar?' كم/س':' km/h'))
+        + row(ar?'الموقع':'GPS', `${(+c[1]).toFixed(5)}, ${(+c[0]).toFixed(5)}`)
+        + row(ar?'الجهاز':'Device', esc(p.dev||'—'))
+        + row(ar?'آخر تحديث':'Updated', ts)
+        + `</div>`
+      ).addTo(map);
+    });
+    map.on('mouseleave', 'vehicles', ()=>{ map.getCanvas().style.cursor=''; popup.remove(); });
   });
 }
 
 function openStream() {
-  let es; try { es = new EventSource(API_BASE + '/api/stream'); } catch(_) { return; }
-  es.addEventListener('vehicles', (ev) => {
-    let data; try { data = JSON.parse(ev.data); } catch(_) { return; }
-    const list = data.positions || data.vehicles || data || [];
-    const features = list.map(v => ({
+  // /api/stream sends one unnamed `data:` frame per vehicle (PositionData).
+  // Accumulate by vehicle_id and re-render, so the map shows the whole fleet.
+  const seen = {};
+  function render() {
+    const ar = (document.documentElement.lang||'ar').slice(0,2)==='ar';
+    const features = Object.values(seen).map(v => ({
       type:'Feature',
-      geometry:{ type:'Point', coordinates:[v.lon ?? v.longitude, v.lat ?? v.latitude] },
-      properties:{ id: v.vehicle_id || v.id }
-    })).filter(f => f.geometry.coordinates.every(Number.isFinite));
+      geometry:{ type:'Point', coordinates:[v.lon, v.lat] },
+      properties:{
+        id: v.vehicle_id,
+        name: ar ? (v.vehicle_name_ar||v.vehicle_name) : (v.vehicle_name||v.vehicle_name_ar),
+        fleet: v.fleet_code || '',
+        driver: ar ? (v.driver_name_ar||v.driver_name||'') : (v.driver_name||v.driver_name_ar||''),
+        speed: v.speed_kmh==null ? '' : v.speed_kmh,
+        ts: v.timestamp || '',
+        dev: v.gps_device_id || ''
+      }
+    }));
     if (map?.getSource && map.getSource('vehicles')) map.getSource('vehicles').setData({type:'FeatureCollection',features});
-  });
+  }
+  let es; try { es = new EventSource(API_BASE + '/api/stream'); } catch(_) { return; }
+  es.onmessage = (ev) => {
+    let v; try { v = JSON.parse(ev.data); } catch(_) { return; }
+    if (!v || v.error || v.vehicle_id == null) return;
+    const lon = (v.longitude ?? v.lon), lat = (v.latitude ?? v.lat);
+    if (!Number.isFinite(lon) || !Number.isFinite(lat)) return;
+    v.lon = lon; v.lat = lat;
+    seen[v.vehicle_id] = v;
+    render();
+  };
 }
 
 $('#refresh-btn').addEventListener('click', () => { loadKpis(); loadAlerts(); });
