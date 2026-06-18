@@ -133,11 +133,7 @@ async def _insert_user_row(new_user: dict) -> dict:
         except httpx.HTTPStatusError as exc:
             last_body = getattr(exc.response, "text", "") or str(exc)
             missing = next(
-                (
-                    c
-                    for c in _USER_OPTIONAL_COLUMNS
-                    if c in payload and c in last_body
-                ),
+                (c for c in _USER_OPTIONAL_COLUMNS if c in payload and c in last_body),
                 None,
             )
             if missing is None:

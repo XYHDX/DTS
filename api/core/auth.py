@@ -94,9 +94,7 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     try:
-        return bcrypt.checkpw(
-            plain_password.encode()[:72], hashed_password.encode()
-        )
+        return bcrypt.checkpw(plain_password.encode()[:72], hashed_password.encode())
     except (ValueError, TypeError):
         return False
 
