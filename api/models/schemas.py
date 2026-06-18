@@ -373,6 +373,11 @@ class PositionData(BaseModel):
     speed_kmh: Optional[float]
     occupancy_pct: Optional[int]
     timestamp: str
+    # Extra context for the live-map hover card (optional / best-effort).
+    fleet_code: Optional[str] = None
+    gps_device_id: Optional[str] = None
+    driver_name: Optional[str] = None
+    driver_name_ar: Optional[str] = None
 
 
 class NearestStop(BaseModel):

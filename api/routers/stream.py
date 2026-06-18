@@ -9,7 +9,7 @@ from fastapi.responses import StreamingResponse
 
 from api.core import live_bus
 from api.core.auth import CurrentUser, optional_auth
-from api.core.database import _supabase_get
+from api.core.database import _service_get
 from api.core.geo import parse_location
 from api.core.tenancy import _op_filter, resolve_read_scope
 from api.models.schemas import PositionData
@@ -33,14 +33,31 @@ async def _snapshot_frames(op_id: Optional[str]) -> list[str]:
     Used for the legacy poll loop and for the one-shot snapshot a bus subscriber
     receives on connect (so a freshly-opened stream is never blank).
     """
-    query = "vehicle_positions_latest?select=*,vehicles(name,name_ar)"
+    query = (
+        "vehicle_positions_latest?select=*,"
+        "vehicles(vehicle_id,name,name_ar,gps_device_id,assigned_driver_id)"
+    )
     if op_id:
         query += f"&{_op_filter(op_id)}"
-    positions = await _supabase_get(query)
+    positions = await _service_get(query)
+
+    # Resolve assigned-driver names in one batch (service key → RLS-safe), so the
+    # live-map hover card can show who is driving each bus.
+    driver_ids = sorted(
+        {(p.get("vehicles") or {}).get("assigned_driver_id") for p in (positions or [])}
+        - {None}
+    )
+    drivers_by_id: dict[str, dict] = {}
+    if driver_ids:
+        rows = await _service_get(
+            f"users?id=in.({','.join(driver_ids)})&select=id,full_name,full_name_ar"
+        )
+        drivers_by_id = {d["id"]: d for d in (rows or [])}
 
     frames: list[str] = []
     for pos in positions or []:
         vehicle = pos.get("vehicles") or {}
+        drv = drivers_by_id.get(vehicle.get("assigned_driver_id")) or {}
         lat, lon = parse_location(pos.get("location"))
         data = PositionData(
             vehicle_id=pos.get("vehicle_id"),
@@ -51,6 +68,10 @@ async def _snapshot_frames(op_id: Optional[str]) -> list[str]:
             speed_kmh=pos.get("speed_kmh"),
             occupancy_pct=pos.get("occupancy_pct"),
             timestamp=pos.get("recorded_at", datetime.utcnow().isoformat()),
+            fleet_code=vehicle.get("vehicle_id"),
+            gps_device_id=vehicle.get("gps_device_id"),
+            driver_name=drv.get("full_name"),
+            driver_name_ar=drv.get("full_name_ar"),
         )
         frames.append(f"data: {data.model_dump_json()}\n\n")
     return frames

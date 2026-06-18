@@ -49,12 +49,12 @@ const char* GPRS_PASS = "";
 
 // Mosquitto broker the device connects to. Over 2G this must be a PUBLIC IP/host
 // (a laptop on localhost is NOT reachable from cellular — see notes at the end).
-const char* MQTT_HOST = "YOUR_BROKER_IP";  // <-- set to your broker's public host/IP
+const char* MQTT_HOST = "165.227.202.242"; // your broker (the DigitalOcean VPS)
 const uint16_t MQTT_PORT = 1883;           // 1883 plain · 8883 TLS (see notes)
-const char* MQTT_USER = "";               // set if the broker requires auth
-const char* MQTT_PASS = "";
+const char* MQTT_USER = "dts";             // broker username
+const char* MQTT_PASS = "";                // <-- REQUIRED: set to your broker password
 
-const uint32_t PUBLISH_EVERY_MS = 10000;  // one fix every 10 s
+const uint32_t PUBLISH_EVERY_MS = 10000;   // one GPS fix every 10 s (10000 ms)
 
 /* ---------------------------------------------------------------------------
  *  2) WIRING  (matches the SIM700/SIM800 prototype guides)
