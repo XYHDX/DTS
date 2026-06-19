@@ -44,10 +44,10 @@ _push_subscriptions: dict = {}
 # request to. Anonymous callers must not be able to point it at an arbitrary
 # host, so only the real push services are accepted.
 _ALLOWED_PUSH_HOST_SUFFIXES = (
-    ".googleapis.com",            # FCM: fcm.googleapis.com / android.googleapis.com
+    ".googleapis.com",  # FCM: fcm.googleapis.com / android.googleapis.com
     ".push.services.mozilla.com",  # Mozilla autopush
-    ".notify.windows.com",        # Microsoft WNS
-    ".push.apple.com",            # Apple Web Push
+    ".notify.windows.com",  # Microsoft WNS
+    ".push.apple.com",  # Apple Web Push
     ".web.push.apple.com",
 )
 

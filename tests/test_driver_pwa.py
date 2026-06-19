@@ -194,6 +194,13 @@ class TestRouteDisplay:
         """Starting a trip with a valid route returns trip_id."""
         mock_vehicles = [{"id": "v-bus-001"}]
         mock_trip = {"id": "trip-abc-001"}
+
+        def fake_get(query, *a, **k):
+            # The concurrent-trip guard checks for an in_progress trip; none here.
+            if "trips?" in query and "in_progress" in query:
+                return []
+            return mock_vehicles
+
         with (
             patch(
                 "api.routers.driver._service_get", new_callable=AsyncMock
@@ -202,7 +209,7 @@ class TestRouteDisplay:
                 "api.routers.driver._service_post", new_callable=AsyncMock
             ) as mock_post,
         ):
-            mock_get.return_value = mock_vehicles
+            mock_get.side_effect = fake_get
             mock_post.return_value = mock_trip
             r = client.post(
                 "/api/driver/trip/start",
@@ -218,6 +225,12 @@ class TestRouteDisplay:
         """Scheduled departure is accepted in trip start payload."""
         mock_vehicles = [{"id": "v-bus-001"}]
         mock_trip = {"id": "trip-sched-001"}
+
+        def fake_get(query, *a, **k):
+            if "trips?" in query and "in_progress" in query:
+                return []
+            return mock_vehicles
+
         with (
             patch(
                 "api.routers.driver._service_get", new_callable=AsyncMock
@@ -226,7 +239,7 @@ class TestRouteDisplay:
                 "api.routers.driver._service_post", new_callable=AsyncMock
             ) as mock_post,
         ):
-            mock_get.return_value = mock_vehicles
+            mock_get.side_effect = fake_get
             mock_post.return_value = mock_trip
             r = client.post(
                 "/api/driver/trip/start",
@@ -256,6 +269,12 @@ class TestRouteDisplay:
     def test_start_trip_db_failure_returns_500(self, client, driver_token):
         """DB failure when persisting trip returns 500."""
         mock_vehicles = [{"id": "v-bus-001"}]
+
+        def fake_get(query, *a, **k):
+            if "trips?" in query and "in_progress" in query:
+                return []
+            return mock_vehicles
+
         with (
             patch(
                 "api.routers.driver._service_get", new_callable=AsyncMock
@@ -264,7 +283,7 @@ class TestRouteDisplay:
                 "api.routers.driver._service_post", new_callable=AsyncMock
             ) as mock_post,
         ):
-            mock_get.return_value = mock_vehicles
+            mock_get.side_effect = fake_get
             mock_post.return_value = None  # DB returned nothing
             r = client.post(
                 "/api/driver/trip/start",

@@ -286,8 +286,7 @@ async def _vehicle_approved(vehicle_id: str) -> bool:
 # the code → UUID once per vehicle (cached) at ingest time. UUIDs pass through
 # unchanged; an unknown id is left as-is for the approval gate to handle.
 _UUID_RE = re.compile(
-    r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-"
-    r"[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-" r"[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
 )
 _resolve_cache: dict[str, tuple[float, Optional[tuple[str, Optional[str]]]]] = {}
 _RESOLVE_TTL = 60.0

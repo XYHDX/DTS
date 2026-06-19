@@ -244,7 +244,9 @@ async def list_all_feedback(
 
     # Scope to operator for non-super-admin users
     if current_user.role != "super_admin" and current_user.operator_id:
-        query += f"&operator_id=eq.{urllib.parse.quote(current_user.operator_id, safe='')}"
+        query += (
+            f"&operator_id=eq.{urllib.parse.quote(current_user.operator_id, safe='')}"
+        )
 
     rows = await _supabase_get(query)
     return [
