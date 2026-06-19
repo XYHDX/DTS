@@ -1,3 +1,4 @@
+import urllib.parse
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -207,9 +208,10 @@ async def get_driver_detail(
         op_id = await resolve_read_scope(operator, current_user)
 
         op_suffix = f"&{_op_filter(op_id)}" if op_id else ""
+        _qdriver = urllib.parse.quote(driver_id, safe="")
 
         driver_rows = await _supabase_get(
-            f"users?id=eq.{driver_id}&role=eq.driver&select=id,full_name,full_name_ar,is_active{op_suffix}"
+            f"users?id=eq.{_qdriver}&role=eq.driver&select=id,full_name,full_name_ar,is_active{op_suffix}"
         )
         if not driver_rows:
             raise HTTPException(
@@ -220,7 +222,7 @@ async def get_driver_detail(
         # Fetch trips for last 30 days (detail view)
         cutoff_30 = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
         trips_30 = await _supabase_get(
-            f"trips?driver_id=eq.{driver_id}&status=eq.completed&actual_start=gte.{cutoff_30}"
+            f"trips?driver_id=eq.{_qdriver}&status=eq.completed&actual_start=gte.{cutoff_30}"
             f"&select=id,on_time_pct,distance_km,speed_kmh,actual_start,actual_end{op_suffix}"
         )
 
@@ -245,7 +247,7 @@ async def get_driver_detail(
 
         # Get live position
         vehicle_rows = await _supabase_get(
-            f"vehicles?assigned_driver_id=eq.{driver_id}&select=id{op_suffix}"
+            f"vehicles?assigned_driver_id=eq.{_qdriver}&select=id{op_suffix}"
         )
         vehicle_id = vehicle_rows[0]["id"] if vehicle_rows else None
         driver["vehicle_id"] = vehicle_id

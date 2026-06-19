@@ -1,3 +1,4 @@
+import urllib.parse
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -313,6 +314,20 @@ async def start_trip(
     """Start a new trip for the driver (vehicle must be admin-approved)."""
     try:
         vehicle_id, _ = await _require_approved_vehicle(current_user.user_id)
+
+        # Reject a second concurrent trip for the same driver. (A DB partial
+        # unique index on trips(driver_id) WHERE status='in_progress' is the
+        # complete guard; this pre-check covers the common case.)
+        active = await _service_get(
+            f"trips?driver_id=eq.{urllib.parse.quote(current_user.user_id, safe='')}"
+            "&status=eq.in_progress&select=id&limit=1"
+        )
+        if active:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="You already have a trip in progress. End it first.",
+            )
+
         trip_data = {
             "vehicle_id": vehicle_id,
             "route_id": trip.route_id,
@@ -366,7 +381,10 @@ async def end_trip(
             "actual_end": datetime.utcnow().isoformat(),
             "passenger_count": trip_data.passenger_count,
         }
-        await _service_patch(f"trips?id=eq.{trip_id}", update_data)
+        # CAS: only complete a trip that is still in progress.
+        await _service_patch(
+            f"trips?id=eq.{trip_id}&status=eq.in_progress", update_data
+        )
 
         return {
             "status": "success",
@@ -404,7 +422,8 @@ async def update_passenger_count(
 
         trip_id = trips[0]["id"]
         await _service_patch(
-            f"trips?id=eq.{trip_id}", {"passenger_count": data.passenger_count}
+            f"trips?id=eq.{trip_id}&status=eq.in_progress",
+            {"passenger_count": data.passenger_count},
         )
 
         return {"status": "success", "timestamp": datetime.utcnow().isoformat()}
@@ -434,15 +453,17 @@ async def ack_trip(
     ``GET /api/driver/me/next_trip`` and migration 013's dispatch workflow.
     """
     try:
+        _qtrip = urllib.parse.quote(trip_id, safe="")
         rows = await _service_get(
-            f"trips?id=eq.{trip_id}&driver_id=eq.{current_user.user_id}&select=id,status"
+            f"trips?id=eq.{_qtrip}&driver_id=eq."
+            f"{urllib.parse.quote(current_user.user_id, safe='')}&select=id,status"
         )
         if not rows:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Trip not found"
             )
         await _service_patch(
-            f"trips?id=eq.{trip_id}",
+            f"trips?id=eq.{_qtrip}",
             {"status": "acked", "acked_at": datetime.utcnow().isoformat()},
         )
         return {

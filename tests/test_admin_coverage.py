@@ -547,15 +547,20 @@ class TestDriverTripManagement:
     def test_start_trip_success(self, client, driver_token):
         mock_vehicles = [{"id": "v-001"}]
         mock_trip = {"id": "trip-001"}
+
+        async def fake_get(query, *a, **k):
+            # The concurrent-trip guard checks for an existing in_progress trip;
+            # there is none here, so it returns [] and start proceeds.
+            if "trips?" in query and "in_progress" in query:
+                return []
+            return mock_vehicles
+
         with (
-            patch(
-                "api.routers.driver._service_get", new_callable=AsyncMock
-            ) as mock_get,
+            patch("api.routers.driver._service_get", side_effect=fake_get),
             patch(
                 "api.routers.driver._service_post", new_callable=AsyncMock
             ) as mock_post,
         ):
-            mock_get.return_value = mock_vehicles
             mock_post.return_value = mock_trip
             r = client.post(
                 "/api/driver/trip/start",

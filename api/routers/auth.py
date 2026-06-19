@@ -72,7 +72,8 @@ async def login(request: LoginRequest, raw_request: Request, response: Response)
         # credentials" — even for valid accounts. Auth must look up the user
         # with the service role. (users stays private; never exposed via anon.)
         users = await _service_get(
-            f"users?email=eq.{urllib.parse.quote(request.email, safe='')}&select=id,email,password_hash,role,operator_id,is_active"
+            f"users?email=eq.{urllib.parse.quote(request.email, safe='')}"
+            "&select=id,email,password_hash,role,operator_id,is_active,must_change_password"
         )
 
         if not users:
@@ -132,7 +133,12 @@ async def login(request: LoginRequest, raw_request: Request, response: Response)
             path="/",
         )
 
-        return TokenResponse(access_token=token, user_id=user["id"], role=user["role"])
+        return TokenResponse(
+            access_token=token,
+            user_id=user["id"],
+            role=user["role"],
+            must_change_password=bool(user.get("must_change_password", False)),
+        )
 
     except HTTPException:
         raise

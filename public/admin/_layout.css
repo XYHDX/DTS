@@ -175,9 +175,13 @@
 /* ── Data table ────────────────────────────────────────────────────────────── */
 .data-table-card {
   background: #fff; border: 1px solid var(--rule); border-radius: 10px;
-  overflow: hidden;
+  /* Was overflow:hidden, which CLIPPED the right-hand action buttons
+     (Approve/Reject/Resolve) on narrow screens, leaving them unreachable.
+     Scroll horizontally instead so every column stays accessible. */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
-.data-table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+.data-table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 14.5px; }
 .data-table thead th {
   text-align: start;
   background: var(--surface-soft);

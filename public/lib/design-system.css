@@ -449,6 +449,8 @@ h1, h2, h3, h4, .display {
 .btn--block { width: 100%; }
 .btn--lg { font-size: var(--fs-md); padding: var(--s-4) var(--s-6); min-height: 52px; }
 .btn--sm { font-size: var(--fs-xs); padding: var(--s-2) var(--s-3); min-height: 36px; }
+/* On touch devices, raise small buttons to the 44px WCAG 2.5.5 target. */
+@media (pointer: coarse) { .btn--sm { min-height: var(--tap-min); } }
 .btn:disabled, .btn[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
 
 /* ---- Inputs ---- */

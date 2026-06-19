@@ -607,9 +607,13 @@ document.addEventListener('i18n:change', () => setGps(_gpsState, _gpsKey));
 // Login
 $('#login-form').addEventListener('submit', async (ev) => {
   ev.preventDefault();
+  // Prevent double-submit: lock the button for the duration of the request.
+  const submitBtn = ev.target.querySelector('button[type="submit"]') || ev.target.querySelector('button');
+  if (submitBtn && submitBtn.disabled) return;
   const email = $('#email').value.trim();
   const password = $('#password').value;
   $('#login-error').classList.add('hidden');
+  if (submitBtn) submitBtn.disabled = true;
   try {
     const r = await fetch(API_BASE + '/api/auth/login', {
       method: 'POST',
@@ -626,6 +630,8 @@ $('#login-form').addEventListener('submit', async (ev) => {
     setupGPS();
   } catch (e) {
     $('#login-error').classList.remove('hidden');
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
   }
 });
 

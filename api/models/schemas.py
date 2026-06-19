@@ -41,6 +41,10 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     user_id: str
     role: str
+    # True when the account still has its admin-issued initial password and
+    # must rotate it before doing anything else. Clients use this to force the
+    # change-password screen on first login.
+    must_change_password: bool = False
 
 
 class UserCreate(BaseModel):

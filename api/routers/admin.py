@@ -383,7 +383,9 @@ async def update_user(
             )
 
         result = await _service_patch(
-            f"users?id=eq.{user_id}{_own_op_filter(current_user)}", update_dict
+            f"users?id=eq.{urllib.parse.quote(user_id, safe='')}"
+            f"{_own_op_filter(current_user)}",
+            update_dict,
         )
         if not result:
             raise HTTPException(
@@ -667,7 +669,9 @@ async def update_vehicle(
             )
 
         result = await _service_patch(
-            f"vehicles?id=eq.{vehicle_id}{_own_op_filter(current_user)}", update_dict
+            f"vehicles?id=eq.{urllib.parse.quote(vehicle_id, safe='')}"
+            f"{_own_op_filter(current_user)}",
+            update_dict,
         )
         if not result:
             raise HTTPException(
@@ -738,7 +742,9 @@ async def assign_vehicle(
                 detail="Provide route_id and/or driver_id.",
             )
         result = await _service_patch(
-            f"vehicles?id=eq.{vehicle_id}{_own_op_filter(current_user)}", update_data
+            f"vehicles?id=eq.{urllib.parse.quote(vehicle_id, safe='')}"
+            f"{_own_op_filter(current_user)}",
+            update_data,
         )
         if not result:
             raise HTTPException(
@@ -779,7 +785,8 @@ async def decommission_vehicle(
     """
     try:
         result = await _service_patch(
-            f"vehicles?id=eq.{vehicle_id}{_own_op_filter(current_user)}",
+            f"vehicles?id=eq.{urllib.parse.quote(vehicle_id, safe='')}"
+            f"{_own_op_filter(current_user)}",
             {
                 "status": "decommissioned",
                 "is_active": False,
@@ -894,7 +901,9 @@ async def admin_update_route(
         if not update:
             raise HTTPException(status_code=400, detail="No fields to update")
         result = await _service_patch(
-            f"routes?id=eq.{route_pk}{_own_op_filter(current_user)}", update
+            f"routes?id=eq.{urllib.parse.quote(route_pk, safe='')}"
+            f"{_own_op_filter(current_user)}",
+            update,
         )
         if not result:
             raise HTTPException(status_code=404, detail="Route not found")
@@ -982,11 +991,19 @@ async def decide_vehicle_approval(
             update["approved_by"] = None
             update["approved_at"] = None
 
+        # Compare-and-set: only flip the row if it is STILL in the state we
+        # read above, so two concurrent approve/suspend calls cannot both win
+        # (TOCTOU). An empty result means another request changed it first.
         result = await _service_patch(
-            f"vehicles?id=eq.{vehicle_id}{_own_op_filter(current_user)}", update
+            f"vehicles?id=eq.{urllib.parse.quote(vehicle_id, safe='')}"
+            f"&approval_status=eq.{current}{_own_op_filter(current_user)}",
+            update,
         )
         if not result:
-            raise HTTPException(status_code=404, detail="Vehicle not found")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Vehicle state changed concurrently; reload and retry.",
+            )
 
         await _service_post(
             "audit_log",
@@ -1089,7 +1106,9 @@ async def resolve_alert(
             else None,
         }
         result = await _service_patch(
-            f"alerts?id=eq.{alert_id}{_own_op_filter(current_user)}", update_data
+            f"alerts?id=eq.{urllib.parse.quote(alert_id, safe='')}"
+            f"{_own_op_filter(current_user)}",
+            update_data,
         )
         if not result:
             raise HTTPException(

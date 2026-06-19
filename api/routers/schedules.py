@@ -1,3 +1,4 @@
+import urllib.parse
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -28,7 +29,7 @@ async def get_route_schedule(
         # Always scoped to exactly one operator (cross-tenant leak fix).
         op_id = await resolve_read_scope(operator, current_user)
 
-        query = f"schedules?route_id=eq.{route_id}&select=*"
+        query = f"schedules?route_id=eq.{urllib.parse.quote(route_id, safe='')}&select=*"
         if op_id:
             query += f"&{_op_filter(op_id)}"
         schedules = await _supabase_get(query)

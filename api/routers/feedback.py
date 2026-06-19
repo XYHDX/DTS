@@ -8,6 +8,7 @@ Endpoints:
   GET  /api/admin/feedback        — all feedback (admin/dispatcher only)
 """
 
+import urllib.parse
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -61,7 +62,8 @@ async def submit_feedback(
         )
     # Verify the trip exists and is completed
     trips = await _supabase_get(
-        f"trips?id=eq.{payload.trip_id}&select=id,driver_id,status,operator_id"
+        f"trips?id=eq.{urllib.parse.quote(payload.trip_id, safe='')}"
+        "&select=id,driver_id,status,operator_id"
     )
     if not trips:
         raise HTTPException(
@@ -84,7 +86,8 @@ async def submit_feedback(
         # Check for duplicate (only for logged-in, non-anonymous users)
         if passenger_id:
             existing = await _supabase_get(
-                f"trip_feedback?trip_id=eq.{payload.trip_id}&passenger_id=eq.{passenger_id}&select=id"
+                f"trip_feedback?trip_id=eq.{urllib.parse.quote(payload.trip_id, safe='')}"
+                f"&passenger_id=eq.{urllib.parse.quote(passenger_id, safe='')}&select=id"
             )
             if existing:
                 raise HTTPException(
@@ -136,7 +139,7 @@ async def get_trip_feedback(
 ):
     """List reviews for a specific trip (non-anonymous only)."""
     rows = await _supabase_get(
-        f"trip_feedback?trip_id=eq.{trip_id}"
+        f"trip_feedback?trip_id=eq.{urllib.parse.quote(trip_id, safe='')}"
         f"&is_anonymous=eq.false"
         f"&order=created_at.desc"
         f"&limit={limit}&offset={offset}"
@@ -168,12 +171,13 @@ async def get_trip_feedback(
 )
 async def get_driver_rating(driver_id: str):
     """Return aggregated rating summary for a driver."""
+    _qdriver = urllib.parse.quote(driver_id, safe="")
     rows = await _supabase_get(
-        f"driver_rating_summary?driver_id=eq.{driver_id}&select=*"
+        f"driver_rating_summary?driver_id=eq.{_qdriver}&select=*"
     )
     if not rows:
         # Driver exists but has no reviews yet — return zeroed summary
-        users = await _supabase_get(f"users?id=eq.{driver_id}&role=eq.driver&select=id")
+        users = await _supabase_get(f"users?id=eq.{_qdriver}&role=eq.driver&select=id")
         if not users:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Driver not found"
@@ -230,9 +234,9 @@ async def list_all_feedback(
         f"&order=created_at.desc&limit={limit}&offset={offset}"
     )
     if driver_id:
-        query += f"&driver_id=eq.{driver_id}"
+        query += f"&driver_id=eq.{urllib.parse.quote(driver_id, safe='')}"
     if trip_id:
-        query += f"&trip_id=eq.{trip_id}"
+        query += f"&trip_id=eq.{urllib.parse.quote(trip_id, safe='')}"
     if min_rating is not None:
         query += f"&rating=gte.{min_rating}"
     if max_rating is not None:
@@ -240,7 +244,7 @@ async def list_all_feedback(
 
     # Scope to operator for non-super-admin users
     if current_user.role != "super_admin" and current_user.operator_id:
-        query += f"&operator_id=eq.{current_user.operator_id}"
+        query += f"&operator_id=eq.{urllib.parse.quote(current_user.operator_id, safe='')}"
 
     rows = await _supabase_get(query)
     return [
