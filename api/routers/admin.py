@@ -1193,19 +1193,25 @@ async def list_upcoming_trips(
 
         routes, vehicles, drivers = {}, {}, {}
         rid, vid, did = _ids("route_id"), _ids("vehicle_id"), _ids("driver_id")
+        # Tenant-scope the enrichment too (defense-in-depth): the ids come from
+        # the operator-scoped trips query above, but the service key bypasses
+        # RLS, so we never rely on that scoping alone.
         if rid:
             for r in await _service_get(
-                f"routes?id=in.({','.join(rid)})&select=id,route_id,name,name_ar"
+                f"routes?id=in.({','.join(rid)})"
+                f"&select=id,route_id,name,name_ar{op_suffix}"
             ):
                 routes[r["id"]] = r
         if vid:
             for v in await _service_get(
-                f"vehicles?id=in.({','.join(vid)})&select=id,vehicle_id,name,name_ar"
+                f"vehicles?id=in.({','.join(vid)})"
+                f"&select=id,vehicle_id,name,name_ar{op_suffix}"
             ):
                 vehicles[v["id"]] = v
         if did:
             for u in await _service_get(
-                f"users?id=in.({','.join(did)})&select=id,full_name,full_name_ar,email"
+                f"users?id=in.({','.join(did)})"
+                f"&select=id,full_name,full_name_ar,email{op_suffix}"
             ):
                 drivers[u["id"]] = u
         for t in trips:
@@ -1268,7 +1274,7 @@ async def dispatch_trip(
             "&status=in.(scheduled,dispatched,acked,in_progress)"
             f"&scheduled_start=gte.{urllib.parse.quote(lo, safe='')}"
             f"&scheduled_start=lte.{urllib.parse.quote(hi, safe='')}"
-            "&select=id"
+            f"&select=id{_own_op_filter(current_user)}"
         )
         if conflicts:
             raise HTTPException(

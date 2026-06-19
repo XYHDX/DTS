@@ -265,6 +265,7 @@
 </head>
 <body class="with-fade-in">
 
+<a class="skip-to-content" href="#main" data-i18n="a11y.skip">تخطٍّ إلى المحتوى</a>
 
 <!-- Universal utility bar (gov chip + cross-section links) -->
 <div class="utility-bar">
@@ -288,7 +289,7 @@
 
 <div id="offline-banner" class="offline-banner hidden" role="status" data-i18n="driver.offline">دون اتصال — يتم تخزين المواقع محلياً وستُرسل عند العودة</div>
 
-<header class="driver-bar">
+<header class="driver-bar" id="main">
   <div class="container driver-bar__inner">
   <a href="/" class="home-btn" title="العودة إلى الرئيسية" aria-label="العودة إلى الرئيسية">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
@@ -844,8 +845,12 @@ function restoreActiveTrip(t) {
 }
 
 // Trip controls
-$('#start-trip').addEventListener('click', async () => {
+$('#start-trip').addEventListener('click', async (ev) => {
   if (!token) return;
+  // Prevent double-submit: lock the button for the duration of the request.
+  const startBtn = ev.currentTarget;
+  if (startBtn.disabled) return;
+  startBtn.disabled = true;
   try {
     // Contract fix (2026-06-11): trip/start REQUIRES route_id; an empty
     // body silently failed and trips were never recorded server-side.
@@ -865,6 +870,8 @@ $('#start-trip').addEventListener('click', async () => {
   } catch (_) {
     alert('تعذر بدء الرحلة — تحقق من الاتصال / Could not start the trip.');
     return;
+  } finally {
+    startBtn.disabled = false;
   }
   tripStartedAt = Date.now();
   totalKm = 0; pax = 0; lastPos = null;
@@ -872,7 +879,11 @@ $('#start-trip').addEventListener('click', async () => {
   if (cap?.startBackgroundGeolocation) cap.startBackgroundGeolocation((p) => onPosition(p.coords || p));
 });
 
-$('#end-trip').addEventListener('click', async () => {
+$('#end-trip').addEventListener('click', async (ev) => {
+  // Prevent double-submit: lock the button for the duration of the request.
+  const endBtn = ev.currentTarget;
+  if (endBtn.disabled) return;
+  endBtn.disabled = true;
   if (timerInterval) clearInterval(timerInterval);
   try {
     await fetch(API_BASE + '/api/driver/trip/end', {
@@ -880,7 +891,9 @@ $('#end-trip').addEventListener('click', async () => {
       headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
       body: JSON.stringify({ passenger_count: pax })
     });
-  } catch (_) {}
+  } catch (_) {} finally {
+    endBtn.disabled = false;
+  }
   tripId = null; tripStartedAt = null;
   $('#start-trip').classList.remove('hidden');
   $('#end-trip').classList.add('hidden');

@@ -88,6 +88,17 @@
   --color-text-mute: #6A6A6A;
   --color-link:      var(--national-green);
 
+  /* ---- Admin chrome aliases ----
+     /admin/_layout.css (and a few admin pages) reference a shorter token
+     vocabulary (--rule, --ink-1/2/3, --surface-soft). They were never defined,
+     so admin tables/panels fell back to the browser defaults. Map each to the
+     closest semantic token: --ink-1 = strongest text, --ink-3 = faintest. */
+  --rule:         var(--color-border);
+  --ink-1:        var(--color-text);
+  --ink-2:        var(--color-text-mute);
+  --ink-3:        #9A9A9A;
+  --surface-soft: var(--color-surface-2);
+
   --success: var(--national-green);
   --warning: #B5651D;
   --danger:  var(--national-red);

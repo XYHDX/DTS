@@ -137,6 +137,7 @@
 </style>
 </head>
 <body class="with-fade-in">
+<noscript><div style="margin:0;padding:14px 18px;background:#9b121e;color:#fff;font-family:system-ui,sans-serif;font-size:14px;text-align:center;">يتطلب هذا التطبيق تفعيل جافاسكربت للعمل. · This app requires JavaScript to be enabled.</div></noscript>
 
 <!-- Universal utility bar -->
 <div class="utility-bar">
@@ -290,7 +291,7 @@ $('#login-form').addEventListener('submit', async (ev) => {
       },
       body: JSON.stringify({ email, password, remember, turnstile_token: turnstileToken }),
     });
-    if (!r.ok) throw new Error('login failed');
+    if (!r.ok) { const e = new Error('login failed'); e.status = r.status; throw e; }
     const data = await r.json();
     const token = data.token || data.access_token;
     // The modular API's login response carries only user_id + role; fetch the
@@ -332,10 +333,15 @@ $('#login-form').addEventListener('submit', async (ev) => {
     if (role === 'driver') location.href = '/driver/';
     else location.href = '/admin/';
   } catch (e) {
-    // Restore the standard "wrong credentials" message — it may have been
-    // overwritten by the captcha branch above. We use the localized version
-    // so EN users don't see Arabic when login fails.
-    $('#error-msg').textContent = window.I18N ? window.I18N.t('admin.error') : 'بيانات الدخول غير صحيحة';
+    // Distinguish a genuine bad-password (HTTP 401) from a server outage /
+    // network failure: only 401 means the credentials were wrong. Anything else
+    // (5xx, network error, timeout — no e.status) is a connectivity problem, so
+    // we must not tell the user their password is wrong. Localized either way.
+    const key = e && e.status === 401 ? 'admin.error' : 'error.network';
+    const fallback = key === 'admin.error'
+      ? 'بيانات الدخول غير صحيحة'
+      : 'تعذّر الاتصال بالخادم — حاول مجدداً.';
+    $('#error-msg').textContent = window.I18N ? window.I18N.t(key) : fallback;
     $('#error-msg').classList.remove('hidden');
   } finally {
     btn.disabled = false;

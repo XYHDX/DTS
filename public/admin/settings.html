@@ -30,6 +30,7 @@
 </style>
 </head>
 <body data-page="settings">
+<noscript><div style="margin:0;padding:14px 18px;background:#9b121e;color:#fff;font-family:system-ui,sans-serif;font-size:14px;text-align:center;">يتطلب هذا التطبيق تفعيل جافاسكربت للعمل. · This app requires JavaScript to be enabled.</div></noscript>
 
 <div class="utility-bar">
   <div class="container">
@@ -149,6 +150,10 @@
     load();
     $('#sc-form').addEventListener('submit', async function (ev) {
       ev.preventDefault();
+      // Prevent double-submit: lock the button for the duration of the request.
+      const saveBtn = ev.target.querySelector('button[type="submit"]');
+      if (saveBtn && saveBtn.disabled) return;
+      if (saveBtn) saveBtn.disabled = true;
       const body = { mode: $('#sc-mode').value, merchant_id: $('#sc-merchant').value.trim() };
       try {
         const r = await window.ADMIN_AUTH.fetch('/api/admin/settings', {
@@ -158,6 +163,7 @@
         window.ADMIN_AUTH.toast('تم حفظ الإعدادات', 'Settings saved', 'success');
         load();
       } catch (e) { window.ADMIN_AUTH.toast(e.message, e.message, 'error'); }
+      finally { if (saveBtn) saveBtn.disabled = false; }
     });
   });
   // Relabel the secret pills on language change.

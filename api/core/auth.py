@@ -307,13 +307,30 @@ def require_role(*allowed_roles: UserRole):
     return role_checker
 
 
-def optional_auth(request: Request) -> Optional[CurrentUser]:
+async def optional_auth(request: Request) -> Optional[CurrentUser]:
     token = _token_from_request(request)
     if token is None:
         current_user_token.set(None)
         return None
     current_user_token.set(token)
     token_payload = verify_token(token)
+    # L1 — apply the same revocation gate as get_current_user, but DEGRADE to
+    # anonymous (return None) instead of 401: these are optional-auth endpoints
+    # where identity only drives tenant scoping / dedup, so a deactivated
+    # account or a token issued before a password change is treated as no-auth.
+    # Best-effort — a lookup blip leaves the (already verified) identity intact.
+    try:
+        pwd_changed_at, is_active = await _lookup_revocation_state(
+            token_payload.user_id
+        )
+        if is_active is False or (
+            token_payload.iat is not None
+            and is_token_revoked_by_password_change(token_payload.iat, pwd_changed_at)
+        ):
+            current_user_token.set(None)
+            return None
+    except Exception:
+        pass
     return CurrentUser(
         user_id=token_payload.user_id,
         email=token_payload.email,

@@ -396,6 +396,17 @@ async def _seed_default_operator():
 async def _startup():
     await _seed_default_operator()
     asyncio.create_task(websocket._ws_broadcast_loop())
+    # H5 — per-process caches (rate-limit, approval, EMA) and SSE fan-out only
+    # stay correct across multiple workers/instances when Redis backs them.
+    import logging as _logging
+    import os as _os
+
+    if not (_os.getenv("REDIS_PUBSUB_URL") or _os.getenv("UPSTASH_REDIS_REST_URL")):
+        _logging.getLogger("api.index").warning(
+            "no Redis configured (REDIS_PUBSUB_URL/UPSTASH_REDIS_REST_URL unset): "
+            "rate-limiting, approval/EMA caches and SSE fan-out are per-process — "
+            "set Redis before running multiple workers/instances"
+        )
 
 
 # ── Exception handlers ────────────────────────────────────────────────────────
@@ -413,6 +424,22 @@ async def http_exception_handler(request, exc):
 
 @app.exception_handler(Exception)
 async def generic_exception_handler(request, exc):
+    # Log the unhandled exception — previously it vanished (a 500 with no
+    # trail), which is how silent server-path failures went unnoticed.
+    import logging as _logging
+
+    _logging.getLogger("api.index").error(
+        "unhandled_exception %s %s",
+        getattr(request, "method", "?"),
+        getattr(getattr(request, "url", None), "path", "?"),
+        exc_info=exc,
+    )
+    try:
+        import sentry_sdk
+
+        sentry_sdk.capture_exception(exc)
+    except Exception:
+        pass
     return JSONResponse(
         status_code=500,
         content={

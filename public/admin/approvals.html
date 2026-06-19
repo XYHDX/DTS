@@ -16,6 +16,7 @@
 <script src="/admin/_gate.js"></script>
 </head>
 <body data-page="approvals">
+<noscript><div style="margin:0;padding:14px 18px;background:#9b121e;color:#fff;font-family:system-ui,sans-serif;font-size:14px;text-align:center;">يتطلب هذا التطبيق تفعيل جافاسكربت للعمل. · This app requires JavaScript to be enabled.</div></noscript>
 
 <!-- Universal utility bar -->
 <div class="utility-bar">
@@ -200,7 +201,12 @@
       note = prompt(isAr()
         ? (action === 'reject' ? 'سبب الرفض (سيظهر للمشغّل):' : 'سبب التعليق:')
         : (action === 'reject' ? 'Rejection reason (shown to the operator):' : 'Suspension reason:'));
-      if (note === null) return;
+      if (note === null) return;            // user cancelled
+      note = note.trim();
+      if (!note) {                          // empty/whitespace is not a valid reason
+        window.ADMIN_AUTH.toast('يجب إدخال سبب', 'A reason is required', 'error');
+        return;
+      }
     } else if (action === 'approve') {
       const v = ALL.find(x => x.id === id) || {};
       if (!confirm(isAr()

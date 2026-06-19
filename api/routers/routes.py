@@ -56,11 +56,25 @@ async def list_routes(
             query += f"&{_op_filter(op_id)}"
         routes = await _supabase_get(query)
 
+        # Stop counts in ONE query instead of one per route (was an N+1 that
+        # fired on every cache miss). Fetch all links for these routes, tally
+        # in Python.
+        stop_counts: dict[str, int] = {}
+        route_ids = [r["id"] for r in routes]
+        if route_ids:
+            ids_csv = ",".join(
+                urllib.parse.quote(str(rid), safe="") for rid in route_ids
+            )
+            links = await _supabase_get(
+                f"route_stops?route_id=in.({ids_csv})&select=route_id"
+            )
+            for link in links:
+                rid = link.get("route_id")
+                if rid is not None:
+                    stop_counts[rid] = stop_counts.get(rid, 0) + 1
+
         enriched_routes = []
         for route in routes:
-            stops = await _supabase_get(
-                f"route_stops?route_id=eq.{route['id']}&select=id"
-            )
             enriched_routes.append(
                 RouteResponse(
                     id=route["id"],
@@ -72,7 +86,7 @@ async def list_routes(
                     distance_km=route.get("distance_km"),
                     avg_duration_min=route.get("avg_duration_min"),
                     fare_syp=route.get("fare_syp"),
-                    stop_count=len(stops),
+                    stop_count=stop_counts.get(route["id"], 0),
                 )
             )
 

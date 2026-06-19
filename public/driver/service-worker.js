@@ -189,7 +189,7 @@ async function flushGpsQueue() {
   }
 
   const apiBase = self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1'
-    ? `http://${self.location.hostname}:8080`
+    ? `http://${self.location.hostname}:8000`
     : self.location.origin;
 
   const headers = {

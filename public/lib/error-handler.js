@@ -96,11 +96,25 @@
         var tc = _getTC();
         var el = d.createElement('div');
         el.className = 'dt-toast ' + type;
-        el.innerHTML = '<span class="dt-toast-icon">' + (ICONS[type] || '⚠️') + '</span>' +
-            '<div class="dt-toast-body">' +
-            '<div class="dt-toast-title">' + ar + '</div>' +
-            (en ? '<div class="dt-toast-sub">' + en + '</div>' : '') +
-            '</div>';
+        // Build with textContent — `ar`/`en` are caller-supplied (often raw
+        // error messages), so they must never be interpolated as innerHTML.
+        var icon = d.createElement('span');
+        icon.className = 'dt-toast-icon';
+        icon.textContent = ICONS[type] || '⚠️';
+        var body = d.createElement('div');
+        body.className = 'dt-toast-body';
+        var title = d.createElement('div');
+        title.className = 'dt-toast-title';
+        title.textContent = ar == null ? '' : ar;
+        body.appendChild(title);
+        if (en) {
+            var sub = d.createElement('div');
+            sub.className = 'dt-toast-sub';
+            sub.textContent = en;
+            body.appendChild(sub);
+        }
+        el.appendChild(icon);
+        el.appendChild(body);
         tc.appendChild(el);
         setTimeout(function () {
             el.style.transition = 'opacity .3s ease';
@@ -258,13 +272,30 @@
         var ar    = o.ar    || 'لا توجد بيانات';
         var en    = o.en    || 'No data available';
         var hint  = o.hint  || '';
-        el.innerHTML =
-            '<div class="dt-empty">' +
-            '<div class="e-icon">' + icon + '</div>' +
-            '<div class="e-ar">' + ar + '</div>' +
-            '<div class="e-en">' + en + '</div>' +
-            (hint ? '<div class="e-hint">' + hint + '</div>' : '') +
-            '</div>';
+        // Build with textContent — icon/ar/en/hint may be caller-supplied, so
+        // they must never be interpolated as innerHTML.
+        var wrap = d.createElement('div');
+        wrap.className = 'dt-empty';
+        var eIcon = d.createElement('div');
+        eIcon.className = 'e-icon';
+        eIcon.textContent = icon;
+        var eAr = d.createElement('div');
+        eAr.className = 'e-ar';
+        eAr.textContent = ar;
+        var eEn = d.createElement('div');
+        eEn.className = 'e-en';
+        eEn.textContent = en;
+        wrap.appendChild(eIcon);
+        wrap.appendChild(eAr);
+        wrap.appendChild(eEn);
+        if (hint) {
+            var eHint = d.createElement('div');
+            eHint.className = 'e-hint';
+            eHint.textContent = hint;
+            wrap.appendChild(eHint);
+        }
+        el.textContent = '';
+        el.appendChild(wrap);
     }
 
     // ── skeleton helpers ──────────────────────────────────────────────────

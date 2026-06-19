@@ -1,6 +1,7 @@
 import urllib.parse
 from datetime import datetime
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from api.core.auth import CurrentUser, require_role
@@ -338,7 +339,18 @@ async def start_trip(
             "operator_id": current_user.operator_id,
         }
 
-        result = await _service_post("trips", trip_data)
+        try:
+            result = await _service_post("trips", trip_data)
+        except httpx.HTTPStatusError as e:
+            # The trips(driver_id) WHERE status='in_progress' partial-unique
+            # index (migration 033) is the real guard: if a concurrent start
+            # slips past the pre-check above, PostgREST returns 409 here.
+            if e.response is not None and e.response.status_code == 409:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="You already have a trip in progress. End it first.",
+                )
+            raise
         if not result:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

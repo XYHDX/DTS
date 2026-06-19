@@ -135,36 +135,37 @@ def _smooth_fuel(vehicle_id: str, raw: Optional[float]) -> Optional[float]:
 
 
 async def _persist(decoded: _PartialDecode, *, fuel_smoothed: Optional[float]) -> None:
-    """Write to the hypertable. Lazy-import to avoid coupling at startup."""
-    from api.core.database import _service_post  # type: ignore
+    """Persist the position via the same RPC the driver/Traccar paths use.
 
-    row = {
-        "vehicle_id": decoded.vehicle_id,
-        "operator_id": decoded.operator_id,
-        "route_id": decoded.route_id,
-        "ts":  # ms → ISO 8601 UTC
-        time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(decoded.timestamp / 1000.0))
-        + "Z",
-        "lat": decoded.latitude,
-        "lon": decoded.longitude,
-        "speed": decoded.speed_kph,
-        "heading": decoded.heading,
-        "engine_state": decoded.engine_state,
-        "fuel_level": fuel_smoothed,
-        "trigger_event": decoded.trigger_event,
-        "satellite_count": decoded.satellite_count,
-        "hdop": decoded.hdop,
-        "cell_signal_dbm": decoded.cell_signal_dbm,
-        "firmware_version": decoded.firmware_version,
-        "battery_mv": decoded.battery_mv,
-        "is_replay": decoded.is_replay,
+    ``upsert_vehicle_position`` writes both ``vehicle_positions`` (history) and
+    ``vehicle_positions_latest`` (what the live map reads) and builds the
+    PostGIS ``location`` point from lon/lat. We route through it instead of a
+    raw insert so column names and the NOT NULL ``location`` geometry are
+    always correct — the previous raw insert wrote non-existent columns
+    (``ts``/``lat``/``lon``/``speed``) so EVERY MQTT/bridge frame failed and
+    was silently dropped. NOTE: rich device telemetry
+    (fuel_level/engine_state/satellites/…) is not yet persisted here — tracked
+    as a follow-up; ``fuel_smoothed`` is still consumed by the fuel-event
+    detector at the call site.
+    """
+    from api.core.database import _service_rpc  # type: ignore
+
+    params: dict[str, object] = {
+        "p_vehicle_id": decoded.vehicle_id,
+        "p_lat": decoded.latitude,
+        "p_lon": decoded.longitude,
+        "p_speed": decoded.speed_kph,
+        "p_heading": decoded.heading,
+        "p_source": "mqtt",
     }
+    # route_id maps to a UUID column; only forward it when it looks like a UUID
+    # (firmware may publish a human route code, which would abort the cast).
+    if decoded.route_id and _UUID_RE.match(str(decoded.route_id)):
+        params["p_route_id"] = decoded.route_id
     try:
-        await _service_post("vehicle_positions", row)
+        await _service_rpc("upsert_vehicle_position", params)
     except Exception as e:
-        # The MQTT path will move this into a background consumer; until
-        # then a Postgres blip drops the frame on the floor. We log,
-        # never crash.
+        # Best-effort: a Postgres/Redis blip must never crash the hot path.
         logger.warning(
             "telemetry_persist_failed",
             extra={"vehicle_id": decoded.vehicle_id, "err": str(e)[:200]},
@@ -264,7 +265,7 @@ async def _vehicle_approved(vehicle_id: str) -> bool:
         from api.core.database import _service_get  # type: ignore
 
         rows = await _service_get(
-            f"vehicles?id=eq.{vehicle_id}&select=approval_status,is_active"
+            f"vehicles?id=eq.{quote(vehicle_id, safe='')}&select=approval_status,is_active"
         )
         if rows:
             v = rows[0]

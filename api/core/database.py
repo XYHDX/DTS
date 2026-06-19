@@ -156,15 +156,24 @@ async def _supabase_rpc(func_name: str, params: dict):
 
 
 async def _service_get(path: str) -> list:
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.get(
-            _supabase_url(path), headers=_supabase_headers(use_service_key=True)
-        )
-        resp.raise_for_status()
-        if not resp.content:
-            return []
-        data = resp.json()
-        return data if isinstance(data, list) else [data] if data else []
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(
+                _supabase_url(path), headers=_supabase_headers(use_service_key=True)
+            )
+            resp.raise_for_status()
+            if not resp.content:
+                return []
+            data = resp.json()
+            return data if isinstance(data, list) else [data] if data else []
+    except HTTPException:
+        raise
+    except Exception as e:
+        # Log the real cause (status/body) — these server-trusted hot paths
+        # previously bubbled a raw error to the generic 500 handler with no
+        # trail. Re-raise unchanged so callers can still inspect the status.
+        logger.error("Service GET failed: %s", e, exc_info=True)
+        raise
 
 
 async def _service_post(path: str, data: dict) -> dict:
@@ -177,37 +186,55 @@ async def _service_post(path: str, data: dict) -> dict:
     """
     headers = _supabase_headers(use_service_key=True)
     headers["Prefer"] = "return=representation"
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.post(_supabase_url(path), headers=headers, json=data)
-        resp.raise_for_status()
-        if not resp.content:
-            return {}
-        result = resp.json()
-        return result[0] if isinstance(result, list) and result else result
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(_supabase_url(path), headers=headers, json=data)
+            resp.raise_for_status()
+            if not resp.content:
+                return {}
+            result = resp.json()
+            return result[0] if isinstance(result, list) and result else result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Service POST failed: %s", e, exc_info=True)
+        raise
 
 
 async def _service_patch(path: str, data: dict) -> list:
     """UPDATE with the service-role key (bypasses RLS — server-trusted paths)."""
     headers = _supabase_headers(use_service_key=True)
     headers["Prefer"] = "return=representation"
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.patch(_supabase_url(path), headers=headers, json=data)
-        resp.raise_for_status()
-        if not resp.content:
-            return []
-        result = resp.json()
-        return result if isinstance(result, list) else [result]
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.patch(_supabase_url(path), headers=headers, json=data)
+            resp.raise_for_status()
+            if not resp.content:
+                return []
+            result = resp.json()
+            return result if isinstance(result, list) else [result]
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Service PATCH failed: %s", e, exc_info=True)
+        raise
 
 
 async def _service_rpc(func_name: str, params: dict):
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.post(
-            f"{os.getenv('SUPABASE_URL')}/rest/v1/rpc/{func_name}",
-            headers=_supabase_headers(use_service_key=True),
-            json=params,
-        )
-        resp.raise_for_status()
-        return resp.json() if resp.content else None
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(
+                f"{os.getenv('SUPABASE_URL')}/rest/v1/rpc/{func_name}",
+                headers=_supabase_headers(use_service_key=True),
+                json=params,
+            )
+            resp.raise_for_status()
+            return resp.json() if resp.content else None
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Service RPC %s failed: %s", func_name, e, exc_info=True)
+        raise
 
 
 async def _health_check() -> bool:

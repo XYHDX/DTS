@@ -353,21 +353,28 @@ async def _confirm_payment(payload: ShamCashWebhookPayload) -> dict:
     if payload.amount_syp != p["amount_syp"]:
         raise HTTPException(status_code=422, detail="Amount mismatch.")
 
-    new_status = "confirmed" if payload.result == "success" else "failed"
+    # A failed callback must NOT be terminal. Previously it set status='failed'
+    # and wrote provider_ref, so a later GENUINE success for the same payment
+    # could never confirm: the row was no longer 'pending', and the reused
+    # provider_ref tripped its UNIQUE constraint. We now leave a failed attempt
+    # 'pending' (it lapses via expires_at) and only ever write provider_ref /
+    # confirmed_at on success.
+    if payload.result != "success":
+        return {"status": "failed", "terminal": False, "idempotent": False}
+
     update = {
-        "status": new_status,
+        "status": "confirmed",
         "provider_ref": payload.provider_ref,
         "payer_hint": payload.payer_hint,
+        "confirmed_at": datetime.now(timezone.utc).isoformat(),
     }
-    if new_status == "confirmed":
-        update["confirmed_at"] = datetime.now(timezone.utc).isoformat()
-
-    # The UNIQUE constraint on provider_ref makes replayed callbacks with a
-    # reused reference fail the PATCH instead of double-crediting.
+    # &status=eq.pending + UNIQUE(provider_ref) keep this idempotent: a second
+    # success or a replayed callback finds no pending row / a duplicate ref and
+    # is ignored instead of double-crediting.
     result = await _service_patch(f"payments?id=eq.{p['id']}&status=eq.pending", update)
     if not result:
         return {"status": "ignored", "reason": "not_pending_or_duplicate_ref"}
-    return {"status": new_status, "idempotent": False}
+    return {"status": "confirmed", "idempotent": False}
 
 
 @router.post("/api/pay/webhook/shamcash", tags=["payments"])
