@@ -219,7 +219,7 @@
     <div id="mini-map" class="map" role="application" aria-label="خريطة الحافلات"></div>
     <div class="map-legend" aria-hidden="true" style="position:absolute;inset-inline-start:10px;top:10px;background:var(--color-surface);border-radius:var(--r-sm);padding:8px 10px;box-shadow:var(--sh-sm);font-size:var(--fs-xs);z-index:5">
       <div style="display:flex;gap:6px;align-items:center"><span style="width:10px;height:10px;border-radius:50%;background:#00876f;border:2px solid #fff;display:inline-block"></span><span data-i18n="map.legendBus">حافلة</span></div>
-      <div style="display:flex;gap:6px;align-items:center;margin-top:3px"><span style="width:10px;height:10px;border-radius:50%;background:var(--gold-600)"></span><span data-i18n="map.legendStop">محطة</span></div>
+      <div style="display:flex;gap:6px;align-items:center;margin-top:3px"><span style="width:10px;height:10px;border-radius:50%;background:#111111"></span><span data-i18n="map.legendStop">محطة</span></div>
     </div>
   </div>
 </section>
@@ -545,7 +545,7 @@ function initMap(center=[36.291, 33.513]) {
     // Stops layer (gold dots) — matches the legend; drawn under the buses.
     map.addSource('stops', { type:'geojson', data: {type:'FeatureCollection',features:[]} });
     map.addLayer({ id:'stops', type:'circle', source:'stops',
-      paint: { 'circle-radius':4, 'circle-color':'#C9A95B', 'circle-stroke-width':1.5, 'circle-stroke-color':'#fff' } });
+      paint: { 'circle-radius':4, 'circle-color':'#111111', 'circle-stroke-width':1.5, 'circle-stroke-color':'#fff' } });
     map.addSource('vehicles', { type:'geojson', data: {type:'FeatureCollection',features:[]} });
     map.addLayer({ id:'vehicles', type:'circle', source:'vehicles',
       paint: { 'circle-radius':6, 'circle-color':'#00876f', 'circle-stroke-width':2, 'circle-stroke-color':'#fff' } });

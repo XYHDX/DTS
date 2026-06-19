@@ -111,7 +111,7 @@
   .map-legend .row + .row { margin-top: 4px; }
   .swatch { width: 12px; height: 12px; border-radius: 50%; }
   .swatch--bus { background: var(--national-green-500); border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.2); }
-  .swatch--stop { background: var(--national-gold); }
+  .swatch--stop { background: #111111; }
 
   /* Routes section */
   .routes-section { margin-top: 64px; }
@@ -446,6 +446,19 @@ function initMap() {
   });
   map.addControl(new maplibregl.NavigationControl({showCompass:false}), 'top-left');
   map.on('load', () => {
+    // Bus stops (black dots) — drawn under the buses.
+    map.addSource('stops', { type:'geojson', data:{ type:'FeatureCollection', features: [] } });
+    map.addLayer({ id:'stops', type:'circle', source:'stops',
+      paint: { 'circle-radius':4, 'circle-color':'#111111', 'circle-stroke-width':1.5, 'circle-stroke-color':'#fff' } });
+    fetch(API_BASE + '/api/stops', { credentials:'same-origin' }).then(r=>r.ok?r.json():[]).then(list=>{
+      const feats = (Array.isArray(list)?list:[]).map(s=>{
+        const lon=s.longitude??s.lon, lat=s.latitude??s.lat;
+        if(!Number.isFinite(lon)||!Number.isFinite(lat)) return null;
+        return { type:'Feature', geometry:{ type:'Point', coordinates:[lon,lat] }, properties:{} };
+      }).filter(Boolean);
+      if (map.getSource('stops')) map.getSource('stops').setData({ type:'FeatureCollection', features:feats });
+    }).catch(()=>{});
+
     map.addSource('vehicles', { type: 'geojson', data: { type:'FeatureCollection', features: [] } });
     map.addLayer({
       id: 'vehicles',
