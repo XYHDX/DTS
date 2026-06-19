@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:local_auth/local_auth.dart';
 
 import 'auth_controller.dart';
+
+// TODO(i18n): strings are still hardcoded; externalize to AppLocalizations.of(context)
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key, this.next});
@@ -33,30 +34,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _busy = true;
       _error = null;
     });
-    final bool ok = await ref
+    final LoginResult result = await ref
         .read(authControllerProvider.notifier)
         .login(_emailCtl.text.trim(), _pwCtl.text);
     setState(() => _busy = false);
     if (!mounted) return;
-    if (ok) {
-      context.go(widget.next ?? '/');
-    } else {
-      setState(() => _error = 'بيانات الدخول غير صحيحة');
-    }
-  }
-
-  Future<void> _biometric() async {
-    final LocalAuthentication local = LocalAuthentication();
-    final bool ok = await local.authenticate(
-      localizedReason: 'تأكيد الهوية للدخول',
-      options: const AuthenticationOptions(
-          stickyAuth: true, biometricOnly: false),
-    );
-    if (ok && mounted) {
-      // For demo: re-use cached credentials. In production: server-side
-      // pairing of biometric verifier with a long-lived refresh token.
-      _emailCtl.text = 'driver@example.com';
-      _pwCtl.text = '••••••';
+    switch (result) {
+      case LoginResult.success:
+        context.go(widget.next ?? '/');
+      case LoginResult.invalidCredentials:
+        setState(() => _error = 'بيانات الدخول غير صحيحة');
+      case LoginResult.serverUnreachable:
+        setState(() => _error = 'تعذّر الوصول إلى الخادم، حاول مجددًا');
     }
   }
 
@@ -116,12 +105,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     strokeWidth: 2, color: Colors.white))
                             : const Text('دخول'),
                       ),
-                      const SizedBox(height: 10),
-                      OutlinedButton.icon(
-                        onPressed: _biometric,
-                        icon: const Icon(Icons.fingerprint),
-                        label: const Text('الدخول ببصمة الإصبع'),
-                      ),
+                      // TODO(biometric): wire to secure credential store
+                      // Biometric sign-in is hidden until a real credential
+                      // store exists. The previous button injected placeholder
+                      // credentials, so it always failed — see auth_controller.
                     ],
                   ),
                 ),

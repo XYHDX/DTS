@@ -13,9 +13,14 @@
 #   prometheus     — scrapes the API /metrics endpoint (enable with METRICS_ENABLED=true)
 #   grafana        — dashboards (provisioned: "DamascusTransit — API Overview")
 #
-# Grafana:   http://localhost:3001   (admin / admin — change on first login)
-# Prometheus: http://localhost:9090
-# Redis:      redis://localhost:6379/0   (point the API at it with REDIS_PUBSUB_URL)
+# Grafana:   http://127.0.0.1:3001   (admin / $GRAFANA_ADMIN_PASSWORD — required, no default)
+# Prometheus: http://127.0.0.1:9090
+# Redis:      redis://127.0.0.1:6379/0   (point the API at it with REDIS_PUBSUB_URL)
+#
+# SECURITY: every published port below is bound to 127.0.0.1 (loopback) so this
+# dev stack is never exposed on a LAN/public interface. Grafana requires
+# GRAFANA_ADMIN_PASSWORD to be set (no insecure default). Mosquitto/Redis remain
+# auth-less for local dev only — add auth before exposing them anywhere.
 # ─────────────────────────────────────────────────────────────────────────────
 services:
 
@@ -24,15 +29,15 @@ services:
     restart: unless-stopped
     command: ["redis-server", "--save", "", "--appendonly", "no"]
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     networks: [scale]
 
   mosquitto:
     image: eclipse-mosquitto:2
     restart: unless-stopped
     ports:
-      - "1883:1883"
-      - "9001:9001"
+      - "127.0.0.1:1883:1883"
+      - "127.0.0.1:9001:9001"
     volumes:
       - ./monitoring/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
       - mosquitto-data:/mosquitto/data
@@ -60,11 +65,31 @@ services:
       - redis
     networks: [scale]
 
+  geo-gc:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    restart: unless-stopped
+    command: ["python", "-m", "api.workers.geo_gc"]
+    environment:
+      # Prune vehicles from the Redis GEO live set once their latest position
+      # is older than this (seconds); sweep on the interval below.
+      GEO_PRUNE_AFTER_SECONDS: ${GEO_PRUNE_AFTER_SECONDS:-3600}
+      GEO_PRUNE_INTERVAL_SECONDS: ${GEO_PRUNE_INTERVAL_SECONDS:-1800}
+      # GEO set lives in Upstash; stale lookup uses Supabase. Soft-fails when unset.
+      UPSTASH_REDIS_REST_URL: ${UPSTASH_REDIS_REST_URL:-}
+      UPSTASH_REDIS_REST_TOKEN: ${UPSTASH_REDIS_REST_TOKEN:-}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-}
+    depends_on:
+      - redis
+    networks: [scale]
+
   prometheus:
     image: prom/prometheus:latest
     restart: unless-stopped
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
@@ -76,10 +101,12 @@ services:
     image: grafana/grafana:latest
     restart: unless-stopped
     ports:
-      - "3001:3000"
+      - "127.0.0.1:3001:3000"
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      # Required — compose refuses to start the stack if this is unset, so the
+      # dashboard can never come up on the well-known admin/admin default.
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in your .env}
       GF_USERS_ALLOW_SIGN_UP: "false"
     volumes:
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro

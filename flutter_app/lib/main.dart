@@ -66,8 +66,18 @@ class DamascusTransitApp extends ConsumerWidget {
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
       routerConfig: router,
-      locale: const Locale('ar'),
       supportedLocales: const <Locale>[Locale('ar'), Locale('en')],
+      // Follow the device locale when supported; otherwise fall back to Arabic
+      // so Arabic stays the effective default for unsupported locales.
+      localeResolutionCallback:
+          (Locale? deviceLocale, Iterable<Locale> supported) {
+        if (deviceLocale != null) {
+          for (final Locale l in supported) {
+            if (l.languageCode == deviceLocale.languageCode) return l;
+          }
+        }
+        return const Locale('ar');
+      },
       localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

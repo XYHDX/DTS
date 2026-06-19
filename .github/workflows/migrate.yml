@@ -1,0 +1,85 @@
+# =============================================================================
+# Database migration runner — applies db/migrations/*.sql to Supabase Postgres.
+#
+# SAFE BY DEFAULT: this workflow is a no-op unless the SUPABASE_DB_URL secret
+# is configured. It runs ONLY on manual dispatch (workflow_dispatch) so it can
+# never fail a deploy that is triggered automatically on push.
+#
+# SETUP (required before this does anything):
+#   1. Add a repository secret named SUPABASE_DB_URL with the Postgres
+#      connection string, e.g. (use the Supavisor session-mode pooler URI):
+#        postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres
+#   2. Trigger from the GitHub UI:  Actions → "Apply DB migrations" → Run workflow.
+#
+# IDEMPOTENCY: every file in db/migrations/ is written to be safe to re-run
+# (CREATE ... IF NOT EXISTS / guarded ALTERs), so applying the full set
+# repeatedly is harmless. Migrations are applied in lexical (sorted) order.
+#
+# OPTIONAL — chain before a Vercel deploy: instead of (or in addition to)
+# manual runs, you can gate the deploy job in ci.yml on this workflow, e.g. by
+# converting this into a reusable workflow (add `workflow_call:` under `on:`)
+# and adding to the deploy job:
+#     needs: [migrate]
+# Only do that once SUPABASE_DB_URL is set, otherwise the gate is a silent skip.
+# =============================================================================
+name: Apply DB migrations
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "apply" to confirm running migrations against Supabase'
+        required: true
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    name: Apply migrations
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Guard — skip when SUPABASE_DB_URL is absent
+        id: guard
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::warning::SUPABASE_DB_URL not set — skipping migrations"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "${{ github.event.inputs.confirm }}" != "apply" ]; then
+            echo "::error::Confirmation input was not 'apply' — refusing to run."
+            exit 1
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Install psql client
+        if: steps.guard.outputs.skip != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y postgresql-client
+
+      - name: Apply db/migrations/*.sql in sorted order
+        if: steps.guard.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=$(ls db/migrations/*.sql 2>/dev/null | sort)
+          if [ -z "$files" ]; then
+            echo "No migration files found under db/migrations/ — nothing to do."
+            exit 0
+          fi
+          for f in $files; do
+            echo "──► applying $f"
+            psql "$SUPABASE_DB_URL" \
+              --set ON_ERROR_STOP=on \
+              --single-transaction \
+              -f "$f"
+          done
+          echo "All migrations applied."

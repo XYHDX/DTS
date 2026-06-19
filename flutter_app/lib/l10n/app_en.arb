@@ -25,6 +25,7 @@
   "loginEmail": "Email",
   "loginPassword": "Password",
   "loginInvalid": "Invalid credentials",
+  "loginServerUnreachable": "Couldn't reach the server, please try again",
   "loginButton": "Sign in",
   "loginBiometric": "Sign in with fingerprint",
 

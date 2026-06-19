@@ -1,6 +1,11 @@
 # =============================================================================
 # DamascusTransit — production image (multi-stage, distroless-flavoured)
-# Pinned to Python 3.12-slim 2024-09 sha for reproducibility.
+# Base image: python:3.12-slim-bookworm.
+# NOTE: NOT yet pinned to an immutable digest — builds are reproducible only to
+# the moving tag. To pin (recommended), resolve the digest and replace BOTH
+# FROM lines with python:3.12-slim-bookworm@sha256:<digest>:
+#   docker pull python:3.12-slim-bookworm
+#   docker inspect --format='{{index .RepoDigests 0}}' python:3.12-slim-bookworm
 # Build with:
 #   docker build -f Dockerfile.prod -t damascustransit:prod .
 # =============================================================================

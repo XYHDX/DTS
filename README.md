@@ -28,15 +28,18 @@ vehicle before it may operate**. GPS comes from custom in-vehicle hardware
 | Component | State |
 |---|---|
 | Backend (`api/`) | FastAPI · 89 routes · JWT + RBAC + revocation · per-operator tenancy on reads **and** writes · vehicle approval workflow · Sham Cash payment scaffold (sandbox) |
-| Database (`db/`) | PostgreSQL 16 + PostGIS · migration chain `002→020` (019 approvals, 020 payments) · TimescaleDB hypertable for telemetry |
+| Database (`db/`) | PostgreSQL 16 + PostGIS · migration chain `002→036` (019 approvals, 020 payments, 028 security hardening, 030 route expansion, 033 one-active-trip, 034 incident-photo RLS) · TimescaleDB hypertable for telemetry |
 | Web (`public/`) | Landing + passenger PWA + driver console + **9-page admin console** (approvals, vehicles, users, routes, alerts, payments, audit, analytics) — RTL-first, unified design system |
 | Mobile (`flutter_app/`) | **The official iOS + Android app** (Flutter 3.22, Riverpod, MapLibre, SSE) |
 | Hardware (`firmware/`, `schemas/`) | Edge-unit spec (ESP32/STM32 + SIM900A→BG95) · Protobuf wire format · HMAC-signed ingest over HTTPS or MQTT |
 | Observability (`monitoring/`) | Prometheus `/metrics` + auto-provisioned Grafana dashboards + Mosquitto dev broker (`docker-compose.scale.yml`) |
 | Tests | ~360 pytest tests green + Playwright specs |
 
-> **Deploy note:** apply DB migrations **through `020`** before deploying this
-> code — `docs/APPLY_MIGRATIONS.md`.
+> **Deploy note:** apply DB schema then **all** migrations in order
+> **`002→036`** before deploying this code — `docs/APPLY_MIGRATIONS.md`.
+> (021 restores public read, 024 creates the admin tables, 028 is the
+> security hardening, 030 adds the route network — skipping any of these
+> leaves subsystems broken.)
 
 ## The operating model — نموذج التشغيل
 
@@ -161,7 +164,7 @@ Hardened 2026-06-11 (see [`RESTRUCTURE_REPORT_2026-06-11.md`](RESTRUCTURE_REPORT
 
 ```
 api/             FastAPI backend (routers/, core/, models/, workers/)
-db/              schema.sql + migrations 002→020
+db/              schema.sql + migrations 002→036
 public/          web apps (landing, passenger, driver, admin×9, help, demo)
 flutter_app/     official iOS+Android app
 firmware/        GPS edge-unit spec        schemas/   Protobuf wire format

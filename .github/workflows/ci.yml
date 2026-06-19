@@ -25,7 +25,7 @@ jobs:
           cache: pip
 
       - name: Install ruff
-        run: pip install ruff
+        run: pip install ruff==0.15.18
 
       - name: Check style (ruff format)
         run: ruff format --check api/ lib/

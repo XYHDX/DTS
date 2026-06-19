@@ -28,7 +28,8 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "monthly"
+      interval: "weekly"
+      day: "monday"
     labels: ["dependencies", "ci"]
     commit-message:
       prefix: "deps(ci)"
