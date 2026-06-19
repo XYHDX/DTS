@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Network security config for DamascusTransit (referenced from AndroidManifest.xml
+  via android:networkSecurityConfig). Created 2026-06-19 — the manifest pointed at
+  this resource but the file was missing, which breaks the build / blocks the
+  documented local dev host.
+
+  Production: cleartext HTTP is DENIED (base-config). Only the loopback hosts the
+  Android emulator/simulator use are permitted cleartext, so a local API on
+  http://10.0.2.2:8000 works during development without weakening production.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Local development hosts only -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+    </domain-config>
+</network-security-config>

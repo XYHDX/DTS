@@ -121,10 +121,16 @@ async def traccar_position_webhook(
 
         return {"status": "success", "timestamp": datetime.utcnow().isoformat()}
 
+    except HTTPException:
+        raise  # preserve intended 4xx (auth/validation) — don't mask as 503
     except Exception as e:
         logger.error("Traccar position webhook error", extra={"error": str(e)})
-        # Do not leak internal exception details to the caller.
-        return {"status": "error", "detail": "internal error"}
+        # Return 5xx (not a 200 "error") so Traccar RETRIES delivery instead of
+        # silently dropping the position. Detail is generic — no internal leak.
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="internal error",
+        )
 
 
 @router.post("/api/traccar/event", response_model=WebhookResponse, tags=["traccar"])
@@ -202,7 +208,13 @@ async def traccar_event_webhook(
 
         return {"status": "success", "timestamp": datetime.utcnow().isoformat()}
 
+    except HTTPException:
+        raise  # preserve intended 4xx (auth/validation) — don't mask as 503
     except Exception as e:
         logger.error("Traccar event webhook error", extra={"error": str(e)})
-        # Do not leak internal exception details to the caller.
-        return {"status": "error", "detail": "internal error"}
+        # Return 5xx (not a 200 "error") so Traccar RETRIES delivery instead of
+        # silently dropping the event/alert. Detail is generic — no internal leak.
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="internal error",
+        )

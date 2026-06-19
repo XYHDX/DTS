@@ -16,24 +16,27 @@
 -- ============================================================
 
 -- Distinct bcrypt hash per account (same password "Damascus2026!", different salt).
-INSERT INTO users (email, password_hash, full_name, full_name_ar, role, phone, operator_id, is_active) VALUES
+-- must_change_password = true forces a rotation on first login, so this
+-- repo-published demo password can never be a usable standing credential
+-- (SEC-2). The login flow honours the flag; see api/routers/auth.py.
+INSERT INTO users (email, password_hash, full_name, full_name_ar, role, phone, operator_id, is_active, must_change_password) VALUES
   ('admin@damascus-transit.demo',
    '$2b$12$HpbfV7OnWCfrsLxLp8UiZO4Rc0BNiCUPrf56PF0vSaQTGnbS7PafK',
    'Demo Admin', 'مدير تجريبي', 'admin', '+963900000001',
-   '00000000-0000-0000-0000-000000000001', true),
+   '00000000-0000-0000-0000-000000000001', true, true),
 
   ('operator@damascus-transit.demo',
    '$2b$12$Q7hJksvGrI1.N/iI/38vL.IaT7jRdtqIgX2./NpebcIRrOdas1I2S',
    'Demo Operator', 'مشغّل تجريبي', 'dispatcher', '+963900000002',
-   '00000000-0000-0000-0000-000000000001', true),
+   '00000000-0000-0000-0000-000000000001', true, true),
 
   ('driver@damascus-transit.demo',
    '$2b$12$M.p/tkNKxnl38YzWkElLxuZ3p1rSbj3G.QTNLM1DQo9Fz.RaGXyKy',
    'Demo Driver', 'سائق تجريبي', 'driver', '+963900000003',
-   '00000000-0000-0000-0000-000000000001', true),
+   '00000000-0000-0000-0000-000000000001', true, true),
 
   ('passenger@damascus-transit.demo',
    '$2b$12$pD32ASlAmQFiCfMoh8rFFOQaL5UqEev5.FA9zbhyCPqlbxJOWwwWS',
    'Demo Passenger', 'راكب تجريبي', 'viewer', '+963900000004',
-   '00000000-0000-0000-0000-000000000001', true)
+   '00000000-0000-0000-0000-000000000001', true, true)
 ON CONFLICT (email) DO NOTHING;

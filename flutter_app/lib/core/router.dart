@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../features/auth/auth_controller.dart';
 import '../features/auth/login_screen.dart';
 import '../features/driver/driver_home.dart';
+import '../features/passenger/nearest_stops_screen.dart';
 import '../features/passenger/passenger_home.dart';
 import '../features/passenger/route_detail_screen.dart';
 import '../features/routes/routes_list_screen.dart';
@@ -27,6 +28,10 @@ final routerProvider = Provider<GoRouter>((Ref ref) {
       GoRoute(
         path: '/',
         builder: (_, __) => const PassengerHome(),
+      ),
+      GoRoute(
+        path: '/nearby',
+        builder: (_, __) => const NearestStopsScreen(),
       ),
       GoRoute(
         path: '/routes',

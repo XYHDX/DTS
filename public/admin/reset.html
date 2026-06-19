@@ -27,6 +27,7 @@
 </style>
 </head>
 <body>
+<noscript><div style="margin:0;padding:14px 18px;background:#9b121e;color:#fff;font-family:system-ui,sans-serif;font-size:14px;text-align:center;">يتطلب هذا التطبيق تفعيل جافاسكربت للعمل. · This app requires JavaScript to be enabled.</div></noscript>
 
 <div class="utility-bar">
   <div class="container">
@@ -124,13 +125,17 @@
   if (mode === 'forced') {
     document.getElementById('form-change').addEventListener('submit', async function (ev) {
       ev.preventDefault();
+      // Prevent double-submit: lock the button for the duration of the handler.
+      const submitBtn = ev.target.querySelector('button[type="submit"]');
+      if (submitBtn && submitBtn.disabled) return;
+      if (submitBtn) submitBtn.disabled = true;
       const err = document.getElementById('err-change'), ok = document.getElementById('ok-change');
       err.textContent = ''; ok.textContent = '';
       const cur = document.getElementById('cur').value;
       const np1 = document.getElementById('new').value;
       const np2 = document.getElementById('new2').value;
-      if (np1 !== np2) { err.textContent = 'كلمتا المرور غير متطابقتين — passwords do not match'; return; }
-      if (np1 === cur) { err.textContent = 'كلمة المرور الجديدة يجب أن تختلف — must differ from current'; return; }
+      if (np1 !== np2) { err.textContent = 'كلمتا المرور غير متطابقتين — passwords do not match'; if (submitBtn) submitBtn.disabled = false; return; }
+      if (np1 === cur) { err.textContent = 'كلمة المرور الجديدة يجب أن تختلف — must differ from current'; if (submitBtn) submitBtn.disabled = false; return; }
       // Web auth is the httpOnly cookie (sent automatically on same-origin);
       // a Bearer header is only added if a token happens to be present (native/dev).
       const tk = localStorage.getItem('dt_token') || sessionStorage.getItem('dt_token');
@@ -156,6 +161,7 @@
         ok.textContent = 'تم التغيير — سجّل الدخول بكلمة المرور الجديدة. Redirecting…';
         setTimeout(() => { location.href = '/admin/login.html'; }, 1200);
       } catch (_) { err.textContent = 'تعذر الاتصال بالخادم — network error'; }
+      finally { if (submitBtn) submitBtn.disabled = false; }
     });
   }
 
@@ -163,11 +169,15 @@
   if (mode === 'consume') {
     document.getElementById('form-consume').addEventListener('submit', async function (ev) {
       ev.preventDefault();
+      // Prevent double-submit: lock the button for the duration of the handler.
+      const submitBtn = ev.target.querySelector('button[type="submit"]');
+      if (submitBtn && submitBtn.disabled) return;
+      if (submitBtn) submitBtn.disabled = true;
       const err = document.getElementById('err-consume'), ok = document.getElementById('ok-consume');
       err.textContent = ''; ok.textContent = '';
       const np1 = document.getElementById('t-new').value;
       const np2 = document.getElementById('t-new2').value;
-      if (np1 !== np2) { err.textContent = 'كلمتا المرور غير متطابقتين — passwords do not match'; return; }
+      if (np1 !== np2) { err.textContent = 'كلمتا المرور غير متطابقتين — passwords do not match'; if (submitBtn) submitBtn.disabled = false; return; }
       try {
         const r = await fetch('/api/auth/reset-password', {
           method: 'POST',
@@ -179,6 +189,7 @@
         ok.textContent = 'تم — يمكنك الآن تسجيل الدخول. Redirecting…';
         setTimeout(() => { location.href = '/admin/login.html'; }, 1200);
       } catch (_) { err.textContent = 'تعذر الاتصال بالخادم — network error'; }
+      finally { if (submitBtn) submitBtn.disabled = false; }
     });
   }
 
@@ -186,6 +197,10 @@
   if (mode === 'request') {
     document.getElementById('form-request').addEventListener('submit', async function (ev) {
       ev.preventDefault();
+      // Prevent double-submit: lock the button for the duration of the request.
+      const submitBtn = ev.target.querySelector('button[type="submit"]');
+      if (submitBtn && submitBtn.disabled) return;
+      if (submitBtn) submitBtn.disabled = true;
       const err = document.getElementById('err-request'), ok = document.getElementById('ok-request');
       err.textContent = ''; ok.textContent = '';
       try {
@@ -197,6 +212,7 @@
         if (r.status === 429) { err.textContent = 'محاولات كثيرة — حاول لاحقاً. Too many attempts.'; return; }
         ok.textContent = 'إن كان البريد مسجلاً فستصلك رسالة خلال دقائق. — If registered, an email is on its way.';
       } catch (_) { err.textContent = 'تعذر الاتصال بالخادم — network error'; }
+      finally { if (submitBtn) submitBtn.disabled = false; }
     });
   }
 })();

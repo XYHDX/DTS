@@ -134,3 +134,41 @@ def test_ingest_unknown_id_is_dropped_not_rewritten(monkeypatch):
     _run(mi._ingest(decoded))
     assert decoded.vehicle_id == "UNKNOWN-XYZ"  # not rewritten / not blanked
     assert called["geo"] is False  # unknown vehicle dropped at the approval gate
+
+
+def test_persist_uses_upsert_rpc_not_raw_insert(monkeypatch):
+    """Regression for the silent telemetry-drop bug (C1).
+
+    _persist must go through the upsert_vehicle_position RPC (correct columns +
+    PostGIS point, updates vehicle_positions_latest) — NOT a raw insert of the
+    non-existent ts/lat/lon/speed columns, which failed and was swallowed.
+    """
+    calls = {}
+
+    async def fake_rpc(func_name, params):
+        calls["func"] = func_name
+        calls["params"] = params
+        return None
+
+    async def fake_post(path, data):  # must NOT be used by _persist anymore
+        calls["post_path"] = path
+        return {}
+
+    monkeypatch.setattr("api.core.database._service_rpc", fake_rpc)
+    monkeypatch.setattr("api.core.database._service_post", fake_post)
+
+    decoded = mi._PartialDecode(
+        vehicle_id=VID,
+        timestamp=1718540000000,
+        latitude=33.5,
+        longitude=36.3,
+        operator_id="op-1",
+    )
+    _run(mi._persist(decoded, fuel_smoothed=None))
+
+    assert calls.get("func") == "upsert_vehicle_position"
+    assert "post_path" not in calls  # no raw vehicle_positions insert
+    p = calls["params"]
+    assert p["p_vehicle_id"] == VID
+    assert p["p_lat"] == 33.5 and p["p_lon"] == 36.3
+    assert p["p_source"] == "mqtt"

@@ -130,16 +130,30 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Pull the previous run's counts artifact, fall back to current as baseline.
-          PREV="counts_prev.json"
-          gh run download \
-              --name "row-counts-baseline" \
-              --dir . 2>/dev/null || cp counts_today.json "$PREV"
+          # Download the previous run's baseline into a SEPARATE dir so it can
+          # never clobber today's freshly-generated counts. If there is no
+          # baseline yet (first run / expired artifact) we must NOT compare
+          # today against itself and report a false "OK" — warn and skip the
+          # drop check instead (a fresh baseline is still published below).
+          rm -rf _baseline && mkdir -p _baseline
+          if gh run download --name "row-counts-baseline" --dir _baseline 2>/dev/null \
+             && [ -f _baseline/counts_today.json ]; then
+            cp _baseline/counts_today.json counts_prev.json
+            HAVE_BASELINE=1
+          else
+            HAVE_BASELINE=0
+          fi
 
-          python - <<'PY'
-          import json, sys
+          HAVE_BASELINE=$HAVE_BASELINE python - <<'PY'
+          import json, os, sys
           today = json.load(open('counts_today.json'))
-          prev  = json.load(open('counts_prev.json'))
+          if os.environ.get('HAVE_BASELINE') != '1':
+              print('::warning::No previous row-count baseline found — skipping the '
+                    'drop check for this run. A fresh baseline will be published.')
+              for t, n in sorted(today.items()):
+                  print(f'   {t}: (no baseline) -> {n}')
+              sys.exit(0)
+          prev = json.load(open('counts_prev.json'))
           THRESHOLD = 0.20  # 20% drop is the alarm
           bad = []
           for t, n in today.items():
@@ -148,7 +162,7 @@ jobs:
                   bad.append((t, p, n))
                   print(f'!! {t}: was {p}, now {n} ({(p-n)/p:.0%} drop)')
               else:
-                  print(f'   {t}: {p} → {n}')
+                  print(f'   {t}: {p} -> {n}')
           if bad:
               print('\nFAIL: row count(s) dropped more than 20%.')
               sys.exit(1)

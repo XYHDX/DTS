@@ -10,6 +10,8 @@ import '../../core/theme.dart';
 import '../map/vehicle_stream.dart';
 import '../routes/route_repository.dart';
 
+// TODO(i18n): strings are still hardcoded; externalize to AppLocalizations.of(context)
+
 class PassengerHome extends ConsumerStatefulWidget {
   const PassengerHome({super.key});
   @override
@@ -18,12 +20,21 @@ class PassengerHome extends ConsumerStatefulWidget {
 
 class _PassengerHomeState extends ConsumerState<PassengerHome> {
   LatLng _center = const LatLng(33.513, 36.291);
+  final TextEditingController _searchCtl = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _locate();
   }
+
+  @override
+  void dispose() {
+    _searchCtl.dispose();
+    super.dispose();
+  }
+
+  void _openNearby() => context.push('/nearby');
 
   Future<void> _locate() async {
     try {
@@ -75,13 +86,19 @@ class _PassengerHomeState extends ConsumerState<PassengerHome> {
                     color: Colors.white.withOpacity(0.16),
                     borderRadius: BorderRadius.circular(40),
                   ),
-                  child: const TextField(
-                    style: TextStyle(color: Colors.white),
+                  child: TextField(
+                    controller: _searchCtl,
+                    textInputAction: TextInputAction.search,
+                    onSubmitted: (_) => _openNearby(),
+                    style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
                       border: InputBorder.none,
                       hintText: 'مزة، باب توما، خط ١٢ …',
-                      hintStyle: TextStyle(color: Colors.white60),
-                      prefixIcon: Icon(Icons.search, color: Colors.white),
+                      hintStyle: const TextStyle(color: Colors.white60),
+                      prefixIcon: IconButton(
+                        icon: const Icon(Icons.search, color: Colors.white),
+                        onPressed: _openNearby,
+                      ),
                     ),
                   ),
                 ),
@@ -227,6 +244,9 @@ class _BottomNav extends ConsumerWidget {
       selectedIndex: 0,
       onDestinationSelected: (int idx) {
         switch (idx) {
+          case 1:
+            GoRouter.of(context).go('/nearby');
+            break;
           case 2:
             GoRouter.of(context).go('/routes');
             break;

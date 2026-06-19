@@ -7,6 +7,22 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../core/api_client.dart';
 import '../push/push_service.dart';
 
+/// Outcome of a [AuthController.login] attempt.
+///
+/// Distinguishes a genuine credential rejection (HTTP 401) from a transport
+/// failure (timeouts, connection errors, 5xx) so the UI can show the right
+/// message instead of blaming the user for a server outage.
+enum LoginResult {
+  /// Login succeeded; a token was stored.
+  success,
+
+  /// The server rejected the email/password pair (HTTP 401, or no token).
+  invalidCredentials,
+
+  /// The server could not be reached or returned a server-side error.
+  serverUnreachable,
+}
+
 /// Auth state — null when logged out.
 class AuthState {
   const AuthState({this.token, this.user});
@@ -41,14 +57,14 @@ class AuthController extends Notifier<AuthState> {
 
   bool get isAuthenticated => state.isAuthenticated;
 
-  Future<bool> login(String email, String password) async {
+  Future<LoginResult> login(String email, String password) async {
     try {
       final Response<dynamic> r = await _dio.post<dynamic>('/api/auth/login',
           data: <String, String>{'email': email, 'password': password});
       final Map<String, dynamic> data = (r.data as Map).cast<String, dynamic>();
       final String? token =
           (data['token'] ?? data['access_token']) as String?;
-      if (token == null) return false;
+      if (token == null) return LoginResult.invalidCredentials;
       await _storage.write(key: 'jwt', value: token);
       state = AuthState(
         token: token,
@@ -57,9 +73,23 @@ class AuthController extends Notifier<AuthState> {
       // Fire-and-forget: pair the FCM push token with the user.
       // Soft-fails if Firebase isn't configured yet.
       unawaited(ref.read(pushServiceProvider).registerToken());
-      return true;
-    } on DioException {
-      return false;
+      return LoginResult.success;
+    } on DioException catch (e) {
+      // A 401 is a real credential rejection; everything else (timeouts,
+      // connection errors, 5xx) means the server is unreachable / faulty.
+      final int? status = e.response?.statusCode;
+      if (status == 401) return LoginResult.invalidCredentials;
+      switch (e.type) {
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.receiveTimeout:
+        case DioExceptionType.connectionError:
+          return LoginResult.serverUnreachable;
+        default:
+          if (status != null && status >= 500) {
+            return LoginResult.serverUnreachable;
+          }
+          return LoginResult.invalidCredentials;
+      }
     }
   }
 

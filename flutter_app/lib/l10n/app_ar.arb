@@ -21,6 +21,7 @@
   "loginEmail": "البريد",
   "loginPassword": "كلمة المرور",
   "loginInvalid": "بيانات الدخول غير صحيحة",
+  "loginServerUnreachable": "تعذّر الوصول إلى الخادم، حاول مجددًا",
   "loginButton": "دخول",
   "loginBiometric": "الدخول ببصمة الإصبع",
 

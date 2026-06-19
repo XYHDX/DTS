@@ -155,7 +155,26 @@
     document.addEventListener('click', function () { footer.classList.remove('is-open'); });
   }
 
+  // Inject the skip-to-content link (first body child) + a <noscript> notice,
+  // and tag the main content with id="main" so the skip link has a target.
+  // The admin body is cloaked until JS runs (_gate.js), so JS-disabled users
+  // would otherwise see a permanent blank page — the <noscript> tells them why.
+  function injectA11yChrome() {
+    const ar = isArabic();
+    if (!document.querySelector('.skip-to-content')) {
+      const skip = document.createElement('a');
+      skip.className = 'skip-to-content';
+      skip.href = '#main';
+      skip.dataset.i18n = 'a11y.skip';
+      skip.textContent = ar ? 'تخطٍّ إلى المحتوى' : 'Skip to content';
+      document.body.insertBefore(skip, document.body.firstChild);
+    }
+    const main = document.querySelector('main.main');
+    if (main && !main.id) main.id = 'main';
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
+    injectA11yChrome();
     const initial = ((user && (user.name || user.email)) || '?').trim().charAt(0).toUpperCase();
     setText('#user-initial', initial);
     setText('#user-name', (user && (user.name || user.email)) || '—');

@@ -32,6 +32,7 @@
       'header.help':          'كيفية الاستخدام',
       'header.toggleLang':    'English',
       'header.live':          'مباشر',
+      'a11y.skip':            'تخطٍّ إلى المحتوى',
 
       'hero.eyebrow':         'الجمهورية العربية السورية · نظام النقل العام',
       'hero.title':           'تتبع حافلات دمشق في الوقت الحقيقي',
@@ -414,6 +415,7 @@
       'header.help':          'How to use',
       'header.toggleLang':    'العربية',
       'header.live':          'Live',
+      'a11y.skip':            'Skip to content',
 
       'hero.eyebrow':         'Syrian Arab Republic · Public Transit',
       'hero.title':           'Real-time Damascus bus tracking',

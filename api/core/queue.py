@@ -117,4 +117,7 @@ def verify_signature(request_headers: dict[str, str]) -> bool:
     """
     if not qstash_configured():
         return True
-    return "upstash-signature" in {k.lower() for k in request_headers}
+    raise NotImplementedError(
+        "QStash signature verification is not implemented — verify the Upstash "
+        "HMAC over the raw request body before trusting QStash callbacks."
+    )
