@@ -138,7 +138,11 @@ CREATE TABLE vehicles (
 CREATE INDEX idx_vehicles_vehicle_id ON vehicles(vehicle_id);
 CREATE INDEX idx_vehicles_status ON vehicles(status);
 CREATE INDEX idx_vehicles_route ON vehicles(assigned_route_id);
-CREATE INDEX idx_vehicles_gps ON vehicles(gps_device_id);
+-- One vehicle per non-null GPS device (the "wrong bus" guard). Mirrors
+-- migration 027 so a schema-only build also enforces it; 027's
+-- CREATE UNIQUE INDEX IF NOT EXISTS then becomes a no-op.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_vehicles_gps_device_id
+    ON vehicles (gps_device_id) WHERE gps_device_id IS NOT NULL;
 
 -- ============================================================
 -- 6. VEHICLE POSITIONS (Time-series)
@@ -162,6 +166,9 @@ CREATE INDEX idx_positions_vehicle ON vehicle_positions(vehicle_id);
 CREATE INDEX idx_positions_time ON vehicle_positions(recorded_at DESC);
 CREATE INDEX idx_positions_location ON vehicle_positions USING GIST(location);
 CREATE INDEX idx_positions_source ON vehicle_positions(source);
+-- Hot path: latest-N positions for one vehicle (history/ETA). Mirrors
+-- migration 009's ix_vp_vehicle_ts so schema-only builds also have it.
+CREATE INDEX IF NOT EXISTS ix_vp_vehicle_ts ON vehicle_positions(vehicle_id, recorded_at DESC);
 
 -- Partition hint: for production with high throughput,
 -- convert to a TimescaleDB hypertable:
@@ -284,14 +291,23 @@ CREATE INDEX idx_schedules_day ON schedules(day_of_week);
 -- 12. AUDIT LOG
 -- ============================================================
 
+-- Superset shape (reconciled 2026-06-19). The application
+-- (api/routers/admin.py) writes (admin_id, action, details, operator_id);
+-- migration 011 writes (action, entity_type, details). Both must work, so
+-- every writer's columns are present and the legacy `entity_type` is nullable.
+-- `details` is JSONB: a plain JSON string from the app is valid JSONB, and
+-- 011's jsonb_build_object(...) is too. Migration 024 (CREATE IF NOT EXISTS)
+-- then no-ops on a fresh build, and migration 032 widens any older table.
 CREATE TABLE audit_log (
     id BIGSERIAL PRIMARY KEY,
-    user_id UUID REFERENCES users(id),
+    admin_id UUID REFERENCES users(id),     -- app writer (api/routers/admin.py)
+    user_id UUID REFERENCES users(id),      -- legacy writer
     action TEXT NOT NULL,
-    entity_type TEXT NOT NULL,
-    entity_id UUID,
+    entity_type TEXT,                        -- legacy (nullable: app omits it)
+    entity_id UUID,                          -- legacy
     details JSONB,
-    ip_address TEXT,
+    operator_id UUID REFERENCES operators(id),
+    ip_address TEXT,                         -- legacy
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

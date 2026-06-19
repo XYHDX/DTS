@@ -1,4 +1,5 @@
 import math
+import urllib.parse
 from datetime import datetime, timezone
 from typing import List, Optional
 
@@ -169,14 +170,15 @@ async def get_stop_eta(
         op_id = await resolve_read_scope(operator, current_user)
 
         # 1. Resolve the stop — accept UUID (id) or stop_id string
-        stop_query = f"stops?id=eq.{stop_id}&select=*"
+        _qstop = urllib.parse.quote(stop_id, safe="")
+        stop_query = f"stops?id=eq.{_qstop}&select=*"
         if op_id:
             stop_query += f"&{_op_filter(op_id)}"
         stops = await _supabase_get(stop_query)
 
         if not stops:
             # Try matching by stop_id string field
-            alt_query = f"stops?stop_id=eq.{stop_id}&select=*"
+            alt_query = f"stops?stop_id=eq.{_qstop}&select=*"
             if op_id:
                 alt_query += f"&{_op_filter(op_id)}"
             stops = await _supabase_get(alt_query)

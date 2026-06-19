@@ -693,13 +693,25 @@ function showDeniedFlash() {
   const which = params.get('denied');
   if (!which) return;
   const isAr = (document.documentElement.lang || 'ar').slice(0, 2) === 'ar';
+  // SECURITY: `which` comes straight from the URL (?denied=). It must never be
+  // placed in innerHTML, or a crafted link (?denied=<img onerror=...>) runs
+  // script in the admin origin. Build the node with textContent instead.
+  const safeWhich = String(which).slice(0, 60);
   const msg = isAr
-    ? `الوصول إلى صفحة "${which}" مقيّد بصلاحية المدير.`
-    : `Access to "${which}" requires the admin role.`;
+    ? `الوصول إلى صفحة "${safeWhich}" مقيّد بصلاحية المدير.`
+    : `Access to "${safeWhich}" requires the admin role.`;
   const bar = document.createElement('div');
   bar.style.cssText = 'background:#fef3c7;color:#78350f;padding:10px 16px;margin:0 0 12px;border-radius:8px;border:1px solid #fcd34d;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:8px;';
-  bar.innerHTML = '<span>⚠ ' + msg + '</span><button style="background:transparent;border:0;font-size:18px;color:#78350f;cursor:pointer;">×</button>';
-  bar.querySelector('button').onclick = () => bar.remove();
+  const span = document.createElement('span');
+  span.textContent = '⚠ ' + msg;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.textContent = '×';
+  btn.setAttribute('aria-label', isAr ? 'إغلاق' : 'Dismiss');
+  btn.style.cssText = 'background:transparent;border:0;font-size:18px;color:#78350f;cursor:pointer;';
+  btn.onclick = () => bar.remove();
+  bar.appendChild(span);
+  bar.appendChild(btn);
   const main = document.querySelector('main');
   if (main) main.insertBefore(bar, main.firstChild);
   // Clean the URL so a refresh doesn't re-flash.

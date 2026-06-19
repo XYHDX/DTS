@@ -33,12 +33,17 @@ COMMENT ON COLUMN vehicle_positions.trigger_event    IS 'Enum value from Vehicle
 COMMENT ON COLUMN vehicle_positions.is_replay        IS 'TRUE when this frame came from the device offline FIFO buffer.';
 
 -- ── 2. Indexes for the common analytics queries ──────────────────────────
+-- FIX (2026-06-19): the timestamp column on vehicle_positions is `recorded_at`
+-- and the speed column is `speed_kmh` (see db/schema.sql) — NOT `ts`/`speed_kph`.
+-- The previous draft referenced non-existent columns, which aborted this whole
+-- BEGIN/COMMIT block on a fresh deploy (so the telemetry columns above never
+-- landed and the hot composite index below was missing). Corrected throughout.
 CREATE INDEX IF NOT EXISTS ix_vp_ts_event
-    ON vehicle_positions (ts DESC, trigger_event)
+    ON vehicle_positions (recorded_at DESC, trigger_event)
     WHERE trigger_event <> 0;
 
 CREATE INDEX IF NOT EXISTS ix_vp_vehicle_ts
-    ON vehicle_positions (vehicle_id, ts DESC);
+    ON vehicle_positions (vehicle_id, recorded_at DESC);
 
 -- ── 3. TimescaleDB hypertable (only when the extension is available) ─────
 DO $$
@@ -54,7 +59,7 @@ BEGIN
     -- Promote to hypertable. Migrate existing rows. 7-day chunks.
     PERFORM create_hypertable(
         'vehicle_positions',
-        'ts',
+        'recorded_at',
         chunk_time_interval => INTERVAL '7 days',
         migrate_data        => TRUE,
         if_not_exists       => TRUE
@@ -71,7 +76,7 @@ BEGIN
     ALTER TABLE vehicle_positions SET (
         timescaledb.compress,
         timescaledb.compress_segmentby = 'vehicle_id',
-        timescaledb.compress_orderby   = 'ts DESC'
+        timescaledb.compress_orderby   = 'recorded_at DESC'
     );
 
     PERFORM add_compression_policy(
@@ -95,12 +100,12 @@ BEGIN
         CREATE MATERIALIZED VIEW IF NOT EXISTS vehicle_positions_1m
         WITH (timescaledb.continuous) AS
         SELECT
-            time_bucket(INTERVAL '1 minute', ts) AS bucket,
+            time_bucket(INTERVAL '1 minute', recorded_at) AS bucket,
             vehicle_id,
             operator_id,
             route_id,
-            avg(speed_kph)           AS avg_speed_kph,
-            max(speed_kph)           AS max_speed_kph,
+            avg(speed_kmh)           AS avg_speed_kmh,
+            max(speed_kmh)           AS max_speed_kmh,
             avg(fuel_level)          AS avg_fuel_level,
             bool_or(engine_state)    AS engine_was_on,
             count(*)                 AS samples

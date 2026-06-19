@@ -12,6 +12,18 @@ router = APIRouter()
 
 CRON_SECRET = os.getenv("CRON_SECRET", "")
 
+# The daily simulator writes synthetic GPS for EVERY active vehicle — a demo
+# aid, not something that should ever run against a production fleet (it would
+# overwrite real tracking). It is therefore OFF by default and only runs when
+# SIMULATION_ENABLED is explicitly truthy. The manual, admin-gated
+# POST /api/admin/simulate is unaffected and still works for demos.
+SIMULATION_ENABLED = os.getenv("SIMULATION_ENABLED", "").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+
 # A real-GPS vehicle with no fix for longer than this is "silent" and raises a
 # (deduped) connection_lost alert; the alert auto-resolves when it reports
 # again. Override with the SILENT_BUS_THRESHOLD_S env var.
@@ -29,6 +41,12 @@ async def cron_simulate_positions(request: Request):
     auth = request.headers.get("authorization", "")
     if not CRON_SECRET or not hmac.compare_digest(auth, f"Bearer {CRON_SECRET}"):
         raise HTTPException(status_code=401, detail="Invalid cron secret")
+    # Disabled in production unless explicitly opted in — never overwrite a real
+    # fleet's live positions on a schedule. Returns 200 so the scheduler does not
+    # treat the skip as a failure and retry.
+    if not SIMULATION_ENABLED:
+        logger.info("cron_simulate skipped — SIMULATION_ENABLED is not set")
+        return {"status": "disabled", "updated": 0}
     try:
         return await _run_simulation()
     except Exception as e:

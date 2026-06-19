@@ -288,6 +288,10 @@ class TestApprovalEnforcement:
 
     def test_trip_start_allowed_for_approved_vehicle(self, client):
         async def fake_get(query):
+            # The concurrent-trip guard asks for an existing in_progress trip;
+            # there is none here.
+            if "trips?" in query and "in_progress" in query:
+                return []
             return [
                 {
                     "id": "veh-1",
@@ -316,6 +320,8 @@ class TestApprovalEnforcement:
         as approved so the live fleet never halts on deploy order."""
 
         async def fake_get(query):
+            if "trips?" in query and "in_progress" in query:
+                return []
             return [{"id": "veh-1", "assigned_route_id": "route-1", "is_active": True}]
 
         async def fake_post(table, data):

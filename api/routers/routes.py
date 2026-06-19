@@ -1,4 +1,5 @@
 import logging
+import urllib.parse
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -106,7 +107,8 @@ async def get_route(
         if cached is not None:
             return cached
 
-        query = f"routes?id=eq.{route_id}&select=*"
+        _qroute = urllib.parse.quote(route_id, safe="")
+        query = f"routes?id=eq.{_qroute}&select=*"
         if op_id:
             query += f"&{_op_filter(op_id)}"
         routes = await _supabase_get(query)
@@ -117,7 +119,7 @@ async def get_route(
             )
 
         route = routes[0]
-        stops = await _supabase_get(f"route_stops?route_id=eq.{route_id}&select=id")
+        stops = await _supabase_get(f"route_stops?route_id=eq.{_qroute}&select=id")
 
         result = RouteResponse(
             id=route["id"],
@@ -171,7 +173,7 @@ async def get_route_stops(
         # Embed the related stop row via the route_stops → stops FK, ordered by
         # the canonical stop_sequence so the list reads start → end.
         rows = await _supabase_get(
-            f"route_stops?route_id=eq.{route_id}"
+            f"route_stops?route_id=eq.{urllib.parse.quote(route_id, safe='')}"
             "&select=stop_sequence,stops(id,stop_id,name,name_ar,location,has_shelter,is_active)"
             "&order=stop_sequence.asc"
         )

@@ -2,6 +2,7 @@ import json
 import os
 from datetime import datetime
 from typing import Optional
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
@@ -38,6 +39,29 @@ router = APIRouter()
 # Each value: {"subscription": {...}, "stopIds": [...], "role": "passenger"|"driver", "createdAt": "..."}
 # For production, migrate to Supabase push_subscriptions table.
 _push_subscriptions: dict = {}
+
+# SSRF guard: a push `endpoint` is a URL this server later POSTs a VAPID-signed
+# request to. Anonymous callers must not be able to point it at an arbitrary
+# host, so only the real push services are accepted.
+_ALLOWED_PUSH_HOST_SUFFIXES = (
+    ".googleapis.com",  # FCM: fcm.googleapis.com / android.googleapis.com
+    ".push.services.mozilla.com",  # Mozilla autopush
+    ".notify.windows.com",  # Microsoft WNS
+    ".push.apple.com",  # Apple Web Push
+    ".web.push.apple.com",
+)
+
+
+def _is_allowed_push_endpoint(url: str) -> bool:
+    """True only for an https URL whose host is a known push service."""
+    try:
+        parsed = urlparse(url)
+    except Exception:
+        return False
+    if parsed.scheme != "https" or not parsed.hostname:
+        return False
+    host = parsed.hostname.lower()
+    return any(host.endswith(suffix) for suffix in _ALLOWED_PUSH_HOST_SUFFIXES)
 
 
 def _get_vapid_claims() -> dict:
@@ -159,6 +183,11 @@ async def subscribe_push(
             operator_id = None
 
     endpoint = req.subscription.endpoint
+    if not _is_allowed_push_endpoint(endpoint):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Unsupported push endpoint — must be a known push service.",
+        )
     _push_subscriptions[endpoint] = {
         "subscription": req.subscription.model_dump(),
         "stopIds": req.stopIds or [],
