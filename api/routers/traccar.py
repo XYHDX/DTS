@@ -63,8 +63,14 @@ async def traccar_position_webhook(
 
     try:
         quoted_id = urllib.parse.quote(position.deviceId, safe="")
+        # Deterministic resolution: if more than one vehicle somehow shares this
+        # device id, always prefer the real-GPS, most-recently-updated one so a
+        # fix never lands on a stale/demo row. Migration 027 also enforces this
+        # as a hard uniqueness constraint.
         devices = await _service_get(
-            f"vehicles?gps_device_id=eq.{quoted_id}&select=id,vehicle_id,approval_status,is_active,operator_id"
+            f"vehicles?gps_device_id=eq.{quoted_id}"
+            "&select=id,vehicle_id,approval_status,is_active,operator_id"
+            "&order=is_real_gps.desc,updated_at.desc.nullslast"
         )
         if not devices:
             return {"status": "ignored", "reason": "device_not_found"}
@@ -138,7 +144,9 @@ async def traccar_event_webhook(
     try:
         quoted_id = urllib.parse.quote(event.deviceId, safe="")
         devices = await _service_get(
-            f"vehicles?gps_device_id=eq.{quoted_id}&select=id,approval_status,is_active"
+            f"vehicles?gps_device_id=eq.{quoted_id}"
+            "&select=id,approval_status,is_active"
+            "&order=is_real_gps.desc,updated_at.desc.nullslast"
         )
         if devices and (
             devices[0].get("is_active") is False

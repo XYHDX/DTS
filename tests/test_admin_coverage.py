@@ -299,6 +299,37 @@ class TestAdminCreateVehicle:
         assert r.status_code == 200
         assert r.json()["vehicle_id"] == "BUS-101"
 
+    def test_create_vehicle_duplicate_device_id(self, client, admin_token):
+        """A gps_device_id already paired to another vehicle is rejected (409),
+        preventing the 'wrong bus' duplicate (migration 027 guards the DB too)."""
+        with (
+            patch("api.routers.admin._service_get", new_callable=AsyncMock) as mock_get,
+            patch(
+                "api.routers.admin._service_post", new_callable=AsyncMock
+            ) as mock_post,
+        ):
+            # 1st _service_get = fleet-code check (free); 2nd = device-id check (taken).
+            mock_get.side_effect = [
+                [],
+                [{"id": "v-existing", "vehicle_id": "BUS-OTHER"}],
+            ]
+            r = client.post(
+                "/api/admin/vehicles",
+                json={
+                    "vehicle_id": "BUS-201",
+                    "name": "Bus 201",
+                    "name_ar": "حافلة 201",
+                    "vehicle_type": "bus",
+                    "capacity": 40,
+                    "gps_device_id": "DTS002",
+                },
+                headers={"Authorization": f"Bearer {admin_token}"},
+            )
+        assert r.status_code == 409
+        assert "DTS002" in r.json()["detail"]
+        assert "BUS-OTHER" in r.json()["detail"]
+        mock_post.assert_not_called()
+
     def test_create_vehicle_db_failure(self, client, admin_token):
         with patch(
             "api.routers.admin._service_post", new_callable=AsyncMock
