@@ -391,6 +391,50 @@ class TestAdminUpdateVehicle:
             )
         assert r.status_code == 404
 
+    def test_update_vehicle_device_duplicate(self, client, admin_token):
+        """Pairing a device id already used by another vehicle is rejected (409)."""
+        with (
+            patch("api.routers.admin._service_get", new_callable=AsyncMock) as mock_get,
+            patch(
+                "api.routers.admin._service_patch", new_callable=AsyncMock
+            ) as mock_patch,
+        ):
+            mock_get.return_value = [{"id": "v-other", "vehicle_id": "BUS-OTHER"}]
+            r = client.put(
+                "/api/admin/vehicles/v-001",
+                json={"gps_device_id": "DTS002"},
+                headers={"Authorization": f"Bearer {admin_token}"},
+            )
+        assert r.status_code == 409
+        assert "DTS002" in r.json()["detail"]
+        mock_patch.assert_not_called()
+
+    def test_update_vehicle_unpair_device(self, client, admin_token):
+        """Empty gps_device_id clears the device and forces is_real_gps off."""
+        with patch(
+            "api.routers.admin._service_patch", new_callable=AsyncMock
+        ) as mock_patch:
+            mock_patch.return_value = [
+                {
+                    "id": "v-001",
+                    "vehicle_id": "VH-001",
+                    "name": "Bus",
+                    "name_ar": "حافلة",
+                    "vehicle_type": "bus",
+                    "capacity": 40,
+                    "status": "idle",
+                }
+            ]
+            r = client.put(
+                "/api/admin/vehicles/v-001",
+                json={"gps_device_id": ""},
+                headers={"Authorization": f"Bearer {admin_token}"},
+            )
+        assert r.status_code == 200
+        sent = mock_patch.call_args[0][1]
+        assert sent["gps_device_id"] is None
+        assert sent["is_real_gps"] is False
+
 
 # ---------------------------------------------------------------------------
 # Admin: assign vehicle

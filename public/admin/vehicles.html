@@ -140,7 +140,8 @@
       const ap = APPROVAL[v.approval_status||'approved'] || APPROVAL.approved;
       const name = isAr()?(v.name_ar||v.name||'—'):(v.name||v.name_ar||'—');
       const driver = v.driver_name ? esc(v.driver_name) : '<span class="cell-muted">—</span>';
-      let actions = '<button class="btn-row js-assign" data-id="'+esc(v.id)+'" style="color:var(--national-green)">'+(isAr()?'تعيين':'Assign')+'</button>';
+      let actions = '<button class="btn-row js-edit" data-id="'+esc(v.id)+'" style="color:var(--national-green)">'+(isAr()?'تعديل':'Edit')+'</button>';
+      actions += ' <button class="btn-row js-assign" data-id="'+esc(v.id)+'" style="color:var(--national-green)">'+(isAr()?'تعيين':'Assign')+'</button>';
       if (canDecide) actions += ' <button class="btn-row js-del" data-id="'+esc(v.id)+'" style="color:#b91c1c">'+(isAr()?'إخراج':'Retire')+'</button>';
       return '<tr>'+
         '<td class="cell-mono">'+esc(v.vehicle_id||'—')+'</td>'+
@@ -156,6 +157,41 @@
     }).join('');
     tbody.querySelectorAll('.js-del').forEach(b=>b.addEventListener('click', onRetire));
     tbody.querySelectorAll('.js-assign').forEach(b=>b.addEventListener('click', onAssign));
+    tbody.querySelectorAll('.js-edit').forEach(b=>b.addEventListener('click', onEdit));
+  }
+  function onEdit(ev){
+    const id = ev.currentTarget.dataset.id;
+    const v = LAST.find(x=>x.id===id) || {};
+    window.ADMIN_AUTH.openForm({
+      title: isAr()?'تعديل المركبة':'Edit vehicle',
+      subtitle: isAr()?'الاسم والسعة والحالة وجهاز التتبّع — دون الحاجة لقاعدة البيانات.':'Name, capacity, status and GPS tracker — no database needed.',
+      fields: [
+        { name:'name', label:'Name (English)', label_ar:'الاسم (إنجليزي)', value:v.name||'' },
+        { name:'name_ar', label:'Name (Arabic)', label_ar:'الاسم (عربي)', value:v.name_ar||'' },
+        { name:'capacity', label:'Capacity', label_ar:'السعة', type:'number', min:1, max:200, value:(v.capacity!=null?v.capacity:'') },
+        { name:'status', label:'Status', label_ar:'الحالة', type:'select', value:v.status||'idle',
+          options:[{value:'active',label:'Active',label_ar:'نشطة'},{value:'idle',label:'Idle',label_ar:'متوقفة'},{value:'maintenance',label:'Maintenance',label_ar:'صيانة'}]},
+        { name:'gps_device_id', label:'GPS device ID', label_ar:'معرّف جهاز التتبّع', value:v.gps_device_id||'', placeholder:'DTS003',
+          hint: isAr()?'اتركه فارغاً لإلغاء اقتران الجهاز.':'Leave empty to unpair the tracker.' },
+        { name:'is_real_gps', label:'Tracking source', label_ar:'مصدر التتبّع', type:'select', value:(v.is_real_gps?'true':'false'),
+          options:[{value:'true',label:'Real GPS tracker',label_ar:'جهاز تتبّع حقيقي'},{value:'false',label:'Phone / simulated',label_ar:'هاتف / محاكاة'}]},
+      ],
+      onSubmit: async function(values){
+        const payload = {};
+        if (values.name && values.name.trim()) payload.name = values.name.trim();
+        if (values.name_ar && values.name_ar.trim()) payload.name_ar = values.name_ar.trim();
+        if (values.capacity!=null && values.capacity!=='') payload.capacity = Number(values.capacity);
+        if (values.status) payload.status = values.status;
+        payload.gps_device_id = (values.gps_device_id||'').trim();  // empty = unpair
+        payload.is_real_gps = (values.is_real_gps === 'true');
+        const r = await window.ADMIN_AUTH.fetch('/api/admin/vehicles/'+encodeURIComponent(id), {
+          method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
+        });
+        if (!r.ok){ const j = await r.json().catch(()=>({detail:'Save failed'})); return {error: j.detail||'Save failed'}; }
+        window.ADMIN_AUTH.toast('تم تحديث المركبة','Vehicle updated','success');
+      },
+      onAfter: load,
+    });
   }
   function onRetire(ev){
     const id = ev.currentTarget.dataset.id;

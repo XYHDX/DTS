@@ -482,6 +482,8 @@ async def list_all_vehicles(
                     speed_kmh=pos.get("speed_kmh"),
                     occupancy_pct=pos.get("occupancy_pct"),
                     recorded_at=pos.get("recorded_at"),
+                    gps_device_id=v.get("gps_device_id"),
+                    is_real_gps=v.get("is_real_gps"),
                     approval_status=v.get("approval_status"),
                     approved_at=v.get("approved_at"),
                     approval_note=v.get("approval_note"),
@@ -630,6 +632,34 @@ async def update_vehicle(
             update_dict["capacity"] = vehicle_data.capacity
         if vehicle_data.status is not None:
             update_dict["status"] = vehicle_data.status
+        if vehicle_data.is_real_gps is not None:
+            update_dict["is_real_gps"] = vehicle_data.is_real_gps
+
+        # Tracker (GPS device) pairing, editable from the admin UI so an admin
+        # never has to touch the database to pair/unpair a tracker.
+        if vehicle_data.gps_device_id is not None:
+            device = vehicle_data.gps_device_id.strip()
+            if not device:
+                # Unpair: clear the device and the real-GPS flag together.
+                update_dict["gps_device_id"] = None
+                update_dict["is_real_gps"] = False
+            else:
+                # A device belongs to exactly one vehicle (also DB-guarded by
+                # migration 027); reject pairing one already used elsewhere.
+                clash = await _service_get(
+                    f"vehicles?gps_device_id=eq.{urllib.parse.quote(device, safe='')}"
+                    f"&id=neq.{urllib.parse.quote(vehicle_id, safe='')}"
+                    "&select=id,vehicle_id"
+                )
+                if clash:
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail=(
+                            f"GPS device id '{device}' is already paired to "
+                            f"vehicle {clash[0].get('vehicle_id')}. Unpair it there first."
+                        ),
+                    )
+                update_dict["gps_device_id"] = device
 
         if not update_dict:
             raise HTTPException(
