@@ -354,6 +354,9 @@ class AnalyticsOverview(BaseModel):
     # pending_vehicles but the API never returned them (KPIs showed "—").
     trips_today: Optional[int] = None
     open_alerts: Optional[int] = None
+    # Subset of open_alerts that are silent-bus (connection_lost) alerts, for
+    # the dashboard "silent buses" tile (Phase 2/3).
+    silent_buses: Optional[int] = None
     pending_vehicles: Optional[int] = None
     maintenance_vehicles: int
     total_routes: int

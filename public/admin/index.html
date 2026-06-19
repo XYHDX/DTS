@@ -130,7 +130,7 @@
   [dir="rtl"] .pagetitle h1 { font-family: var(--font-sans); }
   .pagetitle p { margin: 4px 0 0; color: var(--color-text-mute); font-size: 14px; }
 
-  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 22px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; margin-bottom: 22px; }
   .kpi {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
@@ -256,6 +256,10 @@
       </div>
       <div class="cluster">
         <span class="badge badge--success"><span class="live-dot" aria-hidden="true"></span><span data-i18n="admin.live"> مباشر</span></span>
+        <button class="btn btn--sm" id="add-bus-btn" style="background:var(--national-green,#0E5650);color:#fff;border:0;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          <span data-i18n="admin.addBus">إضافة حافلة</span>
+        </button>
         <button class="btn btn--outline btn--sm" id="refresh-btn">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
           <span data-i18n="admin.refresh">تحديث</span>
@@ -284,6 +288,12 @@
         <div class="kpi__value" id="kpi-alerts">—</div>
         <div class="kpi__delta" id="kpi-alerts-delta">—</div>
       </div>
+      <a class="kpi reveal" id="kpi-silent-card" href="/admin/alerts.html"
+         style="text-decoration:none;color:inherit;">
+        <div class="kpi__label" data-i18n="admin.kpi.silent">حافلات صامتة (GPS)</div>
+        <div class="kpi__value" id="kpi-silent">—</div>
+        <div class="kpi__delta" id="kpi-silent-delta">—</div>
+      </a>
       <a class="kpi reveal" id="kpi-pending-card" href="/admin/approvals.html"
          style="display:none;text-decoration:none;color:inherit;border-color:var(--national-gold);">
         <div class="kpi__label">بانتظار الموافقة / Pending approval</div>
@@ -425,7 +435,101 @@ async function loadKpis() {
   $('#kpi-alerts-delta').textContent = crit != null
     ? (isAr ? fmtNum(crit) + ' عاجلة' : fmtNum(crit) + ' urgent')
     : (isAr ? 'تنبيهات مفتوحة' : 'open alerts');
+
+  // Silent-bus tile (Phase 2/3): real-GPS vehicles with an open connection_lost
+  // alert — i.e. a tracker that has stopped reporting.
+  const silent = overview.silent_buses || 0;
+  const silentEl = $('#kpi-silent');
+  if (silentEl) {
+    silentEl.textContent = fmtNum(silent);
+    silentEl.style.color = silent > 0 ? 'var(--national-red,#9b121e)' : 'var(--national-green,#0E5650)';
+    $('#kpi-silent-delta').textContent = silent > 0
+      ? (isAr ? 'بدون إشارة GPS' : 'no GPS signal')
+      : (isAr ? 'الكل يُرسل' : 'all reporting');
+  }
 }
+
+// ── Add-a-bus wizard ───────────────────────────────────────────────────────
+// One modal that creates the vehicle, pairs its GPS device, and assigns a
+// route + driver — replacing the old five-screen flow. Reuses existing,
+// already-tested endpoints (POST /vehicles then POST /vehicles/{id}/assign)
+// via the shared ADMIN_AUTH helper from _shell.js.
+async function openAddBus() {
+  if (!window.ADMIN_AUTH) return;
+  const isAr = (document.documentElement.lang || 'ar').slice(0,2) === 'ar';
+  const [routes, users] = await Promise.all([
+    ADMIN_AUTH.fetch('/api/admin/routes').then(r => r.ok ? r.json() : []).catch(() => []),
+    ADMIN_AUTH.fetch('/api/admin/users').then(r => r.ok ? r.json() : []).catch(() => []),
+  ]);
+  const drivers = (Array.isArray(users) ? users : []).filter(u => u.role === 'driver' && u.is_active);
+  const none = isAr ? '— بدون —' : '— none —';
+  const routeOpts = [{ value:'', label: none }].concat((Array.isArray(routes) ? routes : []).map(r => ({
+    value: r.id, label: (r.route_id ? r.route_id + ' · ' : '') + (r.name || r.name_ar || r.route_id || '')
+  })));
+  const driverOpts = [{ value:'', label: none }].concat(drivers.map(d => ({
+    value: d.id, label: (d.full_name || d.email || d.id)
+  })));
+  ADMIN_AUTH.openForm({
+    title: isAr ? 'إضافة حافلة' : 'Add a bus',
+    subtitle: isAr ? 'المركبة والجهاز والخط والسائق — في خطوة واحدة.'
+                   : 'Vehicle, device, route and driver — in one step.',
+    fields: [
+      { name:'vehicle_id', label:'Fleet code', label_ar:'رمز المركبة', required:true, placeholder:'BUS-105' },
+      { name:'name', label:'Name (English)', label_ar:'الاسم (إنجليزي)', required:true, placeholder:'Bus 105' },
+      { name:'name_ar', label:'Name (Arabic)', label_ar:'الاسم (عربي)', required:true, placeholder:'حافلة ١٠٥' },
+      { name:'vehicle_type', label:'Type', label_ar:'النوع', type:'select', value:'bus', options:[
+        { value:'bus', label:'Bus', label_ar:'حافلة' },
+        { value:'microbus', label:'Microbus', label_ar:'ميكروباص' },
+        { value:'taxi', label:'Taxi', label_ar:'تكسي' } ] },
+      { name:'capacity', label:'Capacity', label_ar:'السعة', type:'number', value:50, min:1 },
+      { name:'gps_device_id', label:'GPS device ID', label_ar:'معرّف جهاز التتبّع', placeholder:'DTS003',
+        hint: isAr ? 'الجهاز/المُعرّف المقترن بهذه الحافلة (يمكن تركه فارغاً).'
+                   : 'The tracker/IMEI paired to this bus (optional).' },
+      { name:'is_real_gps', label:'Tracking source', label_ar:'مصدر التتبّع', type:'select', value:'true', options:[
+        { value:'true', label:'Real GPS tracker', label_ar:'جهاز تتبّع حقيقي' },
+        { value:'false', label:'Phone / simulated', label_ar:'هاتف / محاكاة' } ] },
+      { name:'route_id', label:'Route', label_ar:'الخط', type:'select', options: routeOpts },
+      { name:'driver_id', label:'Driver', label_ar:'السائق', type:'select', options: driverOpts },
+    ],
+    onSubmit: async (v) => {
+      const payload = {
+        vehicle_id: (v.vehicle_id || '').trim(),
+        name: (v.name || '').trim(),
+        name_ar: (v.name_ar || '').trim(),
+        vehicle_type: v.vehicle_type || 'bus',
+        capacity: v.capacity || 50,
+        gps_device_id: ((v.gps_device_id || '').trim()) || null,
+        is_real_gps: (v.is_real_gps === 'true' || v.is_real_gps === true),
+      };
+      const res = await ADMIN_AUTH.fetch('/api/admin/vehicles', {
+        method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload)
+      });
+      const created = await res.json().catch(() => null);
+      if (!res.ok) return { error: (created && created.detail) || (isAr ? 'فشل الإنشاء' : 'Create failed') };
+      if ((v.route_id || v.driver_id) && created && created.id) {
+        const a = await ADMIN_AUTH.fetch('/api/admin/vehicles/' + encodeURIComponent(created.id) + '/assign', {
+          method:'POST', headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify({ route_id: v.route_id || '', driver_id: v.driver_id || '' })
+        });
+        if (!a.ok) {
+          const aj = await a.json().catch(() => null);
+          return { error: (isAr ? 'أُنشئت المركبة، لكن فشل الإسناد: ' : 'Bus created, but assignment failed: ')
+                          + ADMIN_AUTH.errText(aj && aj.detail) };
+        }
+      }
+      ADMIN_AUTH.toast(isAr ? 'تمت إضافة الحافلة' : 'Bus added', 'Bus added', 'success');
+      return null;
+    },
+    onAfter: () => { if (typeof loadKpis === 'function') loadKpis(); },
+  });
+}
+document.addEventListener('DOMContentLoaded', function () {
+  const b = document.getElementById('add-bus-btn');
+  if (!b) return;
+  const role = (user && (user.role || '')).toLowerCase();
+  if (['admin', 'dispatcher', 'super_admin'].indexOf(role) < 0) { b.style.display = 'none'; return; }
+  b.addEventListener('click', openAddBus);
+});
 
 // Build a DOM node safely — no `${data}` into innerHTML anywhere. Defends
 // against XSS via malicious alert titles or vehicle IDs coming from the DB.

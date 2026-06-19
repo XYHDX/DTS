@@ -605,7 +605,11 @@ class TestAdminWithAuth:
                 [MOCK_STOP],  # stops
                 [{"id": "d-001", "is_active": True}],  # drivers
                 [{"id": "t-001"}],  # trips today (2026-06-11 KPI fix)
-                [{"id": "a-001"}],  # open alerts
+                # open alerts — one silent-bus (connection_lost) + one other
+                [
+                    {"id": "a-001", "alert_type": "connection_lost"},
+                    {"id": "a-002", "alert_type": "speed_violation"},
+                ],
                 [],  # pending vehicles
                 [{"occupancy_pct": 55}],  # occupancy
             ]
@@ -616,6 +620,9 @@ class TestAdminWithAuth:
         assert r.status_code == 200
         data = r.json()
         assert "total_vehicles" in data
+        # Phase 2/3: silent_buses counts only the connection_lost alerts.
+        assert data["open_alerts"] == 2
+        assert data["silent_buses"] == 1
 
 
 # ---------------------------------------------------------------------------
