@@ -166,6 +166,9 @@ class VehicleResponse(BaseModel):
     speed_kmh: Optional[float] = None
     occupancy_pct: Optional[int] = None
     recorded_at: Optional[str] = None
+    # GPS pairing — surfaced so the admin can edit the tracker from the UI.
+    gps_device_id: Optional[str] = None
+    is_real_gps: Optional[bool] = None
     # Approval workflow (migration 019)
     approval_status: Optional[str] = None
     approved_at: Optional[str] = None
@@ -237,6 +240,10 @@ class VehicleUpdate(BaseModel):
     name_ar: Optional[str] = None
     capacity: Optional[int] = None
     status: Optional[Literal["active", "idle", "maintenance", "decommissioned"]] = None
+    # Tracker pairing, editable post-creation. Empty string clears the device
+    # (and is_real_gps is forced false). Uniqueness is guarded server-side.
+    gps_device_id: Optional[str] = None
+    is_real_gps: Optional[bool] = None
 
 
 class VehicleAssign(BaseModel):
