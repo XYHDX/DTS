@@ -22,6 +22,11 @@
 
 BEGIN;
 
+-- Self-contained: migration 018 (which adds alerts.photo_path + the incidents
+-- bucket) has not been applied on every environment, so ensure the column the
+-- policy references exists first. Idempotent.
+ALTER TABLE public.alerts ADD COLUMN IF NOT EXISTS photo_path TEXT;
+
 DROP POLICY IF EXISTS incidents_read ON storage.objects;
 
 CREATE POLICY incidents_read ON storage.objects

@@ -20,14 +20,9 @@ BEGIN
     ) THEN
         ALTER TABLE public.audit_log
             ALTER COLUMN details TYPE jsonb
-            USING (
-                CASE
-                    WHEN details IS NULL OR btrim(details) = '' THEN NULL
-                    -- Already-JSON text converts directly; plain strings are
-                    -- wrapped as a JSON string so nothing is lost.
-                    WHEN left(btrim(details), 1) IN ('{', '[') THEN details::jsonb
-                    ELSE to_jsonb(details)
-                END
-            );
+            -- Wrap every existing TEXT value as a JSON string. This is lossless
+            -- and CANNOT fail (no parsing of JSON-looking text), so the prod
+            -- apply is safe; the app treats details as opaque anyway.
+            USING (CASE WHEN details IS NULL THEN NULL ELSE to_jsonb(details) END);
     END IF;
 END $$;
