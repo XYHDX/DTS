@@ -528,6 +528,25 @@ async def create_vehicle(
                 detail="A vehicle with this fleet code already exists.",
             )
 
+        # Duplicate GPS device id check. A physical tracker maps to exactly one
+        # vehicle; if two vehicles share a gps_device_id the Traccar webhook
+        # attaches fixes to whichever row sorts first (the "wrong bus" bug).
+        # Checked globally — a device belongs to one vehicle across the system.
+        if vehicle_data.gps_device_id:
+            device_dupe = await _service_get(
+                f"vehicles?gps_device_id=eq.{urllib.parse.quote(vehicle_data.gps_device_id, safe='')}"
+                "&select=id,vehicle_id"
+            )
+            if device_dupe:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=(
+                        f"GPS device id '{vehicle_data.gps_device_id}' is already "
+                        f"paired to vehicle {device_dupe[0].get('vehicle_id')}. "
+                        "Unpair it there first."
+                    ),
+                )
+
         is_admin = current_user.role in ("admin", "super_admin")
         new_vehicle = {
             "vehicle_id": vehicle_data.vehicle_id,
