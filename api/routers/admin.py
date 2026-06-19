@@ -1355,7 +1355,14 @@ async def get_analytics_overview(
             f"trips?actual_start=gte.{urllib.parse.quote(today, safe='')}&select=id{op_suffix}"
         )
         open_alerts_rows = await _service_get(
-            f"alerts?is_resolved=eq.false&select=id{op_suffix}"
+            f"alerts?is_resolved=eq.false&select=id,alert_type{op_suffix}"
+        )
+        silent_buses = len(
+            [
+                a
+                for a in (open_alerts_rows or [])
+                if a.get("alert_type") == "connection_lost"
+            ]
         )
         pending_count = await _count_pending_vehicles(op_suffix)
 
@@ -1382,6 +1389,7 @@ async def get_analytics_overview(
             avg_occupancy_pct=round(avg_occupancy, 1) if avg_occupancy else None,
             trips_today=len(trips_today_rows or []),
             open_alerts=len(open_alerts_rows or []),
+            silent_buses=silent_buses,
             pending_vehicles=pending_count,
         )
 
