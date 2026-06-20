@@ -27,7 +27,6 @@ class ErrorBoundary extends StatefulWidget {
 
 class _ErrorBoundaryState extends State<ErrorBoundary> {
   Object? _error;
-  StackTrace? _stack;
   late FlutterExceptionHandler? _previousOnError;
 
   @override
@@ -52,7 +51,6 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
       if (!mounted) return;
       setState(() {
         _error = e;
-        _stack = st;
       });
     }
   }
@@ -60,7 +58,6 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
   void _retry() {
     setState(() {
       _error = null;
-      _stack = null;
     });
   }
 

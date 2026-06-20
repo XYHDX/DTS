@@ -1,0 +1,2 @@
+# Keeps the assets/ directory tracked in git so Flutter's asset bundler
+# (pubspec.yaml `assets: - assets/`) finds it on a fresh CI checkout.

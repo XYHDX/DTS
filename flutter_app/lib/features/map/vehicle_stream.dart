@@ -59,7 +59,7 @@ final vehicleStreamProvider =
   // 1s → 2s → 4s → 8s → 16s → 30s ceiling, ±20% jitter to spread reconnects
   // when many clients see the same outage.
   int backoffMs = 1000;
-  const int maxBackoffMs = 30_000;
+  const int maxBackoffMs = 30000;
   bool disposed = false;
   late StreamSubscription<SSEModel> sub;
 

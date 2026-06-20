@@ -35,8 +35,7 @@ class _NearestStopsScreenState extends ConsumerState<NearestStopsScreen> {
           perm == LocationPermission.whileInUse) {
         try {
           final Position p = await Geolocator.getCurrentPosition(
-              locationSettings:
-                  const LocationSettings(accuracy: LocationAccuracy.medium));
+              desiredAccuracy: LocationAccuracy.medium);
           lat = p.latitude;
           lon = p.longitude;
         } catch (_) {/* fall back to Damascus centre */}

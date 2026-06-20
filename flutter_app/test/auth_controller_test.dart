@@ -106,8 +106,8 @@ void main() {
         dioProvider.overrideWithValue(dio),
       ]);
       final AuthController c = container.read(authControllerProvider.notifier);
-      final bool ok = await c.login('a@b', 'pw');
-      expect(ok, isTrue);
+      final LoginResult ok = await c.login('a@b', 'pw');
+      expect(ok, LoginResult.success);
       expect(container.read(authControllerProvider).token, 'abc.def.ghi');
       expect(await storage.read(key: 'jwt'), 'abc.def.ghi');
     });
@@ -122,8 +122,8 @@ void main() {
         dioProvider.overrideWithValue(dio),
       ]);
       final AuthController c = container.read(authControllerProvider.notifier);
-      final bool ok = await c.login('a@b', 'wrong');
-      expect(ok, isFalse);
+      final LoginResult ok = await c.login('a@b', 'wrong');
+      expect(ok, LoginResult.invalidCredentials);
       expect(container.read(authControllerProvider).isAuthenticated, isFalse);
     });
 
