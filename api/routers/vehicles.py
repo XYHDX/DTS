@@ -37,7 +37,16 @@ async def _get_vehicles_approval_safe(base_query: str) -> list:
     try:
         return await _supabase_get(base_query + _APPROVAL_PUBLIC_CLAUSE)
     except Exception:
-        # Column absent (pre-migration-019) — fall back to the unfiltered query.
+        # Only relax the approval filter when the column is *genuinely* absent
+        # (pre-migration-019). On a transient DB error, re-raise instead of
+        # silently exposing unapproved vehicles on the public map (fail-closed,
+        # audit H2). approval_enforced() probes with the service key, which
+        # preserves the PostgREST status so a missing column is detected exactly.
+        from api.core import approval
+
+        if await approval.approval_enforced():
+            raise
+        approval.note_missing_column()
         return await _supabase_get(base_query)
 
 

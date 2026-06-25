@@ -5,7 +5,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../../core/api_client.dart';
 import '../../core/theme.dart';
 import '../map/vehicle_stream.dart';
 import '../routes/route_repository.dart';
@@ -44,7 +43,7 @@ class _PassengerHomeState extends ConsumerState<PassengerHome> {
         return;
       }
       final Position p = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium));
+          desiredAccuracy: LocationAccuracy.medium);
       if (mounted) setState(() => _center = LatLng(p.latitude, p.longitude));
     } catch (_) {}
   }

@@ -1,0 +1,50 @@
+name: Telemetry heartbeat (GPS-silence watchdog)
+
+# Calls the deployed /api/cron/heartbeat from OUTSIDE the app, so it catches
+# both "ingest pipeline is silent" (the endpoint reports status=silent and
+# fires Sentry) and "the whole app is down" (the request fails here). A failed
+# run notifies via GitHub's workflow-failure notifications.
+#
+# Enable by adding two repo secrets:
+#   HEARTBEAT_URL = https://<your-deployment>/api/cron/heartbeat
+#   CRON_SECRET   = (same value as the app's CRON_SECRET env var)
+# Until both are set, the job no-ops (stays green) so it never false-alarms.
+
+on:
+  schedule:
+    - cron: "*/15 * * * *" # every 15 min (GitHub may delay under load)
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  heartbeat:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check fleet telemetry freshness
+        env:
+          HEARTBEAT_URL: ${{ secrets.HEARTBEAT_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${HEARTBEAT_URL:-}" ] || [ -z "${CRON_SECRET:-}" ]; then
+            echo "::notice::HEARTBEAT_URL / CRON_SECRET not set — skipping. Add repo secrets to enable."
+            exit 0
+          fi
+          body="$(mktemp)"
+          code="$(curl -sS -o "$body" -w '%{http_code}' \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            --max-time 30 "${HEARTBEAT_URL}" || echo '000')"
+          echo "HTTP ${code}"; cat "$body" || true; echo
+          if [ "${code}" != "200" ]; then
+            echo "::error::Heartbeat endpoint unreachable/unhealthy (HTTP ${code}) — the app itself may be down."
+            exit 1
+          fi
+          status="$(jq -r '.status // "unknown"' "$body")"
+          age="$(jq -r '.age_seconds // "null"' "$body")"
+          if [ "${status}" != "ok" ]; then
+            echo "::error::Telemetry ${status} (age=${age}s) — no recent GPS positions. See Sentry / body above."
+            exit 1
+          fi
+          echo "Telemetry OK (age=${age}s)."

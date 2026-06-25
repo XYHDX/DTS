@@ -59,7 +59,6 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: const Text('التنبيهات')),
       body: RefreshIndicator(
@@ -164,9 +163,13 @@ class _Alert {
   }
 }
 
-enum _Severity { critical, high, medium, low, info }
+enum _Severity {
+  critical,
+  high,
+  medium,
+  low,
+  info;
 
-extension on _Severity {
   static _Severity parse(String s) {
     switch (s.toLowerCase()) {
       case 'critical': return _Severity.critical;
@@ -176,7 +179,9 @@ extension on _Severity {
       default:         return _Severity.info;
     }
   }
+}
 
+extension on _Severity {
   (Color bg, Color fg, Color border, String label) get visual {
     switch (this) {
       case _Severity.critical: return (

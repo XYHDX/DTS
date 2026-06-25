@@ -62,8 +62,7 @@ class _IncidentReportScreenState extends ConsumerState<IncidentReportScreen> {
     Position? p;
     try {
       p = await Geolocator.getCurrentPosition(
-              locationSettings:
-                  const LocationSettings(accuracy: LocationAccuracy.high))
+              desiredAccuracy: LocationAccuracy.high)
           .timeout(const Duration(seconds: 5));
     } catch (_) {/* without GPS still acceptable */}
     try {

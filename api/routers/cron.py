@@ -4,7 +4,13 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, HTTPException, Request
 
-from api.core.database import _service_get, _service_patch, _service_post
+from api.core.database import (
+    _active_vehicle_count,
+    _last_position_update,
+    _service_get,
+    _service_patch,
+    _service_post,
+)
 from api.core.logging import logger
 from api.routers.admin import _run_simulation
 
@@ -28,6 +34,13 @@ SIMULATION_ENABLED = os.getenv("SIMULATION_ENABLED", "").strip().lower() in {
 # (deduped) connection_lost alert; the alert auto-resolves when it reports
 # again. Override with the SILENT_BUS_THRESHOLD_S env var.
 SILENT_BUS_THRESHOLD_S = int(os.getenv("SILENT_BUS_THRESHOLD_S", "300"))  # 5 min
+
+# Fleet-wide telemetry watchdog. If the WHOLE system has received no position
+# for longer than this, the ingest pipeline (not just one bus) is likely down.
+# The silent_buses scan only flags individual vehicles to the dashboard; this
+# escalates a platform-level outage to logs + Sentry. Default 30 min so a brief
+# blip doesn't page anyone. Override with TELEMETRY_SILENCE_THRESHOLD_S.
+TELEMETRY_SILENCE_THRESHOLD_S = int(os.getenv("TELEMETRY_SILENCE_THRESHOLD_S", "1800"))
 
 
 @router.get("/api/cron/simulate", tags=["cron"])
@@ -200,5 +213,66 @@ async def cron_silent_buses(request: Request):
         return await _scan_silent_buses()
     except Exception as e:
         logger.error("Silent-bus scan failed", extra={"error": str(e)})
+        logger.error("Unexpected error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+# ---------------------------------------------------------------------------
+# Fleet-wide telemetry heartbeat (platform-outage watchdog)
+#
+# `_scan_silent_buses` flags individual stale vehicles into the alerts table.
+# It does NOT catch the case where the ENTIRE ingest pipeline goes quiet (the
+# live map silently went days without a position before this existed). This
+# watchdog reads the single freshest position across the whole system and, if
+# it's older than the threshold, escalates loudly to logs + Sentry.
+# ---------------------------------------------------------------------------
+async def _check_telemetry_heartbeat() -> dict:
+    """Return fleet-wide telemetry freshness and alert if the system is silent."""
+    last_raw = await _last_position_update()
+    active = await _active_vehicle_count()
+    last_dt = _parse_ts(last_raw)
+    now = datetime.now(timezone.utc)
+    age = (now - last_dt).total_seconds() if last_dt else None
+    silent = age is None or age > TELEMETRY_SILENCE_THRESHOLD_S
+    result = {
+        "status": "silent" if silent else "ok",
+        "age_seconds": int(age) if age is not None else None,
+        "threshold_seconds": TELEMETRY_SILENCE_THRESHOLD_S,
+        "last_position_update": last_raw,
+        "active_vehicles": active,
+    }
+    if silent:
+        msg = (
+            "telemetry_silent: no GPS position for "
+            + (f"{int(age)}s" if age is not None else "an unknown period")
+            + f" (threshold {TELEMETRY_SILENCE_THRESHOLD_S}s, active_vehicles={active})"
+        )
+        logger.error(msg)
+        try:
+            import sentry_sdk
+
+            sentry_sdk.capture_message(msg, level="error")
+        except Exception:
+            pass
+    return result
+
+
+@router.get("/api/cron/heartbeat", tags=["cron"])
+async def cron_heartbeat(request: Request):
+    """Cron endpoint — fleet-wide GPS-silence watchdog.
+
+    Secured by CRON_SECRET (same scheme as the other cron endpoints). Schedule
+    it every few minutes from any scheduler: an external monitor (recommended —
+    it also catches a full app outage), Vercel Cron on Pro, or a VPS crontab.
+    Always returns 200 with a status body; the alert fires as a side effect
+    (logs + Sentry) so the scheduler need not interpret the result.
+    """
+    auth = request.headers.get("authorization", "")
+    if not CRON_SECRET or not hmac.compare_digest(auth, f"Bearer {CRON_SECRET}"):
+        raise HTTPException(status_code=401, detail="Invalid cron secret")
+    try:
+        return await _check_telemetry_heartbeat()
+    except Exception as e:
+        logger.error("Telemetry heartbeat failed", extra={"error": str(e)})
         logger.error("Unexpected error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")

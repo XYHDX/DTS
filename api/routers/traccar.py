@@ -79,10 +79,10 @@ async def traccar_position_webhook(
 
         # Approval workflow (migration 019): positions from vehicles that an
         # admin has not approved (or has suspended) are dropped at the edge.
-        if vehicle.get("is_active") is False or (
-            vehicle.get("approval_status") is not None
-            and vehicle["approval_status"] != "approved"
-        ):
+        # Fail-closed shared policy.
+        from api.core import approval
+
+        if not await approval.is_vehicle_approved(vehicle):
             return {"status": "ignored", "reason": "vehicle_not_approved"}
 
         await _service_rpc(
@@ -154,16 +154,13 @@ async def traccar_event_webhook(
             "&select=id,approval_status,is_active"
             "&order=is_real_gps.desc,updated_at.desc.nullslast"
         )
-        if devices and (
-            devices[0].get("is_active") is False
-            or (
-                devices[0].get("approval_status") is not None
-                and devices[0]["approval_status"] != "approved"
-            )
-        ):
-            return {"status": "ignored", "reason": "vehicle_not_approved"}
         if not devices:
             return {"status": "ignored", "reason": "device_not_found"}
+        # Fail-closed shared policy.
+        from api.core import approval
+
+        if not await approval.is_vehicle_approved(devices[0]):
+            return {"status": "ignored", "reason": "vehicle_not_approved"}
 
         vehicle_id = devices[0]["id"]
 
