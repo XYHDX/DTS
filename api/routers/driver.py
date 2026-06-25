@@ -66,9 +66,12 @@ async def _require_approved_vehicle(driver_user_id: str, vehicle_id: str = None)
             status_code=status.HTTP_404_NOT_FOUND, detail="No vehicle assigned"
         )
     v = vehicles[0]
-    if v.get("is_active") is False or (
-        v.get("approval_status") is not None and v["approval_status"] != "approved"
-    ):
+    # Fail-closed approval policy (shared). A row that carries approval_status is
+    # approved only if it is exactly 'approved'; a legacy row missing the column
+    # is tolerated for backward compatibility.
+    from api.core import approval
+
+    if not await approval.is_vehicle_approved(v):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail=APPROVAL_BLOCKED_DETAIL
         )

@@ -173,9 +173,9 @@ async def get_vehicle_qr(
     ):
         raise HTTPException(status_code=404, detail="Vehicle not found")
 
-    if v.get("is_active") is False or (
-        v.get("approval_status") is not None and v["approval_status"] != "approved"
-    ):
+    from api.core import approval
+
+    if not await approval.is_vehicle_approved(v):
         raise HTTPException(
             status_code=403,
             detail="Vehicle is not approved to operate — no payment QR issued.",
@@ -237,9 +237,9 @@ async def initiate_payment(body: PaymentInitiateRequest, raw_request: Request):
         raise HTTPException(
             status_code=403, detail="QR does not match vehicle operator."
         )
-    if v.get("is_active") is False or (
-        v.get("approval_status") is not None and v["approval_status"] != "approved"
-    ):
+    from api.core import approval
+
+    if not await approval.is_vehicle_approved(v):
         raise HTTPException(
             status_code=403,
             detail="This vehicle is not approved to collect fares.",

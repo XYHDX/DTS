@@ -260,22 +260,29 @@ async def _vehicle_approved(vehicle_id: str) -> bool:
     now = time.monotonic()
     if cached is not None and (now - cached[0]) < _APPROVAL_TTL:
         return cached[1]
-    approved = True  # fail-open for transport errors / pre-migration DBs
-    try:
-        from api.core.database import _service_get  # type: ignore
+    from api.core import approval
+    from api.core.database import _service_get  # type: ignore
 
+    try:
         rows = await _service_get(
             f"vehicles?id=eq.{quote(vehicle_id, safe='')}&select=approval_status,is_active"
         )
-        if rows:
-            v = rows[0]
-            approved = v.get("is_active") is not False and (
-                v.get("approval_status") is None or v["approval_status"] == "approved"
-            )
-        else:
-            approved = False  # definitive answer: unknown vehicle
-    except Exception:
-        approved = True
+    except Exception as e:
+        if approval.is_missing_column_error(e):
+            # Pre-migration DB: the approval feature isn't deployed — tolerate
+            # (logs one loud warning), so a partial migration isn't an outage.
+            approval.note_missing_column()
+            _approval_cache[vehicle_id] = (now, True)
+            return True
+        # Transient/unknown lookup error -> FAIL CLOSED (audit H2: was fail-open,
+        # which silently disabled the gate on any DB blip). Don't cache, so the
+        # next frame re-checks instead of suppressing the vehicle for a full TTL.
+        logger.warning(
+            "telemetry_approval_lookup_failed_fail_closed",
+            extra={"vehicle_id": vehicle_id, "err": str(e)[:200]},
+        )
+        return False
+    approved = await approval.is_vehicle_approved(rows[0] if rows else None)
     _approval_cache[vehicle_id] = (now, approved)
     return approved
 
