@@ -1,0 +1,50 @@
+name: Auto-open PR on push
+
+# When you push any branch other than the default, this opens a pull request
+# for it automatically (the branch's commit messages become the PR title/body),
+# so you never have to open one by hand. Re-pushing an existing PR's branch is a
+# no-op. Pairs with scripts/ship.sh.
+#
+# ONE-TIME SETUP (required): Settings → Actions → General → Workflow permissions
+#   → enable "Allow GitHub Actions to create and approve pull requests".
+# This workflow must also live on the default branch to fire for branches cut
+# from it.
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - master
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  open-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Open a PR for this branch if one doesn't exist
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          # Already have an open PR for this branch? Nothing to do.
+          if gh pr view "$BRANCH" --json number --jq .number >/dev/null 2>&1; then
+            echo "A PR already exists for '$BRANCH' — skipping."
+            exit 0
+          fi
+
+          BASE=$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name)
+
+          # --fill uses the branch's commits for the title and body. Tolerate the
+          # "no commits between base and branch" case without failing the run.
+          if gh pr create --base "$BASE" --head "$BRANCH" --fill; then
+            echo "Opened PR for '$BRANCH' against '$BASE'."
+          else
+            echo "::notice::No PR created (no diff vs '$BASE' yet, or it already exists)."
+          fi
