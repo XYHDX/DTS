@@ -59,7 +59,7 @@ jobs:
       # CI tax (8–12 min cold, ~90 s warm). Two hash keys so a partial change still
       # gets a useful restore.
       - name: Cache Gradle wrapper + caches
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.gradle/caches
@@ -70,7 +70,7 @@ jobs:
             gradle-${{ runner.os }}-
 
       - name: Cache Android SDK packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.android/build-cache
